@@ -1,0 +1,341 @@
+import { relations, sql } from 'drizzle-orm';
+import { index, pgEnum, pgTableCreator, primaryKey } from 'drizzle-orm/pg-core';
+import { type AdapterAccount } from 'next-auth/adapters';
+
+/**
+ * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
+ * database instance for multiple projects.
+ *
+ * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
+ */
+export const createTable = pgTableCreator((name) => `tonytonyshopper_${name}`);
+
+export const userRoleEnum = pgEnum('user_role', ['user', 'admin']);
+
+export type UserRole = (typeof userRoleEnum.enumValues)[number];
+
+export const users = createTable('user', (d) => ({
+  id: d
+    .varchar({ length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: d.varchar({ length: 255 }),
+  email: d.varchar({ length: 255 }).notNull(),
+  emailVerified: d
+    .timestamp({
+      mode: 'date',
+      withTimezone: true,
+    })
+    .default(sql`CURRENT_TIMESTAMP`),
+  image: d.varchar({ length: 255 }),
+
+  role: userRoleEnum('role').default('user').notNull(),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  accounts: many(accounts),
+
+  reviews: many(reviews),
+  orders: many(orders),
+  cartItems: many(cartItems),
+}));
+
+export const accounts = createTable(
+  'account',
+  (d) => ({
+    userId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    type: d.varchar({ length: 255 }).$type<AdapterAccount['type']>().notNull(),
+    provider: d.varchar({ length: 255 }).notNull(),
+    providerAccountId: d.varchar({ length: 255 }).notNull(),
+    refresh_token: d.text(),
+    access_token: d.text(),
+    expires_at: d.integer(),
+    token_type: d.varchar({ length: 255 }),
+    scope: d.varchar({ length: 255 }),
+    id_token: d.text(),
+    session_state: d.varchar({ length: 255 }),
+  }),
+  (t) => [
+    primaryKey({ columns: [t.provider, t.providerAccountId] }),
+    index('account_user_id_idx').on(t.userId),
+  ]
+);
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+}));
+
+export const sessions = createTable(
+  'session',
+  (d) => ({
+    sessionToken: d.varchar({ length: 255 }).notNull().primaryKey(),
+    userId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    expires: d.timestamp({ mode: 'date', withTimezone: true }).notNull(),
+  }),
+  (t) => [index('t_user_id_idx').on(t.userId)]
+);
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
+}));
+
+export const verificationTokens = createTable(
+  'verification_token',
+  (d) => ({
+    identifier: d.varchar({ length: 255 }).notNull(),
+    token: d.varchar({ length: 255 }).notNull(),
+    expires: d.timestamp({ mode: 'date', withTimezone: true }).notNull(),
+  }),
+  (t) => [primaryKey({ columns: [t.identifier, t.token] })]
+);
+// ======== PRODUCTS ========
+// This is your main table for items you sell
+export const products = createTable('product', (d) => ({
+  id: d
+    .varchar({ length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: d.varchar({ length: 255 }).notNull(),
+  description: d.text(),
+
+  // Use 'numeric' for money. Never use 'integer' or 'float'.
+  price: d.numeric({ precision: 10, scale: 2 }).notNull(),
+
+  // Store an array of image URLs
+  images: d.json('images').$type<string[]>(),
+
+  stock: d.integer('stock').default(0).notNull(),
+
+  // For your "Home page: shows selected products"
+  isFeatured: d.boolean('is_featured').default(false).notNull(),
+
+  createdAt: d
+    .timestamp({ withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+}));
+
+// ======== CATEGORIES ========
+// For filtering products on your "All page"
+export const categories = createTable('category', (d) => ({
+  id: d
+    .varchar({ length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: d.varchar({ length: 255 }).notNull().unique(),
+}));
+
+// ======== PRODUCTS <-> CATEGORIES (Many-to-Many) ========
+// A join table to link products to one or more categories
+export const productsToCategories = createTable(
+  'products_to_categories',
+  (d) => ({
+    productId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    categoryId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => categories.id, { onDelete: 'cascade' }),
+  }),
+  (t) => [primaryKey({ columns: [t.productId, t.categoryId] })]
+);
+
+// --- Relations for Products/Categories ---
+
+export const productsRelations = relations(products, ({ many }) => ({
+  productsToCategories: many(productsToCategories),
+  reviews: many(reviews),
+  cartItems: many(cartItems),
+  orderItems: many(orderItems),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  productsToCategories: many(productsToCategories),
+}));
+
+export const productsToCategoriesRelations = relations(
+  productsToCategories,
+  ({ one }) => ({
+    category: one(categories, {
+      fields: [productsToCategories.categoryId],
+      references: [categories.id],
+    }),
+    product: one(products, {
+      fields: [productsToCategories.productId],
+      references: [products.id],
+    }),
+  })
+);
+
+// ======== REVIEWS (Comments) ========
+export const reviews = createTable(
+  'review',
+  (d) => ({
+    id: d
+      .varchar({ length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    rating: d.integer('rating').notNull(), // e.g., 1-5 stars
+    comment: d.text(),
+
+    // Links to the user who wrote it
+    userId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+
+    // Links to the product it's for
+    productId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`),
+  }),
+  (t) => [
+    // Index for faster lookups of a product's reviews
+    index('review_product_id_idx').on(t.productId),
+  ]
+);
+
+// --- Relations for Reviews ---
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  user: one(users, { fields: [reviews.userId], references: [users.id] }),
+  product: one(products, {
+    fields: [reviews.productId],
+    references: [products.id],
+  }),
+}));
+
+// ======== CART (for logged-in users) ========
+// This directly matches your plan: "user -> db"
+export const cartItems = createTable(
+  'cart_item',
+  (d) => ({
+    userId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    productId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    quantity: d.integer('quantity').default(1).notNull(),
+  }),
+  (t) => [
+    // A user can only have one row per product in their cart
+    primaryKey({ columns: [t.userId, t.productId] }),
+  ]
+);
+
+// --- New Enum for Order Status ---
+export const orderStatusEnum = pgEnum('order_status', [
+  'pending',
+  'paid',
+  'shipped',
+  'cancelled',
+]);
+
+// ======== ORDERS ========
+// The main record of a completed purchase
+export const orders = createTable('order', (d) => ({
+  id: d
+    .varchar({ length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+
+  // Nullable, to support GUEST checkout
+  userId: d.varchar({ length: 255 }).references(() => users.id),
+
+  // Required if userId is null
+  guestEmail: d.varchar({ length: 255 }),
+
+  status: orderStatusEnum('status').default('pending').notNull(),
+  totalAmount: d.numeric({ precision: 10, scale: 2 }).notNull(),
+
+  // Store shipping/billing address as JSON for simplicity
+  // This is safer, as the address is "frozen in time" for this order
+  shippingAddress: d.json('shipping_address'),
+  billingAddress: d.json('billing_address'),
+
+  // Store the Stripe Payment Intent ID for reconciliation
+  paymentIntentId: d.varchar({ length: 255 }).unique(),
+
+  createdAt: d
+    .timestamp({ withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`),
+}));
+
+// ======== ORDER ITEMS (Line Items) ========
+// A join table showing which products were in which order
+export const orderItems = createTable(
+  'order_item',
+  (d) => ({
+    id: d
+      .varchar({ length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    orderId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    productId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => products.id), // Don't cascade delete, we want order history
+    quantity: d.integer('quantity').notNull(),
+
+    // CRITICAL: Store the price at the time of purchase
+    // This prevents order totals from changing if you update a product's price later
+    priceAtPurchase: d.numeric({ precision: 10, scale: 2 }).notNull(),
+  }),
+  (t) => [index('order_item_order_id_idx').on(t.orderId)]
+);
+
+// --- Relations for Cart/Orders ---
+
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  user: one(users, { fields: [cartItems.userId], references: [users.id] }),
+  product: one(products, {
+    fields: [cartItems.productId],
+    references: [products.id],
+  }),
+}));
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  // An order can belong to one user (or null)
+  user: one(users, { fields: [orders.userId], references: [users.id] }),
+
+  // An order has many items
+  orderItems: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  // An item belongs to one order
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+
+  // An item references one product
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
+}));
