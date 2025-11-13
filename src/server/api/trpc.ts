@@ -131,3 +131,23 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+/**
+ * Reusable middleware to ensure users are logged in and are admin.
+ */
+const isAdmin = t.middleware(({ ctx, next }) => {
+  if (!ctx.session?.user || ctx.session.user.role !== "admin") {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  return next({
+    ctx: {
+      // infers session is non-null and user is admin
+      session: { ...ctx.session, user: ctx.session.user },
+    },
+  });
+});
+
+/**
+ * Protected procedure for admin users only
+ */
+export const adminProcedure = t.procedure.use(isAdmin);

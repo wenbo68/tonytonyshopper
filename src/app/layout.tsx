@@ -1,18 +1,23 @@
-import '~/styles/globals.css';
+import "~/styles/globals.css";
 
-import { type Metadata } from 'next';
-import { Geist } from 'next/font/google';
+import { type Metadata } from "next";
+import { Geist } from "next/font/google";
 
-import { TRPCReactProvider } from '~/trpc/react';
+// import { TRPCReactProvider } from '~/trpc/react';
+import { ContextProviders } from "./_contexts/ContextProviders";
+import { CartMergeHandler } from "./_components/cart/CartMergeHandler";
+import { TopNav } from "./_components/nav/TopNav";
+import { Toaster } from "react-hot-toast";
+import { ProductVariantModal } from "./_components/product/ProductVariantModal";
 
 export const metadata: Metadata = {
-  title: 'TonyTonyShopper',
-  description: 'E-commerce website',
+  title: "TonyTonyShopper",
+  description: "E-commerce website",
 };
 
 const geist = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans',
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
 });
 
 export default function RootLayout({
@@ -20,18 +25,31 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`}>
-      <body className="bg-gray-950 text-gray-400">
+      <body className="flex flex-col bg-gray-950 text-gray-400">
         {/* <Suspense fallback={null}> */}
-        {/* <ContextProviders> */}
-        {/* <TopNav /> */}
-        <main className="max-w-2xl mx-auto pt-8 sm:pt-12 md:pt-14 lg:pt-16 xl:pt-18 pb-12 sm:pb-16 md:pb-18 lg:pb-20 xl:pb-22 px-3">
-          {children}
-        </main>
-        {/* <Toaster position="bottom-center" /> */}
-        {/* <BotNav /> */}
-        {/* </ContextProviders> */}
+        <ContextProviders>
+          <CartMergeHandler />
+          <ProductVariantModal />
+          <TopNav />
+          <main className="mx-auto w-full max-w-7xl grow px-2 pt-4 pb-10 sm:pt-5 sm:pb-11 md:pt-6 md:pb-12 lg:pt-7 lg:pb-13 xl:pt-8 xl:pb-14">
+            {children}
+          </main>
+          <Toaster position="bottom-center" />
+          {/* <BotNav /> */}
+        </ContextProviders>
         {/* </Suspense> */}
       </body>
     </html>
   );
 }
+
+// home/checkout pages are the last things to worry abt
+// so first finish product/all, product/id, cart
+
+// optimize product/all, product/id, cart
+
+// create add product function for admin
+
+// create order history page
+
+// schema changed -> need to update trpc procedures and pages (product/all, product/id, cart)
