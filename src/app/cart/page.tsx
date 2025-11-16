@@ -25,6 +25,9 @@ export default function CartPage() {
   const { data: session, status: sessionStatus } = useSession();
   const utils = api.useUtils();
 
+  // --- 1. ADD STATE FOR CHECKOUT LOADING/ERROR ---
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
   // --- 3. GET THE MODAL OPENER ---
   const openVariantModal = useVariantModalStore((state) => state.openModal);
 
@@ -38,6 +41,21 @@ export default function CartPage() {
       enabled: sessionStatus === "authenticated",
     },
   );
+
+  // --- 2. DEFINE THE CHECKOUT MUTATION ---
+  const createCheckoutMutation = api.stripe.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      // On success, redirect to Stripe's URL
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setCheckoutError("Failed to get checkout URL. Please try again.");
+      }
+    },
+    onError: (err) => {
+      setCheckoutError(err.message);
+    },
+  });
 
   // === 4. Guest Product Fetching (unchanged) ===
   const guestVariantIds = guestCart.map((item) => item.productVariantId);
@@ -103,6 +121,19 @@ export default function CartPage() {
     0,
   );
 
+  // --- 3. CREATE THE CHECKOUT HANDLER ---
+  const handleCheckout = () => {
+    setCheckoutError(null);
+
+    // Map the unified `cartItems` to the simple format our tRPC procedure expects
+    const itemsToCheckout = cartItems.map((item) => ({
+      productVariantId: item.id,
+      quantity: item.quantity,
+    }));
+
+    createCheckoutMutation.mutate(itemsToCheckout);
+  };
+
   return (
     <main className="container mx-auto max-w-2xl px-4 py-8">
       <h1 className="mb-6 text-3xl font-bold tracking-tight">Shopping Cart</h1>
@@ -157,14 +188,20 @@ export default function CartPage() {
       <p className="mt-0.5 text-sm text-gray-500">
         Shipping and taxes calculated at checkout.
       </p>
+
+      {/* --- 4. REPLACE THE <Link> WITH A <button> --- */}
       <div className="mt-6">
-        <Link
-          href="/checkout"
-          className="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700"
+        <button
+          onClick={handleCheckout}
+          disabled={createCheckoutMutation.isPending}
+          className="flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Checkout
-        </Link>
+          {createCheckoutMutation.isPending ? "Processing..." : "Checkout"}
+        </button>
       </div>
+      {checkoutError && (
+        <p className="mt-4 text-center text-sm text-red-500">{checkoutError}</p>
+      )}
     </main>
   );
 }

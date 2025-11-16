@@ -19,9 +19,10 @@ export const createTable = pgTableCreator((name) => `tonytonyshopper_${name}`);
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 export const orderStatusEnum = pgEnum("order_status", [
   "pending",
+  "cancelled",
   "paid",
   "shipped",
-  "cancelled",
+  // "returned",
 ]);
 
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
@@ -353,7 +354,7 @@ export const orders = createTable("order", (d) => ({
   // Required if userId is null
   guestEmail: d.varchar({ length: 255 }),
 
-  status: orderStatusEnum("status").default("pending").notNull(),
+  status: orderStatusEnum("status").notNull(),
   totalAmount: d.numeric({ precision: 10, scale: 2 }).notNull(),
 
   // Store shipping/billing address as JSON for simplicity

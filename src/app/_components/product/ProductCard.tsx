@@ -1,3 +1,5 @@
+"use client";
+
 // Path: ~/app/_components/product/ProductCard.tsx
 import Link from "next/link";
 import Image from "next/image";
@@ -5,12 +7,15 @@ import { formatCurrency } from "~/server/utils/product";
 import { AddToCartButton } from "../cart/AddToCartButton";
 import StarRating from "../rating/StarRating";
 import type { ProductAndVariants } from "~/type";
+import { useSession } from "next-auth/react";
 
 export default function ProductCard({
   product,
 }: {
   product: ProductAndVariants;
 }) {
+  const { data: session } = useSession();
+
   // get the variant with the lowest price
   const variant = product.variants.reduce((prev, curr) =>
     parseFloat(curr.price) < parseFloat(prev.price) ? curr : prev,
@@ -52,6 +57,15 @@ export default function ProductCard({
         </div>
       </Link>
       <AddToCartButton productId={product.id} />
+      {/* --- 3. Add conditional Edit button --- */}
+      {session?.user?.role === "admin" && (
+        <Link
+          href={`/product/edit/${product.id}`}
+          className="mt-2 flex w-full items-center justify-center rounded bg-gray-700 px-8 py-2 text-xs text-gray-300 hover:bg-gray-600"
+        >
+          Edit Product
+        </Link>
+      )}
     </div>
   );
 }

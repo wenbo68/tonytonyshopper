@@ -43,13 +43,6 @@ export default function RootLayout({
   );
 }
 
-// home/checkout pages are the last things to worry abt
-// so first finish product/all, product/id, cart
-
-// optimize product/all, product/id, cart
-
-// create add product function for admin
-
-// create order history page
-
-// schema changed -> need to update trpc procedures and pages (product/all, product/id, cart)
+// use zustand for search/filter
+// add search/filter to product/all page
+// home page is the last things to worry abt

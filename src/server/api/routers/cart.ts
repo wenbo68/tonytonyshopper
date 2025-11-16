@@ -33,7 +33,7 @@ export const cartRouter = createTRPCRouter({
       z.object({
         // CHANGED: from productId to productVariantId
         productVariantId: z.string(),
-        quantity: z.number().min(1),
+        quantity: z.number().min(0),
       }),
     )
     .mutation(async ({ ctx, input }) => {
