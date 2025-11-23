@@ -68,7 +68,15 @@ export default function OrderHistoryPage() {
                 <span className="text-sm font-semibold text-gray-400">
                   STATUS
                 </span>
-                <span className="font-medium text-blue-400 capitalize">
+                <span
+                  className={`font-bold uppercase ${
+                    order.status === "paid"
+                      ? "text-green-400"
+                      : order.status === "shipped"
+                        ? "text-blue-400"
+                        : "text-red-400"
+                  }`}
+                >
                   {order.status}
                 </span>
               </div>
@@ -79,6 +87,22 @@ export default function OrderHistoryPage() {
                 <span className="text-xs text-gray-300">{order.id}</span>
               </div>
             </div>
+
+            {/* --- NEW: Shipping Info Section --- */}
+            {order.status === "shipped" && (
+              <div className="flex flex-col gap-1 border-b border-gray-800 bg-gray-800/50 px-4 py-3 text-sm sm:flex-row sm:gap-6">
+                <div className="flex gap-2">
+                  <span className="font-semibold text-gray-400">Carrier:</span>
+                  <span className="text-gray-200">{order.carrier}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-semibold text-gray-400">Tracking:</span>
+                  <span className="font-mono text-gray-200 select-all">
+                    {order.trackingNumber}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Order Items */}
             <div className="flex flex-col gap-4 p-4">

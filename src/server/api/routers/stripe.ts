@@ -1,6 +1,5 @@
-// Path: ~/server/api/routers/cart.ts
+// Path: ~/server/api/routers/stripe.ts
 import { z } from "zod";
-// --- 1. ADD THESE IMPORTS ---
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -11,22 +10,18 @@ import {
   orderItems,
   orders,
   productVariants,
-} from "~/server/db/schema"; //
-import { eq, and, inArray } from "drizzle-orm";
+} from "~/server/db/schema";
+import { eq, and, inArray } from "drizzle-orm"; //
 import { Stripe } from "stripe";
 import { env } from "~/env.js";
 import { TRPCError } from "@trpc/server";
-import { v4 } from "uuid"; // You'll need to install uuid: pnpm add uuid
+import { v4 } from "uuid";
 
-// --- 2. ADD A HELPER TO GET THE BASE URL ---
-// We need this to tell Stripe where to redirect users on success/failure
 function getBaseUrl() {
   if (typeof window !== "undefined") return window.location.origin;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
-
-// ... (imports)
 
 export const stripeRouter = createTRPCRouter({
   createCheckoutSession: publicProcedure
@@ -49,6 +44,22 @@ export const stripeRouter = createTRPCRouter({
       const stripe = new Stripe(env.STRIPE_SECRET_KEY);
       const baseUrl = getBaseUrl();
       const variantIds = input.map((item) => item.productVariantId);
+
+      // --- NEW: Clean up old 'pending' orders for this user ---
+      // This ensures we don't reuse stale orders or leave a mess of pending orders
+      // visible to the user/admin if they abandon checkout repeatedly.
+      if (ctx.session?.user) {
+        await ctx.db
+          .update(orders)
+          .set({ status: "cancelled" })
+          .where(
+            and(
+              eq(orders.userId, ctx.session.user.id),
+              eq(orders.status, "pending"),
+            ),
+          );
+      }
+      // --------------------------------------------------------
 
       // 1. SECURELY fetch product details from your DB
       const dbVariants = await ctx.db.query.productVariants.findMany({
@@ -95,18 +106,17 @@ export const stripeRouter = createTRPCRouter({
         };
       });
 
-      // 3. --- NEW: Create a 'pending' order in our database ---
+      // 3. --- Create a 'pending' order in our database ---
       let newOrderId: string | null = null;
       try {
         const [newOrder] = await ctx.db
           .insert(orders)
           .values({
-            id: `order_${v4()}`, // Generate a unique order ID
+            id: `order_${v4()}`,
             userId: ctx.session?.user?.id,
-            guestEmail: ctx.session?.user?.email, // Use email for guest, or user email
-            totalAmount: (totalAmount / 100).toFixed(2), // Store as dollars
+            guestEmail: ctx.session?.user?.email,
+            totalAmount: (totalAmount / 100).toFixed(2),
             status: "pending",
-            // We'll get addresses from Stripe later via webhook or success page
           })
           .returning({ id: orders.id });
 
@@ -122,11 +132,11 @@ export const stripeRouter = createTRPCRouter({
               (v) => v.id === cartItem.productVariantId,
             )!;
             return {
-              id: `item_${v4()}`, // Generate a unique item ID
+              id: `item_${v4()}`,
               orderId: newOrderId!,
               productVariantId: cartItem.productVariantId,
               quantity: cartItem.quantity,
-              priceAtPurchase: dbVariant.price, // Store the price at this moment
+              priceAtPurchase: dbVariant.price,
             };
           }),
         );
@@ -145,14 +155,10 @@ export const stripeRouter = createTRPCRouter({
           mode: "payment",
           line_items: lineItems,
           customer_email: ctx.session?.user?.email ?? undefined,
-
-          // --- ADD THESE LINES ---
           shipping_address_collection: {
-            allowed_countries: ["US", "CA", "GB"], // Add any countries you ship to
+            allowed_countries: ["US", "CA", "GB"],
           },
-          billing_address_collection: "required", // Collect billing address
-          // --- END OF ADDED LINES ---
-
+          billing_address_collection: "required",
           success_url: `${baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/payment/cancel`,
           metadata: {
@@ -163,7 +169,6 @@ export const stripeRouter = createTRPCRouter({
         return { url: session.url };
       } catch (error) {
         console.error("Failed to create Stripe session:", error);
-        // --- NEW: If Stripe fails, cancel the order we just made ---
         await ctx.db
           .update(orders)
           .set({ status: "cancelled" })

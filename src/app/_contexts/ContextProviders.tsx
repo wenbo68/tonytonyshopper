@@ -1,12 +1,13 @@
 // ~/app/providers.tsx
 
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 // import { FilterProvider } from '~/app/_contexts/SearchContext'; // Adjust the import path
-import { TRPCReactProvider } from '~/trpc/react';
-import { AuthProvider } from './AuthProvider';
-import { FilterProvider } from './FilterProvider';
+import { TRPCReactProvider } from "~/trpc/react";
+import { AuthProvider } from "./AuthProvider";
+import { ReviewFilterProvider } from "./ReviewFilterProvider";
+import { ProductFilterProvider } from "./ProductFilterProvider";
 // import { AuthProvider } from './AuthContext';
 // import { MediaPopupProvider } from './MediaPopupContext';
 
@@ -17,7 +18,9 @@ export function ContextProviders({ children }: { children: ReactNode }) {
   return (
     <TRPCReactProvider>
       <AuthProvider>
-        <FilterProvider>{children}</FilterProvider>
+        <ProductFilterProvider>
+          <ReviewFilterProvider>{children}</ReviewFilterProvider>
+        </ProductFilterProvider>
       </AuthProvider>
     </TRPCReactProvider>
   );

@@ -50,7 +50,7 @@ export default function EditProductPage() {
       alert(`Product "${name}" updated successfully!`);
       // Invalidate product query to refresh data elsewhere
       utils.product.getById.invalidate({ id: data.id });
-      utils.product.getAll.invalidate();
+      utils.product.search.invalidate();
       router.push(`/product/all`);
     },
     onError: (err) => {

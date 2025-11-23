@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import Filter from '../filter/Filter';
-import { useFilterContext } from '~/app/_contexts/FilterProvider';
-import { orderOptions } from '~/const';
-import type { FilterOption } from '~/type';
+import Filter from "../filter/Filter";
+import { useReviewFilterContext } from "~/app/_contexts/ReviewFilterProvider";
+import { reviewOrderOptions } from "~/const";
+import type { FilterOption } from "~/type";
 
 export default function ReviewFilters() {
   const { rating, setRating, order, setOrder, handleSearch } =
-    useFilterContext();
+    useReviewFilterContext();
 
   // dropdown options for all filters
   const ratingOptions: FilterOption[] = [
-    { label: '1 star', urlInput: '1' },
-    { label: '2 star', urlInput: '2' },
-    { label: '3 star', urlInput: '3' },
-    { label: '4 star', urlInput: '4' },
-    { label: '5 star', urlInput: '5' },
+    { label: "1 star", urlInput: "1" },
+    { label: "2 star", urlInput: "2" },
+    { label: "3 star", urlInput: "3" },
+    { label: "4 star", urlInput: "4" },
+    { label: "5 star", urlInput: "5" },
   ];
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -27,7 +27,7 @@ export default function ReviewFilters() {
     <form
       id="review-filters"
       onSubmit={handleSubmit}
-      className="text-sm w-full grid grid-cols-2 gap-2 lg:gap-3"
+      className="grid w-full grid-cols-2 gap-2 text-sm lg:gap-3"
     >
       {/* Filter Components */}
       <div className="contents">
@@ -41,7 +41,7 @@ export default function ReviewFilters() {
         />
         <Filter
           label="Order"
-          options={orderOptions}
+          options={reviewOrderOptions}
           isGroupOptions={true}
           value={order}
           onChange={setOrder}

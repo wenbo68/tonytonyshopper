@@ -11,7 +11,7 @@ import {
   products,
   cartItems,
 } from "~/server/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { Stripe } from "stripe";
 import { env } from "~/env.js";
@@ -195,7 +195,7 @@ export const orderRouter = createTRPCRouter({
     const userOrders = await ctx.db.query.orders.findMany({
       where: and(
         eq(orders.userId, userId),
-        eq(orders.status, "paid"), // Only show completed orders
+        inArray(orders.status, ["paid", "shipped"]), // Only show completed orders
       ),
       orderBy: [desc(orders.createdAt)],
       with: {

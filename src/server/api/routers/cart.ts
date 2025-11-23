@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { cartItems } from "~/server/db/schema"; //
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 export const cartRouter = createTRPCRouter({
   /**
@@ -12,6 +12,7 @@ export const cartRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
     const userCart = await ctx.db.query.cartItems.findMany({
       where: eq(cartItems.userId, ctx.session.user.id),
+      orderBy: [desc(cartItems.createdAt)], // <--- ADD THIS LINE
       with: {
         // Updated Relation: cartItem -> productVariant -> product
         productVariant: {
@@ -80,9 +81,9 @@ export const cartRouter = createTRPCRouter({
     .input(
       z.array(
         z.object({
-          // CHANGED: from productId to productVariantId
           productVariantId: z.string(),
           quantity: z.number(),
+          createdAt: z.number().optional(), // <-- 1. Accept the timestamp
         }),
       ),
     )
@@ -91,28 +92,30 @@ export const cartRouter = createTRPCRouter({
         const existingItem = await ctx.db.query.cartItems.findFirst({
           where: and(
             eq(cartItems.userId, ctx.session.user.id),
-            // CHANGED: from productId to productVariantId
-            eq(cartItems.productVariantId, item.productVariantId), //
+            eq(cartItems.productVariantId, item.productVariantId),
           ),
         });
 
         if (existingItem) {
+          // If it exists, we usually just update quantity and keep the original DB timestamp
+          // (or you could update it to 'now' if you wanted it to jump to the top)
           await ctx.db
             .update(cartItems)
             .set({ quantity: existingItem.quantity + item.quantity })
             .where(
               and(
                 eq(cartItems.userId, ctx.session.user.id),
-                // CHANGED: from productId to productVariantId
-                eq(cartItems.productVariantId, item.productVariantId), //
+                eq(cartItems.productVariantId, item.productVariantId),
               ),
             );
         } else {
+          // If inserting a new item, use the Guest Cart's timestamp
           await ctx.db.insert(cartItems).values({
             userId: ctx.session.user.id,
-            // CHANGED: from productId to productVariantId
-            productVariantId: item.productVariantId, //
+            productVariantId: item.productVariantId,
             quantity: item.quantity,
+            // 2. Use the passed timestamp, or fallback to Date.now()
+            createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
           });
         }
       }

@@ -128,9 +128,18 @@ export const products = createTable("product", (d) => ({
   // For your "Home page: shows selected products"
   isFeatured: d.boolean("is_featured").default(false).notNull(),
 
-  // ---  denorm fields (these stay on the parent) ---
+  // --- review denorm fields ---
   averageRating: d.numeric({ precision: 2, scale: 1 }).default("0").notNull(),
   reviewCount: d.integer("review_count").default(0).notNull(),
+
+  // --- variant denorm fields ---
+  minPrice: d.numeric({ precision: 10, scale: 2 }).default("0").notNull(),
+  maxPrice: d.numeric({ precision: 10, scale: 2 }).default("0").notNull(),
+  totalStock: d.integer("total_stock").default(0).notNull(),
+  hasOutOfStockVariants: d
+    .boolean("has_out_of_stock_variants")
+    .default(false)
+    .notNull(),
 
   createdAt: d
     .timestamp({ withTimezone: true })
@@ -322,6 +331,11 @@ export const cartItems = createTable(
     // ---
 
     quantity: d.integer("quantity").default(1).notNull(),
+
+    // --- ADD THIS COLUMN ---
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`),
   }),
   (t) => [
     // A user can only have one row per variant in their cart
@@ -364,6 +378,10 @@ export const orders = createTable("order", (d) => ({
 
   // Store the Stripe Payment Intent ID for reconciliation
   paymentIntentId: d.varchar({ length: 255 }).unique(),
+
+  // Shipping info
+  carrier: d.varchar("carrier", { length: 50 }), // e.g., "USPS", "FedEx"
+  trackingNumber: d.varchar("tracking_number", { length: 255 }),
 
   createdAt: d
     .timestamp({ withTimezone: true })

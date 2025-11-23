@@ -1,0 +1,1 @@
+ALTER TABLE "tonytonyshopper_cart_item" ADD COLUMN "createdAt" timestamp with time zone DEFAULT CURRENT_TIMESTAMP;

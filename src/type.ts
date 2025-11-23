@@ -1,6 +1,44 @@
 import z from "zod";
 import { products, productVariants, type comments } from "./server/db/schema";
 
+export const StockEnum = z.enum(["all", "some", "none"]);
+export type StockEnum = z.infer<typeof StockEnum>;
+
+export const productOrderEnum = z.enum([
+  "name-asc",
+  "name-desc",
+  "price-asc",
+  "price-desc",
+  "rating-asc",
+  "rating-desc",
+  "created-asc",
+  "created-desc",
+]);
+export type ProductOrderEnum = z.infer<typeof productOrderEnum>;
+
+// --- NEW Zod Schema for getAll input ---
+export const getAllProductsInputSchema = z.object({
+  page: z.number().min(1).optional().default(1),
+  pageSize: z.number().min(1).max(50).optional().default(20),
+
+  // Filters
+  name: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  minPrice: z.number().optional(),
+  maxPrice: z.number().optional(),
+  ratingMin: z.number().min(1).max(5).optional(),
+  ratingMax: z.number().min(1).max(5).optional(),
+  stock: z.array(StockEnum).optional(),
+
+  // Sorting
+  order: productOrderEnum.optional().default("created-desc"),
+  // sortKey: z
+  //   .enum(["date", "name", "price", "rating"])
+  //   .optional()
+  //   .default("date"),
+  // sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+});
+
 // product and its associated variants
 export type Variants = typeof productVariants.$inferSelect;
 export type ProductAndVariants = typeof products.$inferSelect & {

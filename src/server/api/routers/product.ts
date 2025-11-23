@@ -1,5 +1,18 @@
 // Path: ~/server/api/routers/product.ts
-import { eq, inArray } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+} from "drizzle-orm";
 import z from "zod";
 import {
   createTRPCRouter,
@@ -10,89 +23,173 @@ import {
   products,
   productVariants, //
   categories, //
-  productsToCategories, //
+  productsToCategories,
+  orders, //
 } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
-
-// Zod schema for a single variant
-const variantSchema = z.object({
-  name: z.string().min(1), // e.g., "Red / Medium"
-  price: z.number().min(0.01), //
-  stock: z.number().int().min(0), //
-  images: z.string().url().array().optional(), //
-  options: z.record(z.string()), // { "color": "Red", "size": "Medium" }
-});
+import { getAllProductsInputSchema } from "~/type";
+import { updateProductVariantStats } from "~/server/utils/product";
 
 export const productRouter = createTRPCRouter({
-  // /**
-  //  * Add a new product (Admin Only)
-  //  * (From your admin.ts)
-  //  */
-  // add: adminProcedure
-  //   .input(
-  //     z.object({
-  //       name: z.string().min(1), //
-  //       description: z.string().optional(), //
-  //       videoUrls: z.string().url().array().optional(), //
-  //       categoryIds: z.string().array().min(1), //
-  //       variants: z.array(variantSchema).min(1), //
-  //     }),
-  //   )
-  //   .mutation(async ({ ctx, input }) => {
-  //     // This logic was correct and remains unchanged
-  //     const { name, description, videoUrls, categoryIds, variants } = input;
-
-  //     const newProduct = await ctx.db.transaction(async (tx) => {
-  //       const [createdProduct] = await tx
-  //         .insert(products)
-  //         .values({
-  //           name,
-  //           description,
-  //           videos: videoUrls,
-  //         })
-  //         .returning({ id: products.id }); //
-
-  //       if (!createdProduct?.id) {
-  //         tx.rollback();
-  //         throw new Error("Failed to create product.");
-  //       }
-  //       const newProductId = createdProduct.id;
-
-  //       await tx.insert(productsToCategories).values(
-  //         categoryIds.map((catId) => ({
-  //           productId: newProductId,
-  //           categoryId: catId,
-  //         })),
-  //       ); //
-
-  //       await tx.insert(productVariants).values(
-  //         variants.map((variant) => ({
-  //           productId: newProductId,
-  //           name: variant.name,
-  //           price: variant.price.toString(),
-  //           stock: variant.stock,
-  //           images: variant.images,
-  //           options: variant.options,
-  //         })),
-  //       ); //
-
-  //       return { id: newProductId };
-  //     });
-
-  //     return newProduct;
-  //   }),
-
   /**
-   * Fetches all products with their variants.
+   * Fetches all products with filtering, sorting, and pagination.
    */
-  getAll: publicProcedure.query(async ({ ctx }) => {
-    const products = await ctx.db.query.products.findMany({
-      with: {
-        variants: true, // Eager load all variants for each product
-      },
-    });
-    return products;
-  }),
+  search: publicProcedure
+    .input(getAllProductsInputSchema) // <-- Use new input schema
+    .query(async ({ ctx, input }) => {
+      const {
+        page,
+        pageSize,
+        name,
+        categories,
+        minPrice,
+        maxPrice,
+        ratingMin,
+        ratingMax,
+        stock,
+        order,
+      } = input;
+
+      const db = ctx.db;
+
+      // --- 1. Build Dynamic WHERE clause ---
+      const conditions = [];
+
+      // Name Filter
+      if (name) {
+        conditions.push(ilike(products.name, `%${name}%`));
+      }
+
+      // Rating Filter
+      if (ratingMin) {
+        conditions.push(gte(products.averageRating, ratingMin.toString()));
+      }
+      if (ratingMax) {
+        conditions.push(lte(products.averageRating, ratingMax.toString()));
+      }
+
+      // Price Filter (finds products where their price range overlaps with the filter range)
+      if (minPrice) {
+        conditions.push(gte(products.minPrice, minPrice.toString()));
+      }
+      if (maxPrice) {
+        conditions.push(lte(products.minPrice, maxPrice.toString()));
+      }
+
+      // Stock Filter
+      if (stock && stock.length > 0) {
+        const stockConditions = [];
+        if (stock.includes("none")) {
+          stockConditions.push(eq(products.totalStock, 0));
+        }
+        if (stock.includes("some")) {
+          stockConditions.push(
+            and(
+              gt(products.totalStock, 0),
+              eq(products.hasOutOfStockVariants, true),
+            ),
+          );
+        }
+        if (stock.includes("all")) {
+          stockConditions.push(
+            and(
+              gt(products.totalStock, 0),
+              eq(products.hasOutOfStockVariants, false),
+            ),
+          );
+        }
+        if (stockConditions.length > 0) {
+          conditions.push(or(...stockConditions));
+        }
+      }
+
+      // Category Filter (finds products in *any* of the selected categories)
+      if (categories && categories.length > 0) {
+        conditions.push(
+          exists(
+            db
+              .select()
+              .from(productsToCategories)
+              .where(
+                and(
+                  eq(productsToCategories.productId, products.id),
+                  inArray(productsToCategories.categoryId, categories),
+                ),
+              ),
+          ),
+        );
+      }
+
+      const whereClause = and(...conditions);
+
+      // --- 2. Build Dynamic ORDER BY clause ---
+      let orderByClause;
+      switch (order) {
+        case "name-desc":
+          orderByClause = desc(products.name);
+          break;
+        case "name-asc":
+          orderByClause = asc(products.name);
+          break;
+        case "price-desc":
+          orderByClause = desc(products.minPrice);
+          break;
+        case "price-asc":
+          orderByClause = asc(products.minPrice);
+          break;
+        case "rating-desc":
+          orderByClause = desc(products.averageRating);
+          break;
+        case "rating-asc":
+          orderByClause = asc(products.averageRating);
+          break;
+        case "created-desc":
+          orderByClause = desc(products.createdAt);
+          break;
+        case "created-asc":
+          orderByClause = asc(products.createdAt);
+          break;
+      }
+
+      // --- 3. Get Total Count (for pagination) ---
+      const countQuery = db
+        .select({ value: count() })
+        .from(products)
+        .where(whereClause);
+
+      const [totalCountResult] = await countQuery;
+      const totalProducts = totalCountResult?.value ?? 0;
+      const totalPages = Math.ceil(totalProducts / pageSize);
+
+      // --- 4. Get Paginated Data ---
+      const paginatedProducts = await db.query.products.findMany({
+        where: whereClause,
+        orderBy: [orderByClause],
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+        with: {
+          variants: true, // Eager load variants for the product cards
+        },
+      });
+
+      return {
+        products: paginatedProducts,
+        totalPages,
+        currentPage: page,
+      };
+    }),
+
+  // /**
+  //  * Fetches all products with their variants.
+  //  */
+  // getAll: publicProcedure.query(async ({ ctx }) => {
+  //   const products = await ctx.db.query.products.findMany({
+  //     with: {
+  //       variants: true, // Eager load all variants for each product
+  //     },
+  //   });
+  //   return products;
+  // }),
 
   /**
    * Fetches a single product by its ID, with all its variants and categories.
@@ -136,21 +233,27 @@ export const productRouter = createTRPCRouter({
     }),
 
   /**
-   * Get all categories (for the form dropdown)
-   * (Unchanged)
+   * Fetch all categories for the filter dropdown.
+   * Sorted alphabetically by name.
    */
   getCategories: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.query.categories.findMany(); //
+    return ctx.db.query.categories.findMany({
+      orderBy: [asc(categories.name)],
+    });
   }),
 
   /**
    * A temporary mutation to seed the database.
-   * UPDATED for the new schema.
    */
   seedDatabase: publicProcedure.mutation(async ({ ctx }) => {
     try {
       console.log("Clearing old data...");
-      await ctx.db.delete(products); // Deleting products will cascade to variants
+
+      // 1. Delete orders first (this cascades to orderItems)
+      await ctx.db.delete(orders);
+
+      // 2. Now we can safely delete products (cascades to variants, cartItems, etc.)
+      await ctx.db.delete(products);
       await ctx.db.delete(categories);
 
       console.log("Inserting new categories...");
@@ -161,72 +264,85 @@ export const productRouter = createTRPCRouter({
 
       console.log("Inserting new products and variants...");
 
-      // 1. Classic Tee
-      const [tee] = await ctx.db
-        .insert(products)
-        .values([
-          {
-            name: "Classic Cotton Tee",
-            description: "A super soft, 100% cotton tee.",
-            isFeatured: true,
-          },
-        ])
-        .returning();
+      // --- Use a Transaction for consistency ---
+      await ctx.db.transaction(async (tx) => {
+        // 1. Classic Tee
+        const [tee] = await tx
+          .insert(products)
+          .values([
+            {
+              name: "Classic Cotton Tee",
+              description: "A super soft, 100% cotton tee.",
+              isFeatured: true,
+            },
+          ])
+          .returning();
 
-      if (apparelCategory && tee) {
-        await ctx.db.insert(productVariants).values([
-          {
+        if (apparelCategory && tee) {
+          await tx.insert(productVariants).values([
+            {
+              productId: tee.id,
+              name: "Red",
+              price: "24.99",
+              stock: 100,
+              images: ["https://placehold.co/600x600/f00/fff.png?text=Tee+Red"],
+              options: { color: "Red" },
+            },
+            {
+              productId: tee.id,
+              name: "Blue",
+              price: "24.99",
+              stock: 50,
+              images: [
+                "https://placehold.co/600x600/00f/fff.png?text=Tee+Blue",
+              ],
+              options: { color: "Blue" },
+            },
+          ]);
+
+          await tx.insert(productsToCategories).values({
             productId: tee.id,
-            name: "Red",
-            price: "24.99",
-            stock: 100,
-            images: ["https://placehold.co/600x600/f00/fff.png?text=Tee+Red"],
-            options: { color: "Red" },
-          },
-          {
-            productId: tee.id,
-            name: "Blue",
-            price: "24.99",
-            stock: 50,
-            images: ["https://placehold.co/600x600/00f/fff.png?text=Tee+Blue"],
-            options: { color: "Blue" },
-          },
-        ]);
+            categoryId: apparelCategory.id,
+          });
 
-        await ctx.db.insert(productsToCategories).values({
-          productId: tee.id,
-          categoryId: apparelCategory.id,
-        });
-      }
+          // Calculate stats
+          await updateProductVariantStats(tx, tee.id);
+        }
 
-      // 2. Jeans
-      const [jeans] = await ctx.db
-        .insert(products)
-        .values([
-          {
-            name: "Modern Denim Jeans",
-            description: "Stylish, comfortable slim-fit jeans.",
-          },
-        ])
-        .returning();
+        // 2. Jeans
+        const [jeans] = await tx
+          .insert(products)
+          .values([
+            {
+              name: "Modern Denim Jeans",
+              description: "Stylish, comfortable slim-fit jeans.",
+            },
+          ])
+          .returning();
 
-      if (apparelCategory && jeans) {
-        await ctx.db.insert(productVariants).values([
-          {
+        if (apparelCategory && jeans) {
+          await tx.insert(productVariants).values([
+            {
+              productId: jeans.id,
+              name: "Medium Wash / 32x30",
+              price: "59.99",
+              stock: 30,
+              images: [
+                "https://placehold.co/600x600/e0e0e0/333.png?text=Jeans",
+              ],
+              options: { wash: "Medium", size: "32x30" },
+            },
+          ]);
+
+          await tx.insert(productsToCategories).values({
             productId: jeans.id,
-            name: "Medium Wash / 32x30",
-            price: "59.99",
-            stock: 30,
-            images: ["https://placehold.co/600x600/e0e0e0/333.png?text=Jeans"],
-            options: { wash: "Medium", size: "32x30" },
-          },
-        ]);
+            categoryId: apparelCategory.id,
+          });
 
-        await ctx.db.insert(productsToCategories).values({
-          productId: jeans.id,
-          categoryId: apparelCategory.id,
-        });
-      }
+          // Calculate stats
+          await updateProductVariantStats(tx, jeans.id);
+        }
+      });
 
       return { success: true, message: "Database seeded successfully!" };
     } catch (error) {

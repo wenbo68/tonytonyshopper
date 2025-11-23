@@ -10,6 +10,7 @@ import { formatCurrency } from "~/server/utils/product";
 import { useState } from "react";
 // --- 1. IMPORT THE NEW STORE ---
 import { useVariantModalStore } from "../_hooks/useVariantModal";
+import { useCartMergeStore } from "../_hooks/useMergeCartStore";
 
 // A type helper for our new unified cart item structure
 type DisplayCartItem = {
@@ -17,7 +18,7 @@ type DisplayCartItem = {
   productId: string; // The parent product's ID (for linking)
   name: string; // Combined name, e.g., "Classic Tee - Red"
   price: string;
-  images: string[] | null | undefined;
+  images: string[] | null;
   quantity: number;
 };
 
@@ -31,8 +32,10 @@ export default function CartPage() {
   // --- 3. GET THE MODAL OPENER ---
   const openVariantModal = useVariantModalStore((state) => state.openModal);
 
-  // === 2. Guest Cart Logic (unchanged) ===
-  const guestCart = useGuestCartStore((state) => state.items);
+  // 1. Get the merge state
+  const isMerging = useCartMergeStore((state) => state.isMerging);
+
+  const guestCartItems = useGuestCartStore((state) => state.items); // renamed for clarity
 
   // === 3. Logged-in User (tRPC) Logic (unchanged) ===
   const { data: dbCart, isLoading: isDbCartLoading } = api.cart.get.useQuery(
@@ -58,7 +61,7 @@ export default function CartPage() {
   });
 
   // === 4. Guest Product Fetching (unchanged) ===
-  const guestVariantIds = guestCart.map((item) => item.productVariantId);
+  const guestVariantIds = guestCartItems.map((item) => item.productVariantId);
   const { data: guestVariants, isLoading: isGuestProductsLoading } =
     api.product.getVariantsByIds.useQuery(guestVariantIds, {
       enabled:
@@ -70,9 +73,18 @@ export default function CartPage() {
   let isLoading = false;
 
   if (session?.user) {
-    isLoading = isDbCartLoading;
+    // 2. Determine if we should show loading
+    // We show loading if:
+    // a) DB is fetching
+    // b) The merge handler is currently running (isMerging)
+    // c) We have guest items waiting to be merged (prevents initial flicker before effect runs)
+    const isPendingMerge = guestCartItems.length > 0;
+
+    isLoading = isDbCartLoading || isMerging || isPendingMerge;
+
     cartItems =
       dbCart?.map((item) => ({
+        // ... (mapping logic remains the same)
         id: item.productVariant.id,
         productId: item.productVariant.product.id,
         name: `${item.productVariant.product.name} - ${item.productVariant.name}`,
@@ -83,16 +95,30 @@ export default function CartPage() {
   } else {
     isLoading = isGuestProductsLoading;
     if (guestVariants) {
-      cartItems = guestVariants.map((variant) => ({
-        id: variant.id,
-        productId: variant.product.id,
-        name: `${variant.product.name} - ${variant.name}`,
-        price: variant.price,
-        images: variant.images,
-        quantity:
-          guestCart.find((i) => i.productVariantId === variant.id)?.quantity ??
-          0,
-      }));
+      // --- REPLACED LOGIC FOR GUEST CART SORTING ---
+      // 1. Create a map for quick lookup of variant details
+      const variantMap = new Map(guestVariants.map((v) => [v.id, v]));
+
+      // 2. Iterate over the guestCart (which is in added order: Oldest -> Newest)
+      // 3. Reverse it to get Newest -> Oldest
+      // 4. Map to display items
+      cartItems = [...guestCartItems]
+        .reverse()
+        .map((item) => {
+          const variant = variantMap.get(item.productVariantId);
+          if (!variant) return null;
+
+          return {
+            id: variant.id,
+            productId: variant.product.id,
+            name: `${variant.product.name} - ${variant.name}`,
+            price: variant.price,
+            images: variant.images ?? null,
+            quantity: item.quantity,
+          };
+        })
+        // Filter out any nulls (in case a variant ID in local storage no longer exists in DB)
+        .filter((item): item is DisplayCartItem => item !== null);
     }
   }
 

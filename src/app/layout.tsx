@@ -43,6 +43,8 @@ export default function RootLayout({
   );
 }
 
-// use zustand for search/filter
-// add search/filter to product/all page
 // home page is the last things to worry abt
+
+// add filters to sell/order history
+
+// might want optimistic update for adding items to cart

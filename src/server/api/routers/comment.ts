@@ -1,11 +1,11 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
-} from '~/server/api/trpc';
-import { comments, products, users } from '~/server/db/schema';
-import { TRPCError } from '@trpc/server';
+} from "~/server/api/trpc";
+import { comments, products, users } from "~/server/db/schema";
+import { TRPCError } from "@trpc/server";
 import {
   and,
   asc,
@@ -17,13 +17,13 @@ import {
   isNotNull,
   isNull,
   sql,
-} from 'drizzle-orm';
+} from "drizzle-orm";
 import {
   GetCommentTreeInputSchema,
   type CommentTree,
   type FlatCommentWithUser,
-} from '~/type';
-import { updateProductStats } from '~/server/utils/product';
+} from "~/type";
+import { updateProductReviewStats } from "~/server/utils/product";
 
 export const commentRouter = createTRPCRouter({
   getAverageRating: publicProcedure
@@ -69,15 +69,15 @@ export const commentRouter = createTRPCRouter({
       let finalOrderByClause;
 
       switch (order) {
-        case 'rating-desc':
+        case "rating-desc":
           topLevelOrderByClause = desc(comments.rating); // Use Drizzle's desc() helper
           finalOrderByClause = sql`root_rating DESC, "createdAt" ASC`;
           break;
-        case 'rating-asc':
+        case "rating-asc":
           topLevelOrderByClause = asc(comments.rating); // Use Drizzle's asc() helper
           finalOrderByClause = sql`root_rating ASC, "createdAt" ASC`;
           break;
-        case 'created-asc':
+        case "created-asc":
           topLevelOrderByClause = asc(comments.createdAt); // Use Drizzle's asc() helper
           finalOrderByClause = sql`root_created_at ASC, "createdAt" ASC`;
           break;
@@ -180,8 +180,8 @@ export const commentRouter = createTRPCRouter({
         productId: z.string(),
         parentId: z.string().optional(),
         rating: z.number().min(1).max(5).optional(),
-        text: z.string().min(1, 'Comment cannot be empty.'),
-      })
+        text: z.string().min(1, "Comment cannot be empty."),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { productId, parentId, rating, text } = input;
@@ -200,7 +200,7 @@ export const commentRouter = createTRPCRouter({
 
         // 2. If a rating was provided, update the product stats
         if (rating !== undefined && rating !== null) {
-          await updateProductStats(tx, productId);
+          await updateProductReviewStats(tx, productId);
         }
       });
 
@@ -216,8 +216,8 @@ export const commentRouter = createTRPCRouter({
         id: z.string(),
         // IMPORTANT: Allow explicitly setting rating to 'null' to remove it
         rating: z.number().min(1).max(5).nullable().optional(),
-        text: z.string().min(1, 'Comment cannot be empty.').optional(),
-      })
+        text: z.string().min(1, "Comment cannot be empty.").optional(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, text, rating } = input;
@@ -230,13 +230,13 @@ export const commentRouter = createTRPCRouter({
       });
 
       if (!originalComment) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
+        throw new TRPCError({ code: "NOT_FOUND" });
       }
 
       if (originalComment.userId !== userId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only edit your own comments.',
+          code: "FORBIDDEN",
+          message: "You can only edit your own comments.",
         });
       }
 
@@ -251,7 +251,7 @@ export const commentRouter = createTRPCRouter({
 
       if (Object.keys(updateData).length === 0) {
         // No changes were actually sent
-        return { success: true, message: 'No changes provided.' };
+        return { success: true, message: "No changes provided." };
       }
 
       // Wrap in a transaction
@@ -262,7 +262,7 @@ export const commentRouter = createTRPCRouter({
         // 2. If the rating was changed, update stats
         // We must check if 'rating' was part of the input (even if it was set to null)
         if (rating !== undefined) {
-          await updateProductStats(tx, originalComment.productId);
+          await updateProductReviewStats(tx, originalComment.productId);
         }
       });
 
@@ -285,13 +285,13 @@ export const commentRouter = createTRPCRouter({
       });
 
       if (!commentToDelete) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
+        throw new TRPCError({ code: "NOT_FOUND" });
       }
 
       if (commentToDelete.userId !== userId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only delete your own comments.',
+          code: "FORBIDDEN",
+          message: "You can only delete your own comments.",
         });
       }
 
@@ -307,7 +307,7 @@ export const commentRouter = createTRPCRouter({
         if (wasTopLevelReview && hadRating) {
           // If it was a top-level review that had a rating,
           // recalculate the stats for its product.
-          await updateProductStats(tx, commentToDelete.productId);
+          await updateProductReviewStats(tx, commentToDelete.productId);
         }
       });
 

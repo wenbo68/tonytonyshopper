@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 type CartItem = {
   productVariantId: string;
   quantity: number;
+  createdAt?: number; // <-- 1. Add this optional field
 };
 
 type CartState = {
@@ -33,8 +34,14 @@ export const useGuestCartStore = create<CartState>()(
               ),
             };
           } else {
-            // Add new item
-            return { items: [...state.items, item] };
+            // Add new item with current timestamp
+            // 2. Ensure we save the timestamp here
+            return {
+              items: [
+                ...state.items,
+                { ...item, createdAt: item.createdAt ?? Date.now() },
+              ],
+            };
           }
         });
       },

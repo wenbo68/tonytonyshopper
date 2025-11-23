@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import {
   ClickableLabel,
   UnclickableLabel,
   LabelContainer,
-} from '../filter/Label';
-import { useFilterContext } from '~/app/_contexts/FilterProvider';
-import { orderOptions } from '~/const';
+} from "../filter/Label";
+import { useReviewFilterContext } from "~/app/_contexts/ReviewFilterProvider";
+import { reviewOrderOptions } from "~/const";
 
 type ActiveLabel = {
   key: string;
   label: string;
-  type: 'rating';
+  type: "rating";
   onRemove?: () => void;
   className?: string;
 };
@@ -22,9 +22,9 @@ export default function ReviewLabels(
     //   filterOptions,
     // }: {
     //   filterOptions: FilterOptionsFromDb;
-  }
+  },
 ) {
-  const { rating, setRating, order, handleSearch } = useFilterContext();
+  const { rating, setRating, order, handleSearch } = useReviewFilterContext();
 
   const { activeLabels, orderLabel } = useMemo(() => {
     const activeLabels: ActiveLabel[] = [];
@@ -34,7 +34,7 @@ export default function ReviewLabels(
       activeLabels.push({
         key: `rating-${rtg}`,
         label: `${rtg} Star`,
-        type: 'rating',
+        type: "rating",
         onRemove: () => {
           const newRating = rating.filter((r) => r !== rtg);
           setRating(newRating);
@@ -46,7 +46,7 @@ export default function ReviewLabels(
     // Order Label
     let orderLabel: string | null = null;
     if (order) {
-      for (const group of orderOptions) {
+      for (const group of reviewOrderOptions) {
         const foundOption = group.options.find((opt) => opt.urlInput === order);
         if (foundOption) {
           orderLabel = `${group.groupLabel}: ${foundOption.label}`;
@@ -64,7 +64,7 @@ export default function ReviewLabels(
         orderLabel ? (
           <UnclickableLabel label={orderLabel} colorType="order" />
         ) : (
-          <UnclickableLabel label={'Empty Search'} colorType="order" />
+          <UnclickableLabel label={"Empty Search"} colorType="order" />
         )
       ) : (
         <>

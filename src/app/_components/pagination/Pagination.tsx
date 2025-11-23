@@ -1,20 +1,22 @@
-'use client';
+"use client";
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { NavButton } from './NavButton';
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { NavButton } from "./NavButton";
 import {
   FaAngleLeft,
   FaAngleRight,
   FaAnglesLeft,
   FaAnglesRight,
-} from 'react-icons/fa6';
+} from "react-icons/fa6";
 
 type PageSelectorProps = {
+  type: "product" | "review";
   currentPage: number;
   totalPages: number;
 };
 
 export default function PageSelector({
+  type,
   currentPage,
   totalPages,
 }: PageSelectorProps) {
@@ -33,8 +35,8 @@ export default function PageSelector({
       return;
     }
     const params = new URLSearchParams(searchParams.toString());
-    params.set('page', String(newPage));
-    router.push(`${pathname}?${params.toString()}#review-filters`);
+    params.set("page", String(newPage));
+    router.push(`${pathname}?${params.toString()}#${type}-filters`);
     // window.scrollTo(0, 0); // <-- Add this line
   };
 
@@ -50,7 +52,7 @@ export default function PageSelector({
 
   const pageNumbers = Array.from(
     { length: endPage - startPage + 1 },
-    (_, i) => startPage + i
+    (_, i) => startPage + i,
   );
   // --- End of page range logic ---
 
@@ -65,7 +67,7 @@ export default function PageSelector({
         isDisabled={!hasPrevPage}
         aria-label="Go to first page"
       >
-        <FaAnglesLeft className="w-[14px] h-[14px]" />
+        <FaAnglesLeft className="h-[14px] w-[14px]" />
       </NavButton>
 
       {/* Previous Page Button */}
@@ -74,7 +76,7 @@ export default function PageSelector({
         isDisabled={!hasPrevPage}
         aria-label="Go to previous page"
       >
-        <FaAngleLeft className="w-[14px] h-[14px]" />
+        <FaAngleLeft className="h-[14px] w-[14px]" />
       </NavButton>
 
       {/* Page Number Buttons */}
@@ -94,7 +96,7 @@ export default function PageSelector({
         isDisabled={!hasNextPage}
         aria-label="Go to next page"
       >
-        <FaAngleRight className="w-[14px] h-[14px]" />
+        <FaAngleRight className="h-[14px] w-[14px]" />
       </NavButton>
 
       {/* Last Page Button */}
@@ -103,7 +105,7 @@ export default function PageSelector({
         isDisabled={!hasNextPage}
         aria-label="Go to last page"
       >
-        <FaAnglesRight className="w-[14px] h-[14px]" />
+        <FaAnglesRight className="h-[14px] w-[14px]" />
       </NavButton>
     </div>
   );
