@@ -9,8 +9,12 @@ import { useSearchParams } from "next/navigation";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useState } from "react";
 import { ShipOrderModal } from "~/app/_components/admin/ShipModal";
+import { getSellHistoryInputSchema } from "~/type";
+import SellHistoryFilters from "~/app/_components/admin/SellHistoryFilters";
+import SellHistoryLabels from "~/app/_components/admin/SellHistoryLabels";
+import { SellHistoryFilterProvider } from "~/app/_contexts/SellHistoryFilterProvider";
 
-export default function AdminSellHistoryPage() {
+function SellHistoryContent() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
@@ -18,10 +22,39 @@ export default function AdminSellHistoryPage() {
   // --- NEW: Modal State ---
   const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
 
+  // Parse params
+  const rawInput = {
+    page: searchParams.get("page") ? Number(searchParams.get("page")) : 1,
+    pageSize: 20,
+    id: searchParams.get("id") ?? undefined,
+    dateMin: searchParams.get("dateMin") ?? undefined,
+    dateMax: searchParams.get("dateMax") ?? undefined,
+    customerName: searchParams.get("customerName") ?? undefined,
+    customerEmail: searchParams.get("customerEmail") ?? undefined,
+    priceMin: searchParams.get("priceMin")
+      ? Number(searchParams.get("priceMin"))
+      : undefined,
+    priceMax: searchParams.get("priceMax")
+      ? Number(searchParams.get("priceMax"))
+      : undefined,
+    status:
+      searchParams.getAll("status").length > 0
+        ? searchParams.getAll("status")
+        : undefined,
+    carrier: searchParams.get("carrier") ?? undefined,
+    trackingNumber: searchParams.get("trackingNumber") ?? undefined,
+    sort: searchParams.get("sort") ?? undefined,
+  };
+
+  const parsedInput = getSellHistoryInputSchema.safeParse(rawInput);
+
   const { data, isLoading, refetch } = api.admin.getSellHistory.useQuery(
-    { page },
+    parsedInput.success ? parsedInput.data : {},
     {
-      enabled: status === "authenticated" && session?.user?.role === "admin",
+      enabled:
+        status === "authenticated" &&
+        session?.user?.role === "admin" &&
+        parsedInput.success,
     },
   );
 
@@ -56,6 +89,12 @@ export default function AdminSellHistoryPage() {
         >
           Back to Products
         </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col gap-4">
+        <SellHistoryFilters />
+        <SellHistoryLabels />
       </div>
 
       {/* --- NEW: The Modal --- */}
@@ -202,5 +241,13 @@ export default function AdminSellHistoryPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function AdminSellHistoryPage() {
+  return (
+    <SellHistoryFilterProvider>
+      <SellHistoryContent />
+    </SellHistoryFilterProvider>
   );
 }

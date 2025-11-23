@@ -11,26 +11,23 @@ import {
   products,
   cartItems,
 } from "~/server/db/schema";
-import { eq, desc, and, sql, inArray } from "drizzle-orm";
+import {
+  eq,
+  desc,
+  and,
+  sql,
+  inArray,
+  count,
+  ilike,
+  lte,
+  gte,
+} from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { Stripe } from "stripe";
 import { env } from "~/env.js";
+import { getOrdersInputSchema } from "~/type";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
-
-// type ExpandedSession = Stripe.Checkout.Session & {
-//   shipping_details?: {
-//     address: Stripe.Address | null;
-//     name?: string | null;
-//     phone?: string | null;
-//   } | null;
-//   customer_details?: {
-//     address: Stripe.Address | null;
-//     email?: string | null;
-//     name?: string | null;
-//     phone?: string | null;
-//   } | null;
-// };
 
 export const orderRouter = createTRPCRouter({
   /**
@@ -187,32 +184,98 @@ export const orderRouter = createTRPCRouter({
   // ... rest of the file (getMyOrders)
 
   /**
-   * Get all orders for the currently logged-in user.
+   * Get filtered orders for the currently logged-in user.
    */
-  getMyOrders: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
+  getMyOrders: protectedProcedure
+    .input(getOrdersInputSchema) // Use the new schema
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const {
+        page,
+        pageSize,
+        id,
+        status,
+        dateMin,
+        dateMax,
+        priceMin,
+        priceMax,
+        carrier,
+        trackingNumber,
+      } = input;
 
-    const userOrders = await ctx.db.query.orders.findMany({
-      where: and(
+      // 1. Build Conditions
+      const conditions = [
         eq(orders.userId, userId),
-        inArray(orders.status, ["paid", "shipped"]), // Only show completed orders
-      ),
-      orderBy: [desc(orders.createdAt)],
-      with: {
-        orderItems: {
-          with: {
-            productVariant: {
-              with: {
-                product: {
-                  columns: { name: true },
+        // Note: If you want to restrict to only "paid/shipped", keep this:
+        // inArray(orders.status, ["paid", "shipped"])
+        // Or, if using filters, rely on the user's filter or allow all non-pending:
+        inArray(orders.status, ["paid", "shipped"]),
+      ];
+
+      if (id) {
+        conditions.push(ilike(orders.id, `%${id}%`));
+      }
+      if (status && status.length > 0) {
+        // We cast status to any because Zod enum matches Drizzle enum strings
+        conditions.push(inArray(orders.status, status as any[]));
+      }
+      if (dateMin) {
+        conditions.push(gte(orders.createdAt, new Date(dateMin)));
+      }
+      if (dateMax) {
+        // Set time to end of day
+        const d = new Date(dateMax);
+        d.setHours(23, 59, 59, 999);
+        conditions.push(lte(orders.createdAt, d));
+      }
+      if (priceMin !== undefined) {
+        conditions.push(gte(orders.totalAmount, priceMin.toString()));
+      }
+      if (priceMax !== undefined) {
+        conditions.push(lte(orders.totalAmount, priceMax.toString()));
+      }
+      if (carrier) {
+        conditions.push(ilike(orders.carrier, `%${carrier}%`));
+      }
+      if (trackingNumber) {
+        conditions.push(ilike(orders.trackingNumber, `%${trackingNumber}%`));
+      }
+
+      const whereClause = and(...conditions);
+
+      // 2. Pagination: Get total count
+      const [totalResult] = await ctx.db
+        .select({ count: count() })
+        .from(orders)
+        .where(whereClause);
+      const totalItems = totalResult?.count ?? 0;
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      // 3. Fetch Data
+      const userOrders = await ctx.db.query.orders.findMany({
+        where: whereClause,
+        orderBy: [desc(orders.createdAt)],
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+        with: {
+          orderItems: {
+            with: {
+              productVariant: {
+                with: {
+                  product: {
+                    columns: { name: true },
+                  },
                 },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    return userOrders;
-  }),
+      return {
+        orders: userOrders,
+        totalPages,
+        currentPage: page,
+      };
+    }),
 });

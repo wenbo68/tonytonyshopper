@@ -1,5 +1,17 @@
 // Path: ~/server/api/routers/admin.ts
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import {
@@ -7,10 +19,12 @@ import {
   products,
   productsToCategories,
   productVariants,
+  users,
 } from "~/server/db/schema";
 import { updateProductVariantStats } from "~/server/utils/product"; // <--- 1. Import this
 // import { Resend } from "resend"; // <--- Import Resend
 import { env } from "~/env";
+import { getSellHistoryInputSchema } from "~/type";
 
 // Zod schema for a single variant
 const variantSchema = z.object({
@@ -205,30 +219,138 @@ export const adminRouter = createTRPCRouter({
     }),
 
   /**
-   * Get all orders in the system (Admin Only)
+   * Get all orders in the system (Admin Only) with Filters & Sorting
    */
   getSellHistory: adminProcedure
-    .input(
-      z.object({
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(50).default(20),
-      }),
-    )
+    .input(getSellHistoryInputSchema) // Use new schema
     .query(async ({ ctx, input }) => {
-      const { page, pageSize } = input;
+      const {
+        page,
+        pageSize,
+        id,
+        dateMin,
+        dateMax,
+        customerName,
+        customerEmail,
+        priceMin,
+        priceMax,
+        status,
+        carrier,
+        trackingNumber,
+        sort,
+      } = input;
 
-      // 1. Get total count of orders
+      // 1. Build Where Conditions
+      const conditions = [];
+
+      if (id) conditions.push(ilike(orders.id, `%${id}%`));
+
+      if (dateMin) conditions.push(gte(orders.createdAt, new Date(dateMin)));
+      if (dateMax) {
+        const d = new Date(dateMax);
+        d.setHours(23, 59, 59, 999);
+        conditions.push(lte(orders.createdAt, d));
+      }
+
+      if (customerName) {
+        // Filter by user name (only applies to logged-in users)
+        conditions.push(ilike(users.name, `%${customerName}%`));
+      }
+
+      if (customerEmail) {
+        // Check both registered email OR guest email
+        conditions.push(
+          or(
+            ilike(users.email, `%${customerEmail}%`),
+            ilike(orders.guestEmail, `%${customerEmail}%`),
+          ),
+        );
+      }
+
+      if (priceMin !== undefined)
+        conditions.push(gte(orders.totalAmount, priceMin.toString()));
+      if (priceMax !== undefined)
+        conditions.push(lte(orders.totalAmount, priceMax.toString()));
+
+      if (status && status.length > 0) {
+        conditions.push(inArray(orders.status, status as any[]));
+      }
+
+      if (carrier) conditions.push(ilike(orders.carrier, `%${carrier}%`));
+      if (trackingNumber)
+        conditions.push(ilike(orders.trackingNumber, `%${trackingNumber}%`));
+
+      const whereClause = and(...conditions);
+
+      // 2. Build Sort Clause
+      let orderByClause;
+      switch (sort) {
+        case "date-asc":
+          orderByClause = asc(orders.createdAt);
+          break;
+        case "price-desc":
+          orderByClause = desc(orders.totalAmount);
+          break;
+        case "price-asc":
+          orderByClause = asc(orders.totalAmount);
+          break;
+        case "name-desc":
+          orderByClause = desc(users.name);
+          break;
+        case "name-asc":
+          orderByClause = asc(users.name);
+          break;
+        case "email-desc":
+          // Sort by coalesced email
+          orderByClause = sql`COALESCE(${users.email}, ${orders.guestEmail}) DESC`;
+          break;
+        case "email-asc":
+          orderByClause = sql`COALESCE(${users.email}, ${orders.guestEmail}) ASC`;
+          break;
+        case "date-desc":
+        default:
+          orderByClause = desc(orders.createdAt);
+          break;
+      }
+
+      // 3. Pagination Count (Joined with users for filtering)
       const [totalResult] = await ctx.db
         .select({ count: count() })
-        .from(orders);
+        .from(orders)
+        .leftJoin(users, eq(orders.userId, users.id))
+        .where(whereClause);
+
       const totalItems = totalResult?.count ?? 0;
       const totalPages = Math.ceil(totalItems / pageSize);
 
-      // 2. Get the actual data with relations
+      // 4. Fetch Data (Manually join to allow filtering/sorting on user fields)
+      // We use .select().from().leftJoin() instead of .query.findMany() to strictly control the Join
+      // needed for filtering/sorting, but then we need to reconstruct the nested objects if we want relations.
+      // OR we can use findMany if we pass the ID list.
+
+      // Strategy: Get IDs first using the complex filter/sort
+      const rows = await ctx.db
+        .select({
+          id: orders.id,
+          // We select sort columns to ensure order is preserved if needed, though usually ID list is enough if we map back
+        })
+        .from(orders)
+        .leftJoin(users, eq(orders.userId, users.id))
+        .where(whereClause)
+        .orderBy(orderByClause)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize);
+
+      const orderIds = rows.map((r) => r.id);
+
+      if (orderIds.length === 0) {
+        return { orders: [], totalPages, currentPage: page };
+      }
+
+      // 5. Fetch full object data for these IDs using relational query
+      // Note: This second query might return items in a different order, so we re-sort in JS.
       const orderHistory = await ctx.db.query.orders.findMany({
-        orderBy: [desc(orders.createdAt)],
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
+        where: inArray(orders.id, orderIds),
         with: {
           user: {
             columns: { name: true, email: true, image: true },
@@ -247,8 +369,13 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
+      // 6. Re-sort in memory to match the requested sort order (since 'inArray' doesn't guarantee order)
+      // We can map the orderIds to the result.
+      const orderMap = new Map(orderHistory.map((o) => [o.id, o]));
+      const sortedOrders = orderIds.map((id) => orderMap.get(id)!);
+
       return {
-        orders: orderHistory,
+        orders: sortedOrders,
         totalPages,
         currentPage: page,
       };

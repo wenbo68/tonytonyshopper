@@ -48,3 +48,5 @@ export default function RootLayout({
 // add filters to sell/order history
 
 // might want optimistic update for adding items to cart
+
+// what happens to order/sell history when a guest user pays?

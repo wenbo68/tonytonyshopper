@@ -16,8 +16,69 @@ export const productOrderEnum = z.enum([
 ]);
 export type ProductOrderEnum = z.infer<typeof productOrderEnum>;
 
+// --- NEW: Sell History Filter Schema ---
+export const getSellHistoryInputSchema = z.object({
+  page: z.number().min(1).optional().default(1),
+  pageSize: z.number().min(1).max(50).optional().default(20),
+
+  // Filters
+  id: z.string().optional(),
+  dateMin: z.string().optional(),
+  dateMax: z.string().optional(),
+  customerName: z.string().optional(),
+  customerEmail: z.string().optional(),
+  priceMin: z.number().optional(),
+  priceMax: z.number().optional(),
+  status: z
+    .array(z.enum(["pending", "paid", "shipped", "cancelled"]))
+    .optional(),
+  carrier: z.string().optional(),
+  trackingNumber: z.string().optional(),
+
+  // Sort
+  sort: z
+    .enum([
+      "date-desc",
+      "date-asc",
+      "price-desc",
+      "price-asc",
+      "name-desc",
+      "name-asc",
+      "email-desc",
+      "email-asc",
+    ])
+    .optional()
+    .default("date-desc"),
+});
+export type GetSellHistoryInput = z.infer<typeof getSellHistoryInputSchema>;
+
+// --- NEW: Order Filter Schema ---
+export const getOrdersInputSchema = z.object({
+  // Pagination
+  page: z.number().min(1).optional().default(1),
+  pageSize: z.number().min(1).max(50).optional().default(10),
+
+  // Filters
+  id: z.string().optional(),
+  status: z
+    .array(z.enum(["pending", "paid", "shipped", "cancelled"]))
+    .optional(),
+  dateMin: z.string().optional(), // YYYY-MM-DD
+  dateMax: z.string().optional(), // YYYY-MM-DD
+  priceMin: z.number().optional(),
+  priceMax: z.number().optional(),
+  carrier: z.string().optional(),
+  trackingNumber: z.string().optional(),
+
+  // Sorting (Optional, defaulting to Date DESC)
+  sort: z
+    .enum(["date-desc", "date-asc", "total-desc", "total-asc"])
+    .optional()
+    .default("date-desc"),
+});
+
 // --- NEW Zod Schema for getAll input ---
-export const getAllProductsInputSchema = z.object({
+export const getProductsInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(20),
 

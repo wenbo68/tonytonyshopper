@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
-import { getAllProductsInputSchema } from "~/type";
+import { getProductsInputSchema } from "~/type";
 import ProductsSkeleton from "./ProductsSkeleton";
 import ProductCard from "./ProductCard";
 import PageSelector from "../pagination/Pagination";
@@ -42,7 +42,7 @@ export default function Products() {
     pageSize: 30,
   };
 
-  const parsedInput = getAllProductsInputSchema.safeParse(rawInput);
+  const parsedInput = getProductsInputSchema.safeParse(rawInput);
 
   // 4. Use the `useQuery` hook, but only enable it if parsing succeeded
   const { data, isFetching } = api.product.search.useQuery(

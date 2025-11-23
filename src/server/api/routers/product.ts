@@ -27,7 +27,7 @@ import {
   orders, //
 } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
-import { getAllProductsInputSchema } from "~/type";
+import { getProductsInputSchema } from "~/type";
 import { updateProductVariantStats } from "~/server/utils/product";
 
 export const productRouter = createTRPCRouter({
@@ -35,7 +35,7 @@ export const productRouter = createTRPCRouter({
    * Fetches all products with filtering, sorting, and pagination.
    */
   search: publicProcedure
-    .input(getAllProductsInputSchema) // <-- Use new input schema
+    .input(getProductsInputSchema) // <-- Use new input schema
     .query(async ({ ctx, input }) => {
       const {
         page,
