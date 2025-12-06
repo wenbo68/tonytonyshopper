@@ -1,6 +1,6 @@
 // src/components/Dropdown.tsx
-import { useState, useRef, useEffect } from 'react';
-import { IoIosArrowDown } from 'react-icons/io';
+import { useState, useRef, useEffect } from "react";
+import { IoIosArrowDown } from "react-icons/io";
 
 // Define the shape of a single dropdown option
 type DropdownOption = {
@@ -20,7 +20,7 @@ export const Dropdown = ({
   options,
   value,
   onChange,
-  className = '',
+  className = "",
 }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -39,10 +39,10 @@ export const Dropdown = ({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
       // Cleanup the event listener on component unmount
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -51,19 +51,19 @@ export const Dropdown = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex cursor-pointer items-center justify-between rounded bg-gray-800 px-3 py-2 text-xs font-semibold"
+        className="flex w-full cursor-pointer items-center justify-between rounded bg-gray-800 px-3 py-2 text-xs font-semibold"
       >
         {/* Display the selected option's label, or a default */}
-        <span>{selectedOption ? selectedOption.label : 'Select...'}</span>
+        <span>{selectedOption ? selectedOption.label : "Select..."}</span>
         <IoIosArrowDown
-          className={`w-5 h-5 transform transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
+          className={`h-5 w-5 transform transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
           }`}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full z-10 mt-2 w-full rounded bg-gray-800 p-2">
+        <div className="absolute top-full z-10 mt-2 w-full rounded bg-gray-800 p-1.5">
           {options.map((option) => (
             <button
               key={option.value}
@@ -72,8 +72,8 @@ export const Dropdown = ({
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full rounded p-2 text-left text-xs font-semibold hover:bg-gray-900 hover:text-blue-400 ${
-                value === option.value ? 'text-blue-400' : ''
+              className={`w-full rounded p-1.5 text-left text-xs font-semibold hover:bg-gray-900 hover:text-blue-400 ${
+                value === option.value ? "text-blue-400" : ""
               }`}
             >
               {option.label}

@@ -1,13 +1,14 @@
 "use client";
 
-// Path: ~/app/_components/product/ProductCard.tsx
 import Link from "next/link";
 import Image from "next/image";
-import { formatCurrency } from "~/server/utils/product";
+import { formatCurrency, formatNumber } from "~/server/utils/product";
 import { AddToCartButton } from "../cart/AddToCartButton";
 import StarRating from "../rating/StarRating";
 import type { ProductAndVariants } from "~/type";
 import { useSession } from "next-auth/react";
+import { FaPen } from "react-icons/fa";
+import { FaCartPlus } from "react-icons/fa6";
 
 export default function ProductCard({
   product,
@@ -29,43 +30,68 @@ export default function ProductCard({
   const numericRating = parseFloat(product.averageRating);
 
   return (
-    <div className="flex flex-col">
-      <Link href={`/product/${product.id}`} className="flex flex-col gap-2">
-        <Image
-          src={image}
-          alt={product.name ?? "Product image"}
-          width={600}
-          height={600}
-          className="h-full w-full rounded"
-        />
-        <div className="flex flex-col gap-0">
-          <span className="line-clamp-2">{product.name}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">
-              {numericRating.toFixed(1)}
-            </span>
-            <StarRating rating={numericRating} interactive={false} />
-            <span className="text-sm text-gray-500">
-              ({product.reviewCount})
-            </span>
-          </div>
-          {/* Display 'From' if there are multiple price points */}
-          <span className="">
-            {product.variants.length > 1 ? "From " : ""}
-            {formatCurrency(variant.price)}
-          </span>
-        </div>
-      </Link>
-      <AddToCartButton productId={product.id} />
-      {/* --- 3. Add conditional Edit button --- */}
-      {session?.user?.role === "admin" && (
-        <Link
-          href={`/product/edit/${product.id}`}
-          className="mt-2 flex w-full items-center justify-center rounded bg-gray-700 px-8 py-2 text-xs text-gray-300 hover:bg-gray-600"
-        >
-          Edit Product
+    <div className="flex flex-col gap-2">
+      <div className="group relative overflow-hidden rounded">
+        <Link href={`/product/${product.id}`}>
+          <Image
+            src={image}
+            alt={product.name ?? "Product image"}
+            width={600}
+            height={600}
+            className="aspect-square h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
         </Link>
-      )}
+
+        {/* Edit Button (Top-Left) */}
+        {session?.user?.role === "admin" && (
+          <Link
+            href={`/product/edit/${product.id}`}
+            className="absolute top-2 left-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
+            title="Edit Product"
+          >
+            <FaPen size={12} />
+          </Link>
+        )}
+
+        {/* Add to Cart Button (Top-Right) */}
+        <AddToCartButton
+          // productId={product.id}
+          product={product} // <-- Pass the full product object here
+          className="absolute top-2 right-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
+        >
+          <FaCartPlus size={14} />
+        </AddToCartButton>
+
+        {/* Price Tag (Bottom-Left) */}
+        <div className="absolute bottom-2 left-2 z-10 rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-100 backdrop-blur-sm">
+          {product.minPrice === product.maxPrice
+            ? formatCurrency(variant.price)
+            : `From ${formatCurrency(product.minPrice)}`}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-0">
+        {/* product name */}
+        <Link
+          href={`/product/${product.id}`}
+          className="line-clamp-2 font-medium hover:text-blue-400"
+        >
+          {product.name}
+        </Link>
+        {/* avg rating */}
+        <Link
+          href={`/product/${product.id}#review-filters`}
+          className="flex cursor-pointer items-center gap-1"
+        >
+          <span className="text-sm text-gray-500">
+            {numericRating.toFixed(1)}
+          </span>
+          <span className="text-sm text-gray-500">
+            ({formatNumber(product.reviewCount)})
+          </span>
+          <StarRating rating={numericRating} interactive={false} />
+        </Link>
+      </div>
     </div>
   );
 }

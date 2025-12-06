@@ -162,6 +162,7 @@ export const productRouter = createTRPCRouter({
       const totalPages = Math.ceil(totalProducts / pageSize);
 
       // --- 4. Get Paginated Data ---
+      // might need to eager load category info as well for product card
       const paginatedProducts = await db.query.products.findMany({
         where: whereClause,
         orderBy: [orderByClause],
@@ -169,6 +170,11 @@ export const productRouter = createTRPCRouter({
         offset: (page - 1) * pageSize,
         with: {
           variants: true, // Eager load variants for the product cards
+          productsToCategories: {
+            with: {
+              category: true, // Get category info
+            },
+          },
         },
       });
 
@@ -222,11 +228,14 @@ export const productRouter = createTRPCRouter({
       if (input.length === 0) {
         return [];
       }
-      // Query productVariants, not products
       const variantList = await ctx.db.query.productVariants.findMany({
         where: inArray(productVariants.id, input),
         with: {
-          product: true, // Join with the parent product
+          product: {
+            with: {
+              variants: true, // <--- CHANGED: Fetch all variants for guest cart editing
+            },
+          },
         },
       });
       return variantList;

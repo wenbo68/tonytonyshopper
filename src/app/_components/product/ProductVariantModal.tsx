@@ -3,10 +3,14 @@
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { useVariantModalStore } from "~/app/_hooks/useVariantModal";
-import { formatCurrency } from "~/server/utils/product";
+import { useProductVariantModalStore } from "~/app/_hooks/useVariantModalStore";
+import { formatCurrency, formatNumber } from "~/server/utils/product";
 import { useSession } from "next-auth/react";
-import { useGuestCartStore } from "~/app/_hooks/useGuestCart";
+import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
+import Link from "next/link";
+import { FaPen } from "react-icons/fa";
+import StarRating from "../rating/StarRating";
+import { Dropdown } from "../Dropdown";
 
 // Get tRPC types
 type Product = RouterOutputs["product"]["getById"];
@@ -17,8 +21,15 @@ export function ProductVariantModal() {
   const utils = api.useUtils();
 
   // === 1. Global Modal State ===
-  const { isOpen, mode, productId, editingItem, closeModal, initialOptions } =
-    useVariantModalStore();
+  const {
+    isOpen,
+    mode,
+    // productId,
+    editingItem,
+    closeModal,
+    initialOptions,
+    product,
+  } = useProductVariantModalStore();
 
   // === 2. Internal Component State ===
   const [selectedOptions, setSelectedOptions] = useState<
@@ -26,15 +37,16 @@ export function ProductVariantModal() {
   >({});
   const [quantity, setQuantity] = useState(1);
 
-  // === 3. Data Fetching ===
-  // Fetch the full product details
-  const { data: product, isLoading: isLoadingProduct } =
-    api.product.getById.useQuery(
-      { id: productId! },
-      {
-        enabled: !!productId, // Only run query if productId is set
-      },
-    );
+  // // === 3. Data Fetching ===
+  // // Fetch the full product details
+  // // Here can we just pass product info to useVariantModalStore and use it (instead of fetching product info from db again)?
+  // const { data: product, isLoading: isLoadingProduct } =
+  //   api.product.getById.useQuery(
+  //     { id: productId! },
+  //     {
+  //       enabled: !!productId && !preloadedProduct, // Only run query if productId is set or if we don't have the product passed
+  //     },
+  //   );
 
   // === 4. Guest Cart Mutations ===
   const addGuestItem = useGuestCartStore((state) => state.addItem);
@@ -106,7 +118,7 @@ export function ProductVariantModal() {
       if (mode === "edit" && editingItem) {
         // Pre-fill with item's data
         const itemVariant = product.variants.find(
-          (v) => v.id === editingItem.id,
+          (v) => v.id === editingItem.variantId,
         );
         setSelectedOptions(itemVariant?.options ?? {});
         setQuantity(editingItem.quantity);
@@ -143,12 +155,12 @@ export function ProductVariantModal() {
         closeModal();
       }
     } else if (mode === "edit" && editingItem) {
-      const variantChanged = editingItem.id !== selectedVariant.id;
+      const variantChanged = editingItem.variantId !== selectedVariant.id;
 
       if (session?.user) {
         if (variantChanged) {
           updateItem({
-            oldProductVariantId: editingItem.id,
+            oldProductVariantId: editingItem.variantId,
             newProductVariantId: selectedVariant.id,
             newQuantity: quantity,
           });
@@ -162,7 +174,7 @@ export function ProductVariantModal() {
         // Guest cart logic
         if (variantChanged) {
           // Remove old, add new
-          removeGuestItem(editingItem.id);
+          removeGuestItem(editingItem.variantId);
           addGuestItem({ productVariantId: selectedVariant.id, quantity });
         } else {
           updateGuestItem(selectedVariant.id, quantity);
@@ -173,7 +185,7 @@ export function ProductVariantModal() {
   };
 
   // === 8. Render Logic ===
-  if (!isOpen) return null;
+  if (!isOpen || !product) return null;
 
   const displayImage =
     selectedVariant?.images?.[0] ??
@@ -186,6 +198,8 @@ export function ProductVariantModal() {
 
   const displayStock = selectedVariant?.stock ?? 0;
 
+  const numericRating = parseFloat(product.averageRating);
+
   return (
     // Modal Overlay
     <div
@@ -194,114 +208,129 @@ export function ProductVariantModal() {
     >
       {/* Modal Content */}
       <div
-        className="flex w-full max-w-[90vw] flex-col gap-5 rounded bg-gray-900 p-5 sm:max-w-md"
+        className="scrollbar-hide flex max-h-[90vh] w-full max-w-[90vw] flex-col gap-5 overflow-y-auto rounded bg-gray-900 p-4 sm:max-w-sm"
         onClick={(e) => e.stopPropagation()}
       >
-        {isLoadingProduct || !product ? (
-          <div className="text-center text-gray-300">Loading...</div>
-        ) : (
-          <>
-            {/* Header */}
-            <div className="flex gap-4">
-              <div className="h-24 w-24 shrink-0 overflow-hidden rounded-md border border-gray-700">
-                <Image
-                  src={displayImage}
-                  alt={product.name ?? "Product"}
-                  width={100}
-                  height={100}
-                  className="h-full w-full object-cover object-center"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold text-gray-300">
-                  {product.name}
-                </h2>
-                <span className="text-xl font-semibold text-gray-200">
-                  {displayPrice}
-                </span>
-                <span className="text-sm text-gray-400">
-                  {displayStock > 0
-                    ? `${displayStock} in stock`
-                    : "Out of stock"}
-                </span>
-              </div>
-            </div>
+        <div className="flex flex-col gap-3">
+          <div className="group relative overflow-hidden rounded">
+            <Link href={`/product/${product.id}`}>
+              <Image
+                src={displayImage}
+                alt={product.name ?? "Product image"}
+                width={600}
+                height={600}
+                className="aspect-square h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            </Link>
 
-            {/* Options */}
-            <div className="flex flex-col gap-4">
-              {Object.entries(options).map(([name, values]) => (
-                <div key={name}>
-                  <label className="text-sm font-medium text-gray-400 capitalize">
-                    {name}:
-                  </label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {values.map((value) => (
-                      <button
-                        key={value}
-                        onClick={() => handleOptionChange(name, value)}
-                        className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
-                          selectedOptions[name] === value
-                            ? "border-transparent bg-indigo-600 text-white"
-                            : "border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700"
-                        } `}
-                      >
-                        {value}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Quantity */}
-            <div className="flex items-center gap-2">
-              <label
-                htmlFor="quantity"
-                className="min-w-16 text-sm font-semibold text-gray-400"
+            {/* Edit Button (Top-Left) */}
+            {session?.user?.role === "admin" && (
+              <Link
+                href={`/product/edit/${product.id}`}
+                className="absolute top-2 left-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
+                title="Edit Product"
               >
-                Quantity:
+                <FaPen size={12} />
+              </Link>
+            )}
+
+            {/* Price Tag (Bottom-Left) */}
+            <div className="absolute bottom-2 left-2 z-10 flex gap-2">
+              <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-300 backdrop-blur-sm">
+                {displayPrice}
+              </div>
+              {/* Stock Tag */}
+              <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-300 backdrop-blur-sm">
+                stock: {displayStock}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-0">
+            {/* product name */}
+            <Link
+              href={`/product/${product.id}`}
+              className="line-clamp-2 text-xl font-semibold text-gray-300 hover:text-blue-400"
+            >
+              {product.name}
+            </Link>
+            {/* avg rating */}
+            <Link
+              href={`/product/${product.id}#review-filters`}
+              className="flex cursor-pointer items-center gap-1"
+            >
+              <span className="text-sm text-gray-500">
+                {numericRating.toFixed(1)}
+              </span>
+              <span className="text-sm text-gray-500">
+                ({formatNumber(product.reviewCount)})
+              </span>
+              <StarRating rating={numericRating} interactive={false} />
+            </Link>
+          </div>
+        </div>
+
+        {/* Options */}
+        <div className="flex flex-col gap-3">
+          {Object.entries(options).map(([name, values]) => (
+            <div key={name} className="flex items-center gap-2">
+              <label className="min-w-16 text-sm text-gray-400 capitalize">
+                {name}:
               </label>
-              <input
-                type="number"
-                id="quantity"
-                min="1"
-                max={displayStock}
-                value={quantity}
-                onChange={(e) =>
-                  setQuantity(Math.max(0, Number(e.target.value)))
-                }
-                className="w-full rounded bg-gray-800 px-3 py-2 text-sm text-white outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              <Dropdown
+                options={values.map((v) => ({ label: v, value: v }))}
+                value={selectedOptions[name] ?? ""}
+                onChange={(newValue) => handleOptionChange(name, newValue)}
+                className="w-full"
               />
             </div>
+          ))}
+          {/* Quantity */}
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="quantity"
+              className="min-w-16 text-sm text-gray-400"
+            >
+              Quantity:
+            </label>
+            <input
+              type="number"
+              id="quantity"
+              min="1"
+              max={displayStock}
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(0, Number(e.target.value)))}
+              className="w-full rounded bg-gray-800 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+          </div>
+        </div>
 
-            {/* Action Buttons */}
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row-reverse">
-              <button
-                onClick={handleSave}
-                disabled={isPending || !selectedVariant || displayStock <= 0}
-                className="w-full rounded-md bg-indigo-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-800 sm:w-auto"
-              >
-                {isPending
-                  ? "Saving..."
-                  : mode === "add"
-                    ? "Add to Cart"
-                    : "Save Changes"}
-              </button>
-              <button
-                onClick={closeModal}
-                disabled={isPending}
-                className="w-full rounded-md bg-gray-700 px-4 py-2 font-semibold text-gray-300 transition-colors hover:bg-gray-600 disabled:cursor-not-allowed sm:w-auto"
-              >
-                Cancel
-              </button>
-              {!selectedVariant && (
-                <p className="grow text-sm text-red-500">
-                  This option is unavailable.
-                </p>
-              )}
-            </div>
-          </>
-        )}
+        {/* Action Buttons */}
+        <div className="flex flex-row gap-3">
+          <button
+            onClick={closeModal}
+            disabled={isPending}
+            className="w-full cursor-pointer rounded bg-gray-700/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-600/50 disabled:cursor-default disabled:bg-blue-700/50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isPending || !selectedVariant || displayStock <= 0}
+            className="w-full cursor-pointer rounded bg-blue-600/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-blue-500/50 disabled:cursor-default disabled:bg-blue-600/50"
+          >
+            {isPending
+              ? "Saving..."
+              : mode === "add"
+                ? "Add to Cart"
+                : "Save Changes"}
+          </button>
+          {!selectedVariant && (
+            <p className="grow text-sm text-red-500">
+              This option is unavailable.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

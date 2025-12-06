@@ -45,8 +45,6 @@ export default function RootLayout({
 
 // home page is the last things to worry abt
 
-// add filters to sell/order history
-
 // might want optimistic update for adding items to cart
 
-// what happens to order/sell history when a guest user pays?
+// enable users to add images/videos to reviews

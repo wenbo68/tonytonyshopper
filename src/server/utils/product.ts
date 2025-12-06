@@ -3,6 +3,13 @@ import { eq, avg, count, sql, min, max, sum } from "drizzle-orm";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import { products, comments, productVariants } from "~/server/db/schema";
 
+export function formatNumber(num: number) {
+  return Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(num);
+}
+
 /**
  * Helper function to format the price string (from Drizzle) into a currency.
  */

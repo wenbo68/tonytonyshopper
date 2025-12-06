@@ -4,7 +4,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import { api } from "~/trpc/react";
-import { useGuestCartStore } from "../../_hooks/useGuestCart";
+import { useGuestCartStore } from "../../_hooks/useGuestCartStore";
 import { useCartMergeStore } from "~/app/_hooks/useMergeCartStore";
 
 export function CartMergeHandler() {

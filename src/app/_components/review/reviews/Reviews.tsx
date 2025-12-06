@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { useSearchParams } from 'next/navigation';
-import { api } from '~/trpc/react';
-import { GetCommentTreeInputSchema } from '~/type';
-import ReviewOrReply from './ReviewOrReply';
-import Pagination from '../../pagination/Pagination';
-import ReviewsFallback from './ReviewsFallback';
-import { useProductContext } from '~/app/_contexts/ProductProvider';
+import { useSearchParams } from "next/navigation";
+import { api } from "~/trpc/react";
+import { GetCommentTreeInputSchema } from "~/type";
+import ReviewOrReply from "./ReviewOrReply";
+import Pagination from "../../pagination/Pagination";
+import ReviewsFallback from "./ReviewsFallback";
+import { useProductContext } from "~/app/_contexts/ProductProvider";
 
 export default function Reviews() {
   const { productId } = useProductContext();
 
   // 1. Get input from url (zod optional doesn't accept null so must use undefined)
   const searchParams = useSearchParams();
-  const rating = searchParams.getAll('rating').map(Number);
-  const order = searchParams.get('order') ?? undefined;
-  const page = searchParams.get('page') ? Number(searchParams.get('page')) : 1; // must not let it default to 0 when page is empty string
+  const rating = searchParams.getAll("rating").map(Number);
+  const order = searchParams.get("order") ?? undefined;
+  const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1; // must not let it default to 0 when page is empty string
 
   // 2. Construct the tRPC input object from the context state
   const rawInput = {
@@ -32,9 +32,9 @@ export default function Reviews() {
   // 4. if invalid input, don't call trpc procedure
   if (!parsedInput.success) {
     // You can optionally render an error state if the filters are somehow invalid
-    console.error('Zod validation failed:', parsedInput.error);
+    console.error("Zod validation failed:", parsedInput.error);
     return (
-      <p className="text-gray-300 font-semibold">Invalid search options.</p>
+      <p className="font-semibold text-gray-300">Invalid search options.</p>
     );
   }
 
@@ -44,7 +44,7 @@ export default function Reviews() {
     {
       enabled: parsedInput.success,
       staleTime: 0, // always refetch immediately on input change
-    }
+    },
   );
 
   // 5. Show a skeleton while fetching new data
@@ -68,7 +68,11 @@ export default function Reviews() {
       ) : null}
 
       {/* pagination */}
-      <Pagination currentPage={page ?? 1} totalPages={totalPages} />
+      <Pagination
+        currentPage={page ?? 1}
+        totalPages={totalPages}
+        type={"review"}
+      />
     </>
   );
 }

@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { useEffect } from "react";
 import Link from "next/link";
-import { useGuestCartStore } from "~/app/_hooks/useGuestCart";
+import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 
 function SuccessContent() {
   const searchParams = useSearchParams();

@@ -1,13 +1,14 @@
-// Path: ~/app/product/[productId]/page.tsx
-"use client"; // <-- IMPORTANT: Must be a client component
+"use client";
 
 import Image from "next/image";
 import { notFound, useParams } from "next/navigation";
 import { AddToCartButton } from "~/app/_components/cart/AddToCartButton";
 import ReviewSection from "~/app/_components/review/ReviewSection";
 import { formatCurrency } from "~/server/utils/product";
-import { api } from "~/trpc/react"; // <-- IMPORTANT: Use '~/trpc/react'
+import { api } from "~/trpc/react";
 import { useState, useMemo, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Dropdown } from "~/app/_components/Dropdown";
 
 export default function ProductDetailPage(
   {
@@ -17,16 +18,51 @@ export default function ProductDetailPage(
   },
 ) {
   // const { productId } = params;
+  const queryClient = useQueryClient();
+
   // ✅ Get productId from the URL
   const params = useParams();
   const productId = params.productId as string;
 
   // 1. Fetch the product and its variants using the client hook
-  const { data: product, isLoading } = api.product.getById.useQuery({
-    id: productId,
-  });
+  const { data: product, isLoading } = api.product.getById.useQuery(
+    {
+      id: productId,
+    },
+    {
+      // --- NEW OPTIMIZATION ---
+      // Check if this product already exists in the 'product.search' cache (from 'All Products' page)
+      initialData: () => {
+        // tRPC query keys are arrays where the first element is the path array
+        // We look for any queries starting with ['product', 'search']
+        const allSearchQueries = queryClient.getQueriesData({
+          queryKey: [["product", "search"]],
+        });
+
+        for (const [, queryData] of allSearchQueries) {
+          // Cast queryData to expected shape (it has a 'products' array)
+          const data = queryData as {
+            products: Array<{ id: string; [key: string]: any }>;
+          };
+
+          const foundProduct = data?.products?.find((p) => p.id === productId);
+
+          if (foundProduct) {
+            // Found it! Return it as the initial data.
+            console.log("found");
+            return foundProduct as any;
+          }
+        }
+        console.log("not found");
+        return undefined;
+      },
+      // If we found initial data, consider it fresh for 5 mins so we don't immediately background refetch
+      staleTime: 1000 * 60 * 10,
+    },
+  );
 
   // 2. State to hold the user's currently selected options
+  const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >({});
@@ -110,71 +146,84 @@ export default function ProductDetailPage(
   };
 
   return (
-    <section className="flex flex-col gap-0">
-      <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-        {/* Left Column: Image (updates based on selection) */}
-        <div className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded">
-          <Image
-            src={displayImage}
-            alt={product.name ?? "Product image"}
-            width={600}
-            height={600}
-            className="h-full w-full object-cover object-center"
-            priority
-          />
-        </div>
-        {/* Right Column: Details */}
-        <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
-
-          <span className="text-2xl font-semibold">{displayPrice}</span>
-
-          <div className="flex flex-col gap-4">
-            {/* --- THIS IS THE NEW DYNAMIC PART --- */}
-            {Object.entries(options).map(([name, values]) => (
-              <div key={name}>
-                <label className="text-sm font-medium text-gray-700 capitalize">
-                  {name}:
-                </label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {values.map((value) => (
-                    <button
-                      key={value}
-                      onClick={() => handleOptionChange(name, value)}
-                      className={`rounded-md border px-4 py-2 text-sm font-medium ${
-                        selectedOptions[name] === value
-                          ? "border-transparent bg-indigo-600 text-white"
-                          : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                      } `}
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-            {/* --- END OF DYNAMIC PART --- */}
+    <section className="mx-auto flex max-w-2xl flex-col gap-5">
+      {/* <div className="flex flex-col gap-5"> */}
+      {/* images */}
+      <div className="relative">
+        <Image
+          src={displayImage}
+          alt={product.name ?? "Product image"}
+          width={600}
+          height={600}
+          className="aspect-square h-full w-full overflow-hidden rounded object-cover"
+          priority
+        />
+        {/* Price Tag (Bottom-Left) */}
+        <div className="absolute bottom-2 left-2 z-10 flex gap-2">
+          <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-300 backdrop-blur-sm">
+            {displayPrice}
           </div>
-
-          <div className="mt-4">
-            {/* Pass the selected variant ID and stock to the button */}
-            <AddToCartButton
-              productId={product.id}
-              initialOptions={selectedOptions}
-            />
-            {!selectedVariant && product.variants.length > 0 && (
-              <p className="mt-2 text-sm text-red-600">
-                This combination of options is not available.
-              </p>
-            )}
-          </div>
-
-          <div className="mt-4 flex flex-col gap-2">
-            <span className="font-semibold">About this item</span>
-            <p className="text-gray-700">{product.description}</p>
+          {/* Stock Tag */}
+          <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-300 backdrop-blur-sm">
+            stock: {displayStock}
           </div>
         </div>
       </div>
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-0">
+          {/* product name */}
+          <h1 className="text-xl font-semibold text-gray-300">
+            {product.name}
+          </h1>
+          {/* description */}
+          <p className="text-sm text-gray-400">{product.description}</p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {/* options */}
+          {Object.entries(options).map(([name, values]) => (
+            <div key={name} className="flex items-center gap-2">
+              <label className="min-w-16 text-sm text-gray-400 capitalize">
+                {name}:
+              </label>
+              <Dropdown
+                options={values.map((v) => ({ label: v, value: v }))}
+                value={selectedOptions[name] ?? ""}
+                onChange={(newValue) => handleOptionChange(name, newValue)}
+                className="w-full"
+              />
+            </div>
+          ))}
+          {/* Quantity */}
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="quantity"
+              className="min-w-16 text-sm text-gray-400"
+            >
+              Quantity:
+            </label>
+            <input
+              type="number"
+              id="quantity"
+              min="1"
+              max={displayStock}
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(0, Number(e.target.value)))}
+              className="w-full rounded bg-gray-800 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+          </div>
+        </div>
+
+        <div className="">
+          <AddToCartButton product={product} initialOptions={selectedOptions} />
+          {!selectedVariant && product.variants.length > 0 && (
+            <p className="text-sm text-red-600">
+              This combination of options is not available.
+            </p>
+          )}
+        </div>
+      </div>
+      {/* </div> */}
       <ReviewSection productId={productId} />
     </section>
   );

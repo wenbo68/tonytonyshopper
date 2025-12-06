@@ -1,29 +1,37 @@
 "use client";
 
-import { useVariantModalStore } from "~/app/_hooks/useVariantModal";
+import { useProductVariantModalStore } from "~/app/_hooks/useVariantModalStore";
+import type { ReactNode } from "react";
+import type { ProductAndVariants } from "~/type";
 
-// --- UPDATE THE PROPS ---
 export function AddToCartButton({
-  productId,
+  product,
   initialOptions,
+  className,
+  children,
 }: {
-  productId: string;
-  initialOptions?: Record<string, string> | null;
+  product: ProductAndVariants;
+  initialOptions?: Record<string, string>;
+  className?: string;
+  children?: ReactNode;
 }) {
-  const openModal = useVariantModalStore((state) => state.openModal);
+  const openModal = useProductVariantModalStore((state) => state.openModal);
 
-  const handleOpenModal = () => {
-    // --- UPDATE THE FUNCTION CALL ---
-    // Pass 'undefined' for the editingItem, then pass the initialOptions
-    openModal(productId, "add", undefined, initialOptions);
+  const handleOpenModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openModal(product, "add", undefined, initialOptions);
   };
 
   return (
     <button
       onClick={handleOpenModal}
-      className="flex w-full items-center justify-center rounded bg-indigo-600 px-8 py-3 text-gray-300 hover:bg-indigo-700 disabled:opacity-50"
+      className={
+        className ??
+        "w-full cursor-pointer rounded bg-blue-600/50 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-blue-500/50 disabled:cursor-default disabled:bg-blue-600/50"
+      }
     >
-      Add to Cart
+      {children ?? "Add to Cart"}
     </button>
   );
 }

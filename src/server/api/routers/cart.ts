@@ -12,12 +12,15 @@ export const cartRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
     const userCart = await ctx.db.query.cartItems.findMany({
       where: eq(cartItems.userId, ctx.session.user.id),
-      orderBy: [desc(cartItems.createdAt)], // <--- ADD THIS LINE
+      orderBy: [desc(cartItems.createdAt)],
       with: {
-        // Updated Relation: cartItem -> productVariant -> product
         productVariant: {
           with: {
-            product: true, // Get the parent product's details (name, desc)
+            product: {
+              with: {
+                variants: true, // <--- CHANGED: Fetch all variants to populate the Edit Modal instantly
+              },
+            },
           },
         },
       },

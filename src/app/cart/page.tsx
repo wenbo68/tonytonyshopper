@@ -1,21 +1,22 @@
-// Path: ~/app/cart/page.tsx
 "use client";
 
 import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useGuestCartStore } from "../_hooks/useGuestCart";
+import { useGuestCartStore } from "../_hooks/useGuestCartStore";
 import { formatCurrency } from "~/server/utils/product";
 import { useState } from "react";
 // --- 1. IMPORT THE NEW STORE ---
-import { useVariantModalStore } from "../_hooks/useVariantModal";
+import { useProductVariantModalStore } from "../_hooks/useVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
+import type { ProductAndVariants } from "~/type";
 
 // A type helper for our new unified cart item structure
 type DisplayCartItem = {
-  id: string; // This is now the productVariantId
-  productId: string; // The parent product's ID (for linking)
+  variantId: string; // This is now the productVariantId
+  // productId: string; // The parent product's ID (for linking)
+  product: ProductAndVariants; // <-- ADDED: Include full product data
   name: string; // Combined name, e.g., "Classic Tee - Red"
   price: string;
   images: string[] | null;
@@ -30,7 +31,9 @@ export default function CartPage() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   // --- 3. GET THE MODAL OPENER ---
-  const openVariantModal = useVariantModalStore((state) => state.openModal);
+  const openVariantModal = useProductVariantModalStore(
+    (state) => state.openModal,
+  );
 
   // 1. Get the merge state
   const isMerging = useCartMergeStore((state) => state.isMerging);
@@ -85,8 +88,9 @@ export default function CartPage() {
     cartItems =
       dbCart?.map((item) => ({
         // ... (mapping logic remains the same)
-        id: item.productVariant.id,
-        productId: item.productVariant.product.id,
+        variantId: item.productVariant.id,
+        // productId: item.productVariant.product.id,
+        product: item.productVariant.product, // Pass full product with variants
         name: `${item.productVariant.product.name} - ${item.productVariant.name}`,
         price: item.productVariant.price,
         images: item.productVariant.images,
@@ -109,8 +113,9 @@ export default function CartPage() {
           if (!variant) return null;
 
           return {
-            id: variant.id,
-            productId: variant.product.id,
+            variantId: variant.id,
+            // productId: variant.product.id,
+            product: variant.product, // Pass full product with variants
             name: `${variant.product.name} - ${variant.name}`,
             price: variant.price,
             images: variant.images ?? null,
@@ -153,7 +158,7 @@ export default function CartPage() {
 
     // Map the unified `cartItems` to the simple format our tRPC procedure expects
     const itemsToCheckout = cartItems.map((item) => ({
-      productVariantId: item.id,
+      productVariantId: item.variantId,
       quantity: item.quantity,
     }));
 
@@ -168,7 +173,7 @@ export default function CartPage() {
         className="divide-y divide-gray-200 border-t border-b border-gray-200"
       >
         {cartItems.map((item) => (
-          <li key={item.id} className="flex py-6">
+          <li key={item.variantId} className="flex py-6">
             <div className="h-24 w-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
               <Image
                 src={item.images?.[0] ?? "https://placehold.co/100x100.png"}
@@ -182,7 +187,9 @@ export default function CartPage() {
               <div>
                 <div className="flex justify-between text-base font-medium">
                   <h3>
-                    <Link href={`/product/${item.productId}`}>{item.name}</Link>
+                    <Link href={`/product/${item.product.id}`}>
+                      {item.name}
+                    </Link>
                   </h3>
                   <p className="ml-4">{formatCurrency(item.price)}</p>
                 </div>
@@ -194,7 +201,13 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      openVariantModal(item.productId, "edit", item)
+                      openVariantModal(
+                        // item.productId,
+                        item.product,
+                        "edit",
+                        item,
+                        undefined,
+                      )
                     }
                     className="font-medium text-indigo-600 hover:text-indigo-500"
                   >

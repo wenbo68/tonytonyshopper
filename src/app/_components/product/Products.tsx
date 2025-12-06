@@ -49,7 +49,8 @@ export default function Products() {
     parsedInput.success ? parsedInput.data : (undefined as any),
     {
       enabled: parsedInput.success,
-      staleTime: 0, // always refetch immediately on input change
+      staleTime: 1000 * 60 * 10,
+      // refetchOnWindowFocus: false, // this prevents auto refetch when you switch back to this tab from some other tab
     },
   );
 
@@ -64,7 +65,7 @@ export default function Products() {
   // 5. Show a skeleton while fetching new data
   const skeletonCount = 5;
   const gridClasses =
-    "grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
+    "grid gap-3 space-y-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
 
   if (isFetching) {
     return (
