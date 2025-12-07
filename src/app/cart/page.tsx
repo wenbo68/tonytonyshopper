@@ -7,17 +7,15 @@ import Link from "next/link";
 import { useGuestCartStore } from "../_hooks/useGuestCartStore";
 import { formatCurrency } from "~/server/utils/product";
 import { useState } from "react";
-// --- 1. IMPORT THE NEW STORE ---
 import { useProductVariantModalStore } from "../_hooks/useVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
 import type { ProductAndVariants } from "~/type";
 
 // A type helper for our new unified cart item structure
 type DisplayCartItem = {
-  variantId: string; // This is now the productVariantId
-  // productId: string; // The parent product's ID (for linking)
-  product: ProductAndVariants; // <-- ADDED: Include full product data
-  name: string; // Combined name, e.g., "Classic Tee - Red"
+  variantId: string;
+  product: ProductAndVariants;
+  name: string;
   price: string;
   images: string[] | null;
   quantity: number;
@@ -41,12 +39,16 @@ export default function CartPage() {
   const guestCartItems = useGuestCartStore((state) => state.items); // renamed for clarity
 
   // === 3. Logged-in User (tRPC) Logic (unchanged) ===
-  const { data: dbCart, isLoading: isDbCartLoading } = api.cart.get.useQuery(
-    undefined,
-    {
-      enabled: sessionStatus === "authenticated",
-    },
-  );
+  const {
+    data: dbCart,
+    // isLoading: isDbCartLoading,
+    // isRefetching: isDbCartRefetching,
+    isFetching: isUserCartLoading,
+  } = api.cart.get.useQuery(undefined, {
+    enabled: sessionStatus === "authenticated",
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
 
   // --- 2. DEFINE THE CHECKOUT MUTATION ---
   const createCheckoutMutation = api.stripe.createCheckoutSession.useMutation({
@@ -83,7 +85,7 @@ export default function CartPage() {
     // c) We have guest items waiting to be merged (prevents initial flicker before effect runs)
     const isPendingMerge = guestCartItems.length > 0;
 
-    isLoading = isDbCartLoading || isMerging || isPendingMerge;
+    isLoading = isUserCartLoading || isMerging || isPendingMerge;
 
     cartItems =
       dbCart?.map((item) => ({
@@ -166,15 +168,15 @@ export default function CartPage() {
   };
 
   return (
-    <main className="container mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">Shopping Cart</h1>
+    <main className="container mx-auto flex max-w-2xl flex-col gap-5 px-4 py-8">
+      <h1 className="text-xl font-bold">Shopping Cart</h1>
       <ul
         role="list"
-        className="divide-y divide-gray-200 border-t border-b border-gray-200"
+        className="divide-y divide-gray-300 border-t border-b border-gray-300"
       >
         {cartItems.map((item) => (
           <li key={item.variantId} className="flex py-6">
-            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
+            <div className="h-24 w-24 shrink-0 overflow-hidden rounded">
               <Image
                 src={item.images?.[0] ?? "https://placehold.co/100x100.png"}
                 alt={item.name ?? "Product"}
@@ -184,15 +186,9 @@ export default function CartPage() {
               />
             </div>
             <div className="ml-4 flex flex-1 flex-col">
-              <div>
-                <div className="flex justify-between text-base font-medium">
-                  <h3>
-                    <Link href={`/product/${item.product.id}`}>
-                      {item.name}
-                    </Link>
-                  </h3>
-                  <p className="ml-4">{formatCurrency(item.price)}</p>
-                </div>
+              <div className="flex justify-between text-base font-medium">
+                <Link href={`/product/${item.product.id}`}>{item.name}</Link>
+                <p className="ml-4">{formatCurrency(item.price)}</p>
               </div>
               <div className="flex flex-1 items-end justify-between text-sm">
                 <p className="text-gray-500">Qty {item.quantity}</p>
@@ -209,7 +205,7 @@ export default function CartPage() {
                         undefined,
                       )
                     }
-                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                    className="font-medium text-indigo-600 hover:cursor-pointer hover:text-indigo-500"
                   >
                     Edit
                   </button>

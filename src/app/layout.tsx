@@ -48,3 +48,9 @@ export default function RootLayout({
 // might want optimistic update for adding items to cart
 
 // enable users to add images/videos to reviews
+
+// add review filter for reviews with images/videos
+
+// in review, add rating distribution under star rating. put this on the left side, then add list of images/videos on the right side
+
+// in review, wait for invalidate. Also check flags (isloading vs isfetching, etc.)

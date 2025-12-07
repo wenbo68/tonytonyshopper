@@ -4,7 +4,14 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { comments, products, users } from "~/server/db/schema";
+import {
+  comments,
+  orderItems,
+  orders,
+  products,
+  productVariants,
+  users,
+} from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import {
   and,
@@ -26,6 +33,37 @@ import {
 import { updateProductReviewStats } from "~/server/utils/product";
 
 export const commentRouter = createTRPCRouter({
+  /**
+   * Checks if the user is eligible to review the product.
+   * Requirement: User must have a "shipped" order containing this product.
+   */
+  getCanReview: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { productId } = input;
+      const userId = ctx.session.user.id;
+
+      // Join orders -> orderItems -> productVariants to find a match
+      const result = await ctx.db
+        .select({ id: orders.id })
+        .from(orders)
+        .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+        .innerJoin(
+          productVariants,
+          eq(orderItems.productVariantId, productVariants.id),
+        )
+        .where(
+          and(
+            eq(orders.userId, userId),
+            eq(orders.status, "shipped"), // Only allow if shipped
+            eq(productVariants.productId, productId),
+          ),
+        )
+        .limit(1);
+
+      return result.length > 0;
+    }),
+
   getAverageRating: publicProcedure
     .input(z.object({ productId: z.string() }))
     .query(async ({ ctx, input }) => {

@@ -1,5 +1,5 @@
-'use client';
-import { api } from '~/trpc/react';
+"use client";
+import { api } from "~/trpc/react";
 
 // This component must be a client component
 
@@ -16,7 +16,7 @@ export default function SeedButton() {
   });
 
   const handleSeed = () => {
-    if (confirm('Are you sure you want to delete all products and re-seed?')) {
+    if (confirm("Are you sure you want to delete all products and re-seed?")) {
       seedMutation.mutate();
     }
   };
@@ -25,9 +25,9 @@ export default function SeedButton() {
     <button
       onClick={handleSeed}
       disabled={seedMutation.isPending}
-      className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+      className="rounded bg-blue-600/50 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500/50 disabled:opacity-50"
     >
-      {seedMutation.isPending ? 'Seeding...' : 'Seed Database'}
+      {seedMutation.isPending ? "Seeding..." : "Seed Database"}
     </button>
   );
 }

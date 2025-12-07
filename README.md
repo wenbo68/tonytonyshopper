@@ -54,3 +54,15 @@
 
 - db update race condition: if different users can trigger db update simultaneously -> can lead to race condition
 - to prevent race condition, make the db update use transaction
+
+### react query
+
+#### mutation flags
+
+- isPending: mutation running
+
+#### query flags
+
+- isLoading: 1st fetch running
+- isRefetching: refetch (any fetch after 1st fetch) running
+- isFetching: any fetch (1st fetch or fetch) running

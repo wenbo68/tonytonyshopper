@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { useRef, useState, useEffect } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
-import { IoIosArrowDown } from 'react-icons/io';
-import type { FilterOption, FilterGroupOption } from '~/type';
+import { useRef, useState, useEffect } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { IoIosArrowDown } from "react-icons/io";
+import type { FilterOption, FilterGroupOption } from "~/type";
 
 type FilterProps = {
   label: string;
   placeholder?: string;
 } & (
   | {
-      mode: 'single';
+      mode: "single";
       value: string;
       onChange: Dispatch<SetStateAction<string>>;
     }
   | {
-      mode: 'multi';
+      mode: "multi";
       value: string[];
       onChange: Dispatch<SetStateAction<string[]>>;
     }
@@ -29,7 +29,7 @@ export default function Filter(props: FilterProps) {
   const { label, options, isGroupOptions, placeholder, mode, value, onChange } =
     props;
 
-  const [writtenText, setWrittenText] = useState('');
+  const [writtenText, setWrittenText] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -41,11 +41,11 @@ export default function Filter(props: FilterProps) {
         !containerRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
-        setWrittenText('');
+        setWrittenText("");
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Smarter filtering for both flat and grouped options ---
@@ -60,7 +60,7 @@ export default function Filter(props: FilterProps) {
 
           // 2. Separately, find which of the inner options match.
           const matchingOptions = group.options.filter((option) =>
-            option.label.toLowerCase().includes(searchText)
+            option.label.toLowerCase().includes(searchText),
           );
 
           // 3. If the group label itself matches, return the entire group with all its original options.
@@ -79,14 +79,14 @@ export default function Filter(props: FilterProps) {
         })
         .filter((group): group is FilterGroupOption => group !== null) // Filter out the discarded groups.
     : options.filter((option) =>
-        option.label.toLowerCase().includes(searchText)
+        option.label.toLowerCase().includes(searchText),
       );
 
   const handleSelectOption = (option: FilterOption) => {
-    if (mode === 'single') {
+    if (mode === "single") {
       onChange(option.urlInput);
       // setIsDropdownOpen(false);
-      setWrittenText('');
+      setWrittenText("");
       setTimeout(() => {
         setIsDropdownOpen(false);
       }, 50); // 50ms is plenty of time
@@ -113,14 +113,14 @@ export default function Filter(props: FilterProps) {
   };
 
   return (
-    <div className="relative flex flex-col w-full gap-2">
-      <div className="flex w-full gap-2 items-baseline">
+    <div className="relative flex w-full flex-col gap-2">
+      <div className="flex w-full items-baseline gap-2">
         {/** filter label */}
         <label className="font-semibold">{label}</label>
       </div>
       <div ref={containerRef}>
         {/** text bar */}
-        <div className="w-full rounded flex items-center bg-gray-900">
+        <div className="flex w-full items-center rounded bg-gray-900">
           <input
             type="text"
             value={writtenText}
@@ -135,18 +135,18 @@ export default function Filter(props: FilterProps) {
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="p-2 cursor-pointer"
+            className="cursor-pointer p-2"
           >
             <IoIosArrowDown
-              className={`w-5 h-5 transform transition-transform duration-200 ${
-                isDropdownOpen ? 'rotate-180' : ''
+              className={`h-5 w-5 transform transition-transform duration-200 ${
+                isDropdownOpen ? "rotate-180" : ""
               }`}
             />
           </button>
         </div>
         {/** dropdown */}
         {isDropdownOpen && (
-          <div className="text-xs font-semibold absolute z-10 top-full mt-2 w-full flex flex-col bg-gray-800 rounded p-2 max-h-96 overflow-y-auto scrollbar-thin">
+          <div className="scrollbar-thin absolute top-full z-10 mt-2 flex max-h-96 w-full flex-col overflow-y-auto rounded bg-gray-800 p-1 text-xs font-semibold">
             {isGroupOptions
               ? (filteredOptions as FilterGroupOption[]).map((group) => (
                   <div key={group.groupLabel}>
@@ -157,10 +157,10 @@ export default function Filter(props: FilterProps) {
                       <button
                         key={option.urlInput}
                         onClick={() => handleSelectOption(option)}
-                        className={`w-full text-start p-2 rounded cursor-pointer hover:text-blue-400 hover:bg-gray-900 pl-5 ${
+                        className={`w-full cursor-pointer rounded p-2 pl-5 text-start hover:bg-gray-900 hover:text-blue-400 ${
                           String(value) === String(option.urlInput)
-                            ? 'text-blue-400'
-                            : ''
+                            ? "text-blue-400"
+                            : ""
                         }`}
                       >
                         {option.label}
@@ -173,22 +173,20 @@ export default function Filter(props: FilterProps) {
                   <button
                     key={option.urlInput}
                     onClick={() => handleSelectOption(option)}
-                    className={`w-full text-start p-2 rounded cursor-pointer hover:text-blue-400 hover:bg-gray-900
-                    ${
+                    className={`w-full cursor-pointer rounded p-2 text-start hover:bg-gray-900 hover:text-blue-400 ${
                       // Use .some() to check for inclusion with string comparison
-                      mode === 'multi' &&
+                      mode === "multi" &&
                       value.some(
-                        (item) => String(item) === String(option.urlInput)
+                        (item) => String(item) === String(option.urlInput),
                       )
-                        ? 'text-blue-400'
-                        : ''
-                    }
-                    ${
+                        ? "text-blue-400"
+                        : ""
+                    } ${
                       // Compare as strings
-                      mode === 'single' &&
+                      mode === "single" &&
                       String(value) === String(option.urlInput)
-                        ? 'text-blue-400'
-                        : ''
+                        ? "text-blue-400"
+                        : ""
                     }`}
                   >
                     {option.label}

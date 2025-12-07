@@ -13,14 +13,18 @@ type DropdownProps = {
   options: DropdownOption[];
   value: string;
   onChange: (newValue: string) => void;
-  className?: string; // Allow passing custom wrapper styles
+  buttonColor?: string;
+  dropdownColor?: string;
+  dropdownHighlightColor?: string;
 };
 
 export const Dropdown = ({
   options,
   value,
   onChange,
-  className = "",
+  buttonColor,
+  dropdownColor,
+  dropdownHighlightColor,
 }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,11 +51,11 @@ export const Dropdown = ({
   }, []);
 
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
+    <div ref={dropdownRef} className={`relative w-full`}>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex w-full cursor-pointer items-center justify-between rounded bg-gray-800 px-3 py-2 text-xs font-semibold"
+        className={`flex w-full cursor-pointer items-center justify-between rounded ${buttonColor ?? "bg-gray-900"} px-3 py-2 text-xs font-semibold`}
       >
         {/* Display the selected option's label, or a default */}
         <span>{selectedOption ? selectedOption.label : "Select..."}</span>
@@ -63,7 +67,9 @@ export const Dropdown = ({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full z-10 mt-2 w-full rounded bg-gray-800 p-1.5">
+        <div
+          className={`absolute top-full z-10 mt-2 w-full rounded ${dropdownColor ?? "bg-gray-800"} p-1`}
+        >
           {options.map((option) => (
             <button
               key={option.value}
@@ -72,7 +78,7 @@ export const Dropdown = ({
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full rounded p-1.5 text-left text-xs font-semibold hover:bg-gray-900 hover:text-blue-400 ${
+              className={`w-full rounded p-2 text-left text-xs font-semibold ${dropdownHighlightColor ?? "hover:bg-gray-900"} hover:text-blue-400 ${
                 value === option.value ? "text-blue-400" : ""
               }`}
             >

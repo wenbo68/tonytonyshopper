@@ -63,16 +63,16 @@ export function ProductVariantModal() {
 
   const { mutate: updateItem, isPending: isUpdating } =
     api.cart.updateItem.useMutation({
-      onSuccess: () => {
-        utils.cart.get.invalidate();
+      onSuccess: async () => {
+        await utils.cart.get.invalidate();
         closeModal();
       },
     });
 
   const { mutate: updateQuantity, isPending: isUpdatingQty } =
     api.cart.updateQuantity.useMutation({
-      onSuccess: () => {
-        utils.cart.get.invalidate();
+      onSuccess: async () => {
+        await utils.cart.get.invalidate();
         closeModal();
       },
     });
@@ -281,7 +281,9 @@ export function ProductVariantModal() {
                 options={values.map((v) => ({ label: v, value: v }))}
                 value={selectedOptions[name] ?? ""}
                 onChange={(newValue) => handleOptionChange(name, newValue)}
-                className="w-full"
+                buttonColor="bg-gray-800"
+                dropdownColor="bg-gray-700"
+                dropdownHighlightColor="hover:bg-gray-800"
               />
             </div>
           ))}
@@ -310,7 +312,7 @@ export function ProductVariantModal() {
           <button
             onClick={closeModal}
             disabled={isPending}
-            className="w-full cursor-pointer rounded bg-gray-700/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-600/50 disabled:cursor-default disabled:bg-blue-700/50"
+            className="w-full cursor-pointer rounded bg-gray-700/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-600/50 disabled:cursor-default disabled:bg-gray-700/50"
           >
             Cancel
           </button>

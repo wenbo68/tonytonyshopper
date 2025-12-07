@@ -1,11 +1,11 @@
-'use client'; // 1. Make this a Client Component
+"use client"; // 1. Make this a Client Component
 
-import ReviewFilters from './ReviewFilters';
-import AvgRating from '../rating/AvgRating';
-import WriteReview from './write-form/WriteReview';
-import Reviews from './reviews/Reviews';
-import ReviewLabels from './ReviewLabels';
-import { ProductProvider } from '~/app/_contexts/ProductProvider';
+import ReviewFilters from "./ReviewFilters";
+import AvgRating from "../rating/AvgRating";
+import WriteReview from "./write-form/WriteReview";
+import Reviews from "./reviews/Reviews";
+import ReviewLabels from "./ReviewLabels";
+import { ProductProvider } from "~/app/_contexts/ProductProvider";
 
 export default function ReviewSection({ productId }: { productId: string }) {
   return (
@@ -22,10 +22,10 @@ export default function ReviewSection({ productId }: { productId: string }) {
 
         {/* 4. Remove productId prop from all children */}
         <AvgRating />
-        <WriteReview />
         <ReviewFilters />
         <ReviewLabels />
         <Reviews />
+        <WriteReview />
       </section>
     </ProductProvider>
   );

@@ -49,8 +49,8 @@ export default function Products() {
     parsedInput.success ? parsedInput.data : (undefined as any),
     {
       enabled: parsedInput.success,
-      staleTime: 1000 * 60 * 10,
-      // refetchOnWindowFocus: false, // this prevents auto refetch when you switch back to this tab from some other tab
+      staleTime: 0,
+      refetchOnWindowFocus: false,
     },
   );
 

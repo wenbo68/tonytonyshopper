@@ -43,7 +43,8 @@ export default function Reviews() {
     parsedInput.success ? parsedInput.data : (undefined as any),
     {
       enabled: parsedInput.success,
-      staleTime: 0, // always refetch immediately on input change
+      staleTime: 0,
+      refetchOnWindowFocus: false,
     },
   );
 

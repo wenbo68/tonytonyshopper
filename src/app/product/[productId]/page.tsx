@@ -2,27 +2,32 @@
 
 import Image from "next/image";
 import { notFound, useParams } from "next/navigation";
-import { AddToCartButton } from "~/app/_components/cart/AddToCartButton";
+// import { AddToCartButton } from "~/app/_components/cart/AddToCartButton";
 import ReviewSection from "~/app/_components/review/ReviewSection";
 import { formatCurrency } from "~/server/utils/product";
 import { api } from "~/trpc/react";
 import { useState, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dropdown } from "~/app/_components/Dropdown";
+import clsx from "clsx";
+import { useSession } from "next-auth/react";
+import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 
-export default function ProductDetailPage(
-  {
-    //   params,
-    // }: {
-    //   params: { productId: string };
-  },
-) {
-  // const { productId } = params;
+export default function ProductDetailPage() {
+  const { data: session } = useSession();
+  const utils = api.useUtils();
   const queryClient = useQueryClient();
 
   // ✅ Get productId from the URL
   const params = useParams();
   const productId = params.productId as string;
+
+  const addGuestItem = useGuestCartStore((state) => state.addItem);
+  const { mutate: addItem, isPending: isAdding } = api.cart.add.useMutation({
+    onSuccess: () => {
+      utils.cart.get.invalidate();
+    },
+  });
 
   // 1. Fetch the product and its variants using the client hook
   const { data: product, isLoading } = api.product.getById.useQuery(
@@ -110,6 +115,33 @@ export default function ProductDetailPage(
     });
   }, [selectedOptions, product?.variants]);
 
+  // === IMAGE LOGIC START ===
+
+  // Calculate the list of images to display
+  const currentImages = useMemo(() => {
+    if (selectedVariant?.images && selectedVariant.images.length > 0) {
+      return selectedVariant.images;
+    }
+    // Fallback: If no variant selected or variant has no images, use first variant's images
+    if (product?.variants[0]?.images && product.variants[0].images.length > 0) {
+      return product.variants[0].images;
+    }
+    // Fallback: Placeholder
+    return ["https://placehold.co/600x600/eee/ccc.png?text=No+Image"];
+  }, [selectedVariant, product]);
+
+  // State for the currently displayed main image
+  const [activeImage, setActiveImage] = useState<string>("");
+
+  // Sync activeImage when the available list changes (e.g., variant switch)
+  useEffect(() => {
+    if (currentImages.length > 0) {
+      setActiveImage(currentImages[0] ?? "");
+    }
+  }, [currentImages]);
+
+  // === IMAGE LOGIC END ===
+
   // --- Loading and Not Found States ---
   if (isLoading) {
     return (
@@ -145,28 +177,62 @@ export default function ProductDetailPage(
     }));
   };
 
+  const handleAddToCart = () => {
+    if (!selectedVariant) return;
+    if (session?.user) {
+      addItem({ productVariantId: selectedVariant.id, quantity });
+    } else {
+      addGuestItem({ productVariantId: selectedVariant.id, quantity });
+    }
+  };
+
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-5">
       {/* <div className="flex flex-col gap-5"> */}
       {/* images */}
-      <div className="relative">
-        <Image
-          src={displayImage}
-          alt={product.name ?? "Product image"}
-          width={600}
-          height={600}
-          className="aspect-square h-full w-full overflow-hidden rounded object-cover"
-          priority
-        />
-        {/* Price Tag (Bottom-Left) */}
-        <div className="absolute bottom-2 left-2 z-10 flex gap-2">
-          <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-300 backdrop-blur-sm">
-            {displayPrice}
+      {/* Left: Image Gallery */}
+      <div className="flex w-full flex-col gap-3 sm:flex-row">
+        {/* Main Image */}
+        <div className="relative aspect-square w-full grow overflow-hidden rounded border border-gray-800 bg-gray-900">
+          <Image
+            src={activeImage}
+            alt={product.name ?? "Product image"}
+            fill
+            className="object-cover"
+            priority
+          />
+          {/* Price Tag (Bottom-Left) */}
+          <div className="absolute bottom-2 left-2 z-10 flex flex-wrap gap-2">
+            <div className="rounded bg-black/70 px-3 py-2 text-xs font-bold text-gray-300 backdrop-blur-md">
+              {displayPrice}
+            </div>
+            {/* Stock Tag */}
+            <div className="rounded bg-black/70 px-3 py-2 text-xs font-bold text-gray-300 backdrop-blur-md">
+              Stock: {displayStock}
+            </div>
           </div>
-          {/* Stock Tag */}
-          <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-300 backdrop-blur-sm">
-            stock: {displayStock}
-          </div>
+        </div>
+        {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
+        <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[560px] sm:min-w-28 sm:flex-col sm:overflow-y-auto">
+          {currentImages.map((img, index) => (
+            <button
+              key={`${img}-${index}`}
+              onClick={() => setActiveImage(img)}
+              className={clsx(
+                "relative aspect-square w-20 shrink-0 overflow-hidden rounded border-2 transition-all sm:w-full",
+                activeImage === img
+                  ? "border-blue-500 opacity-100 ring-2 ring-blue-500/20"
+                  : "border-transparent bg-gray-800 opacity-60 hover:opacity-100",
+              )}
+            >
+              <Image
+                src={img}
+                alt={`Product view ${index + 1}`}
+                fill
+                className="object-cover"
+              />
+            </button>
+          ))}
         </div>
       </div>
       <div className="flex flex-col gap-5">
@@ -190,7 +256,9 @@ export default function ProductDetailPage(
                 options={values.map((v) => ({ label: v, value: v }))}
                 value={selectedOptions[name] ?? ""}
                 onChange={(newValue) => handleOptionChange(name, newValue)}
-                className="w-full"
+                buttonColor="bg-gray-900"
+                dropdownColor="bg-gray-800"
+                dropdownHighlightColor="hover:bg-gray-900"
               />
             </div>
           ))}
@@ -209,18 +277,25 @@ export default function ProductDetailPage(
               max={displayStock}
               value={quantity}
               onChange={(e) => setQuantity(Math.max(0, Number(e.target.value)))}
-              className="w-full rounded bg-gray-800 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-full rounded bg-gray-900 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           </div>
         </div>
 
-        <div className="">
-          <AddToCartButton product={product} initialOptions={selectedOptions} />
+        <div className="flex flex-col gap-0">
           {!selectedVariant && product.variants.length > 0 && (
             <p className="text-sm text-red-600">
               This combination of options is not available.
             </p>
           )}
+          {/* <AddToCartButton product={product} initialOptions={selectedOptions} /> */}
+          <button
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            className="w-full cursor-pointer rounded bg-blue-600/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-blue-500/50 disabled:cursor-default disabled:bg-blue-600/50"
+          >
+            {isAdding ? `Adding` : `Add To Cart`}
+          </button>
         </div>
       </div>
       {/* </div> */}
