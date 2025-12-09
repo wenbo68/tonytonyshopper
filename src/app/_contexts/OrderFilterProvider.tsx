@@ -108,7 +108,7 @@ export function OrderFilterProvider({ children }: { children: ReactNode }) {
     // Always reset to page 1 on filter change
     newParams.set("page", "1");
 
-    router.push(`/payment/history?${newParams.toString()}`);
+    router.push(`/orders?${newParams.toString()}`);
   };
 
   const value = {

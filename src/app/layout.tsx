@@ -58,3 +58,7 @@ export default function RootLayout({
 // improve ui for order history and admin history pages (create variantCard.tsx to use in cart and history?)
 
 // move addReview function to order history page
+
+// figure out how to handle shipping fee and taxes
+
+// store card brand and last4 in db for each order

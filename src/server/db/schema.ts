@@ -385,7 +385,8 @@ export const orders = createTable("order", (d) => ({
 
   createdAt: d
     .timestamp({ withTimezone: true })
-    .default(sql`CURRENT_TIMESTAMP`),
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({

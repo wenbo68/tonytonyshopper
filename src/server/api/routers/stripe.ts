@@ -112,7 +112,7 @@ export const stripeRouter = createTRPCRouter({
         const [newOrder] = await ctx.db
           .insert(orders)
           .values({
-            id: `order_${v4()}`,
+            id: `${v4()}`,
             userId: ctx.session?.user?.id,
             guestEmail: ctx.session?.user?.email,
             totalAmount: (totalAmount / 100).toFixed(2),
@@ -132,7 +132,7 @@ export const stripeRouter = createTRPCRouter({
               (v) => v.id === cartItem.productVariantId,
             )!;
             return {
-              id: `item_${v4()}`,
+              id: `${v4()}`,
               orderId: newOrderId!,
               productVariantId: cartItem.productVariantId,
               quantity: cartItem.quantity,

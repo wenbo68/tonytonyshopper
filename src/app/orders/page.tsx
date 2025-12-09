@@ -62,8 +62,8 @@ function OrderHistoryContent() {
   const orders = data?.orders ?? [];
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4">
-      <h1 className="text-left text-3xl font-bold text-gray-200">
+    <div className="mx-auto flex flex-col gap-6">
+      <h1 className="text-left text-2xl font-bold text-gray-300">
         Order History
       </h1>
 
@@ -81,55 +81,40 @@ function OrderHistoryContent() {
       ) : (
         <div className="flex flex-col gap-6">
           {orders.map((order) => (
-            <div
-              key={order.id}
-              className="overflow-hidden rounded-lg bg-gray-900 shadow-md"
-            >
+            <div key={order.id} className="rounded bg-gray-900">
               {/* Order Header */}
-              <div className="flex flex-col gap-2 rounded-t-lg bg-gray-800 p-4 text-left sm:flex-row sm:justify-between">
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-400">
-                    ORDER PLACED
-                  </span>
-                  <span className="text-gray-300">
-                    {order.createdAt
-                      ? new Date(order.createdAt).toLocaleDateString()
-                      : "N/A"}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-400">
-                    TOTAL
-                  </span>
-                  <span className="text-gray-300">
-                    {formatCurrency(order.totalAmount)}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-400">
-                    STATUS
-                  </span>
-                  <span
-                    className={`font-bold uppercase ${
-                      order.status === "paid"
-                        ? "text-green-400"
-                        : order.status === "shipped"
-                          ? "text-blue-400"
-                          : order.status === "cancelled"
-                            ? "text-red-400"
-                            : "text-yellow-400"
-                    }`}
-                  >
-                    {order.status}
+              <div className="flex flex-col gap-1">
+                {/* <div className="flex items-center gap-2 text-sm">
+                  <label className="min-w-16 font-semibold text-gray-300">
+                    Order ID:
+                  </label>
+                  <span className="">{order.id}</span>
+                </div> */}
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="min-w-16 font-semibold text-gray-300">
+                    Date:
+                  </label>
+                  <span className="">
+                    {new Date(order.createdAt).toLocaleString("ja-JP", {
+                      year: "numeric",
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-400">
-                    ORDER #
-                  </span>
-                  <span className="font-mono text-xs text-gray-300">
-                    {order.id}
-                  </span>
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="min-w-16 font-semibold text-gray-300">
+                    Total:
+                  </label>
+                  <span className="">{formatCurrency(order.totalAmount)}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="min-w-16 font-semibold text-gray-300">
+                    Status:
+                  </label>
+                  <span className="capitalize">{order.status}</span>
                 </div>
               </div>
 
