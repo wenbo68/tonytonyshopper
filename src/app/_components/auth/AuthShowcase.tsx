@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import Image from 'next/image';
+import { useState, useRef, useEffect } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
+import Image from "next/image";
 // import Link from 'next/link';
 // import { FaHeart } from 'react-icons/fa6';
-import { RiLogoutBoxRLine } from 'react-icons/ri';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { RiLogoutBoxRLine } from "react-icons/ri";
+import { usePathname, useSearchParams } from "next/navigation";
 // import { MdAddBox } from 'react-icons/md';
 
 export function AuthShowcase() {
@@ -28,14 +28,14 @@ export function AuthShowcase() {
         setDropdownOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
 
   // Shows a placeholder while the session is being fetched
-  if (sessionStatus === 'loading') {
+  if (sessionStatus === "loading") {
     return (
       <div className="h-10 w-10 animate-pulse rounded-full bg-gray-300/10" />
     );
@@ -47,10 +47,10 @@ export function AuthShowcase() {
       <button
         onClick={() => {
           const params = searchParams.toString();
-          const callbackUrl = `${pathname}${params ? `?${params}` : ''}`;
+          const callbackUrl = `${pathname}${params ? `?${params}` : ""}`;
           signIn(undefined, { callbackUrl });
         }}
-        className="rounded bg-blue-600/50 hover:bg-blue-500/50 text-gray-300 px-4 py-2 text-sm font-semibold transition cursor-pointer"
+        className="cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 transition hover:bg-indigo-500"
       >
         Login
       </button>
@@ -67,26 +67,26 @@ export function AuthShowcase() {
           className="cursor-pointer"
         >
           <Image
-            src={session.user.image ?? '/fallback-avatar.png'}
-            alt={session.user.name ?? 'User avatar'}
+            src={session.user.image ?? "/fallback-avatar.png"}
+            alt={session.user.name ?? "User avatar"}
             width={40} // Set to the largest size you want to display for quality
             height={40} // Set to the largest size you want to display for quality
-            className="rounded-full w-9 h-9 sm:w-10 sm:h-10" // Responsive classes
+            className="h-9 w-9 rounded-full sm:h-10 sm:w-10" // Responsive classes
           />
         </button>
       </div>
 
       {/* Dropdown Menu */}
       {isDropdownOpen && (
-        <div className="z-10 absolute right-0 mt-3 w-36 origin-top-right rounded bg-gray-800 p-2 flex flex-col">
+        <div className="absolute right-0 z-10 mt-3 flex w-36 origin-top-right flex-col rounded bg-gray-800 p-2">
           <button
             onClick={() => {
               setDropdownOpen(false);
               signOut();
             }}
-            className="flex items-center gap-2 rounded w-full p-2 text-left text-sm hover:bg-gray-900 hover:text-blue-400"
+            className="flex w-full items-center gap-2 rounded p-2 text-left text-sm hover:bg-gray-900 hover:text-blue-400"
           >
-            <div className="flex items-center justify-center h-4 w-4">
+            <div className="flex h-4 w-4 items-center justify-center">
               <RiLogoutBoxRLine size={15} />
             </div>
             Logout

@@ -28,7 +28,7 @@ export function AddToCartButton({
       onClick={handleOpenModal}
       className={
         className ??
-        "w-full cursor-pointer rounded bg-blue-600/50 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-blue-500/50 disabled:cursor-default disabled:bg-blue-600/50"
+        "w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
       }
     >
       {children ?? "Add to Cart"}

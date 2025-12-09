@@ -1,22 +1,20 @@
 import z from "zod";
 import { products, productVariants, type comments } from "./server/db/schema";
 
+// --- product & variant
+export type Variants = typeof productVariants.$inferSelect;
+export type ProductAndVariants = typeof products.$inferSelect & {
+  variants: Variants[];
+};
+export type VariantAndProduct = typeof productVariants.$inferSelect & {
+  product: ProductAndVariants;
+};
+
+// --- stock ----
 export const StockEnum = z.enum(["all", "some", "none"]);
 export type StockEnum = z.infer<typeof StockEnum>;
 
-export const productOrderEnum = z.enum([
-  "name-asc",
-  "name-desc",
-  "price-asc",
-  "price-desc",
-  "rating-asc",
-  "rating-desc",
-  "created-asc",
-  "created-desc",
-]);
-export type ProductOrderEnum = z.infer<typeof productOrderEnum>;
-
-// --- NEW: Sell History Filter Schema ---
+// --- search input schemas ---
 export const getSellHistoryInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(20),
@@ -52,7 +50,6 @@ export const getSellHistoryInputSchema = z.object({
 });
 export type GetSellHistoryInput = z.infer<typeof getSellHistoryInputSchema>;
 
-// --- NEW: Order Filter Schema ---
 export const getOrdersInputSchema = z.object({
   // Pagination
   page: z.number().min(1).optional().default(1),
@@ -77,7 +74,18 @@ export const getOrdersInputSchema = z.object({
     .default("date-desc"),
 });
 
-// --- NEW Zod Schema for getAll input ---
+export const productOrderEnum = z.enum([
+  "name-asc",
+  "name-desc",
+  "price-asc",
+  "price-desc",
+  "rating-asc",
+  "rating-desc",
+  "created-asc",
+  "created-desc",
+]);
+export type ProductOrderEnum = z.infer<typeof productOrderEnum>;
+
 export const getProductsInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(20),
@@ -93,18 +101,7 @@ export const getProductsInputSchema = z.object({
 
   // Sorting
   order: productOrderEnum.optional().default("created-desc"),
-  // sortKey: z
-  //   .enum(["date", "name", "price", "rating"])
-  //   .optional()
-  //   .default("date"),
-  // sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });
-
-// product and its associated variants
-export type Variants = typeof productVariants.$inferSelect;
-export type ProductAndVariants = typeof products.$inferSelect & {
-  variants: Variants[];
-};
 
 // input type of getCommentTree procedure
 export const GetCommentTreeInputSchema = z.object({
@@ -148,6 +145,6 @@ export type UpdateCommentInput = {
     }
 );
 
-// comment filter types
+// --- filter types ---
 export type FilterOption = { label: string; urlInput: string };
 export type FilterGroupOption = { groupLabel: string; options: FilterOption[] };

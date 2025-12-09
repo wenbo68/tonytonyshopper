@@ -1,30 +1,27 @@
 import { create } from "zustand";
 import type { ProductAndVariants } from "~/type";
 
-// This is the 'DisplayCartItem' type from your cart page
-type CartItem = {
+type EditedItem = {
   variantId: string;
-  name: string;
-  price: string;
-  images: string[] | null | undefined;
+  // name: string;
+  // price: string;
+  // images: string[] | null | undefined;
   quantity: number;
 };
 
-// --- DEFINE THE NEW STATE TYPE ---
-type PreSelectedOptions = Record<string, string>;
+// type PreSelectedOptions = Record<string, string>;
 
 type ProductVariantModalState = {
   isOpen: boolean;
   mode: "add" | "edit" | null;
   product: ProductAndVariants | null;
-  editingItem: CartItem | null;
-  initialOptions: PreSelectedOptions | null;
+  editedItem: EditedItem | null;
+  // initialOptions: PreSelectedOptions | null;
   openModal: (
-    // productId: string,
-    product: ProductAndVariants, // <-- ADDED: Accept product data
+    product: ProductAndVariants,
     mode: "add" | "edit",
-    item?: CartItem,
-    initialOptions?: PreSelectedOptions, // <-- ADD THIS
+    item?: EditedItem,
+    // initialOptions?: PreSelectedOptions,
   ) => void;
   closeModal: () => void;
 };
@@ -33,33 +30,29 @@ export const useProductVariantModalStore = create<ProductVariantModalState>(
   (set) => ({
     isOpen: false,
     mode: null,
-    // productId: null,
     product: null,
-    editingItem: null,
-    initialOptions: null, // <-- ADD THIS
+    editedItem: null,
+    // initialOptions: null,
     openModal: (
-      // productId,
       product,
       mode,
-      item = undefined,
-      initialOptions = undefined, // <-- ADD THIS
+      editedItem = undefined,
+      // initialOptions = undefined,
     ) =>
       set({
         isOpen: true,
-        // productId,
-        product, // Store it
+        product,
         mode,
-        editingItem: item,
-        initialOptions, // <-- ADD THIS
+        editedItem,
+        // initialOptions,
       }),
     closeModal: () =>
       set({
         isOpen: false,
-        // productId: null,
-        product: null, // Clear it
+        product: null,
         mode: null,
-        editingItem: null,
-        initialOptions: null, // <-- ADD THIS
+        editedItem: null,
+        // initialOptions: null,
       }),
   }),
 );

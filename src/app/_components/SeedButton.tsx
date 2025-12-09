@@ -25,7 +25,7 @@ export default function SeedButton() {
     <button
       onClick={handleSeed}
       disabled={seedMutation.isPending}
-      className="rounded bg-blue-600/50 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-500/50 disabled:opacity-50"
+      className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
     >
       {seedMutation.isPending ? "Seeding..." : "Seed Database"}
     </button>

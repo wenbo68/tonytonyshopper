@@ -14,28 +14,37 @@ import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 
 export default function ProductDetailPage() {
+  // --- hooks ---
   const { data: session } = useSession();
   const utils = api.useUtils();
   const queryClient = useQueryClient();
-
-  // ✅ Get productId from the URL
   const params = useParams();
   const productId = params.productId as string;
 
-  const addGuestItem = useGuestCartStore((state) => state.addItem);
-  const { mutate: addItem, isPending: isAdding } = api.cart.add.useMutation({
-    onSuccess: () => {
-      utils.cart.get.invalidate();
-    },
-  });
+  // --- states ---
+  const [activeImage, setActiveImage] = useState<string>("");
+  const [quantity, setQuantity] = useState(1);
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, string>
+  >({});
 
-  // 1. Fetch the product and its variants using the client hook
+  // ---- mutations ----
+  // to add item to guest/user cart
+  const addItemToGuestCart = useGuestCartStore((state) => state.addItem);
+  const { mutate: addItemToUserCart, isPending: isAddingToUserCart } =
+    api.cart.add.useMutation({
+      onSuccess: () => {
+        utils.cart.get.invalidate();
+      },
+    });
+
+  // --- queries ---
+  // Find product from product/all client cache -> if not found, fetch from db
   const { data: product, isLoading } = api.product.getById.useQuery(
     {
       id: productId,
     },
     {
-      // --- NEW OPTIMIZATION ---
       // Check if this product already exists in the 'product.search' cache (from 'All Products' page)
       initialData: () => {
         // tRPC query keys are arrays where the first element is the path array
@@ -66,13 +75,9 @@ export default function ProductDetailPage() {
     },
   );
 
-  // 2. State to hold the user's currently selected options
-  const [quantity, setQuantity] = useState(1);
-  const [selectedOptions, setSelectedOptions] = useState<
-    Record<string, string>
-  >({});
+  // --- effect & memo: options ---
 
-  // 3. Derive all unique options from the variants (e.g., { color: ["Red", "Blue"], logo: ["A", "B"] })
+  // Using all variants, derive the product options (e.g., { color: ["Red", "Blue"], logo: ["A", "B"] })
   // This runs only when the product data loads
   const options = useMemo(() => {
     if (!product || !product.variants) return {};
@@ -96,15 +101,15 @@ export default function ProductDetailPage() {
     );
   }, [product]);
 
-  // 4. Set the *initial* selected options once the product loads
-  // We'll default to the first variant's options
+  // initialize selectedOptions to be the 1st variant
+  // This runs only when the product data loads
   useEffect(() => {
     if (product && product.variants.length > 0) {
       setSelectedOptions(product.variants[0]?.options ?? {});
     }
   }, [product]);
 
-  // 5. Find the variant that matches the currently selected options
+  // Find the variant that matches the currently selected options
   // This runs every time the user clicks a new option
   const selectedVariant = useMemo(() => {
     if (!product?.variants) return null;
@@ -115,10 +120,10 @@ export default function ProductDetailPage() {
     });
   }, [selectedOptions, product?.variants]);
 
-  // === IMAGE LOGIC START ===
+  // --- effect & memo: images ---
 
   // Calculate the list of images to display
-  const currentImages = useMemo(() => {
+  const activeImageList = useMemo(() => {
     if (selectedVariant?.images && selectedVariant.images.length > 0) {
       return selectedVariant.images;
     }
@@ -130,19 +135,14 @@ export default function ProductDetailPage() {
     return ["https://placehold.co/600x600/eee/ccc.png?text=No+Image"];
   }, [selectedVariant, product]);
 
-  // State for the currently displayed main image
-  const [activeImage, setActiveImage] = useState<string>("");
-
   // Sync activeImage when the available list changes (e.g., variant switch)
   useEffect(() => {
-    if (currentImages.length > 0) {
-      setActiveImage(currentImages[0] ?? "");
+    if (activeImageList.length > 0) {
+      setActiveImage(activeImageList[0] ?? "");
     }
-  }, [currentImages]);
+  }, [activeImageList]);
 
-  // === IMAGE LOGIC END ===
-
-  // --- Loading and Not Found States ---
+  // --- Conditional Rendering ---
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 text-center">
@@ -155,21 +155,14 @@ export default function ProductDetailPage() {
     notFound();
   }
 
-  // --- Determine what to display ---
-  // Use the selected variant's image, or the product's first variant's image as a fallback
-  const displayImage =
-    selectedVariant?.images?.[0] ?? // 1. Selected variant's image
-    product.variants[0]?.images?.[0] ?? // 2. First variant's image (default)
-    "https://placehold.co/600x600/eee/ccc.png?text=No+Image"; // 3. Placeholder
-
+  // --- constants ---
   const displayPrice = selectedVariant
     ? formatCurrency(selectedVariant.price)
     : "N/A";
-
   const displayStock = selectedVariant?.stock ?? 0;
-  const isAvailable = selectedVariant && displayStock > 0;
+  const isOptionAvailable = !selectedVariant && product.variants.length > 0;
 
-  // --- Handler for clicking an option button ---
+  // --- Handlers ---
   const handleOptionChange = (optionName: string, value: string) => {
     setSelectedOptions((prev) => ({
       ...prev,
@@ -180,15 +173,14 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!selectedVariant) return;
     if (session?.user) {
-      addItem({ productVariantId: selectedVariant.id, quantity });
+      addItemToUserCart({ productVariantId: selectedVariant.id, quantity });
     } else {
-      addGuestItem({ productVariantId: selectedVariant.id, quantity });
+      addItemToGuestCart({ productVariantId: selectedVariant.id, quantity });
     }
   };
 
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-5">
-      {/* <div className="flex flex-col gap-5"> */}
       {/* images */}
       {/* Left: Image Gallery */}
       <div className="flex w-full flex-col gap-3 sm:flex-row">
@@ -214,7 +206,7 @@ export default function ProductDetailPage() {
         </div>
         {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
         <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[560px] sm:min-w-28 sm:flex-col sm:overflow-y-auto">
-          {currentImages.map((img, index) => (
+          {activeImageList.map((img, index) => (
             <button
               key={`${img}-${index}`}
               onClick={() => setActiveImage(img)}
@@ -291,10 +283,18 @@ export default function ProductDetailPage() {
           {/* <AddToCartButton product={product} initialOptions={selectedOptions} /> */}
           <button
             onClick={handleAddToCart}
-            disabled={isAdding}
-            className="w-full cursor-pointer rounded bg-blue-600/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-blue-500/50 disabled:cursor-default disabled:bg-blue-600/50"
+            disabled={
+              isAddingToUserCart || !isOptionAvailable || displayStock <= 0
+            }
+            className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
           >
-            {isAdding ? `Adding` : `Add To Cart`}
+            {!isOptionAvailable
+              ? `Unavailable Options`
+              : displayStock <= 0
+                ? `Out of Stock`
+                : isAddingToUserCart
+                  ? `Adding...`
+                  : `Add To Cart`}
           </button>
         </div>
       </div>

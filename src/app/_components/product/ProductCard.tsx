@@ -31,14 +31,14 @@ export default function ProductCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="group relative overflow-hidden rounded">
+      <div className="relative overflow-hidden rounded">
         <Link href={`/product/${product.id}`}>
           <Image
             src={image}
             alt={product.name ?? "Product image"}
             width={600}
             height={600}
-            className="aspect-square h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="aspect-square h-full w-full object-cover transition-transform duration-300 hover:scale-105"
           />
         </Link>
 
@@ -74,7 +74,7 @@ export default function ProductCard({
         {/* product name */}
         <Link
           href={`/product/${product.id}`}
-          className="line-clamp-2 font-medium hover:text-blue-400"
+          className="line-clamp-2 text-sm font-semibold hover:text-blue-400"
         >
           {product.name}
         </Link>

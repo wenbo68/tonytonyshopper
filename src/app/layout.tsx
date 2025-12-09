@@ -54,3 +54,7 @@ export default function RootLayout({
 // in review, add rating distribution under star rating. put this on the left side, then add list of images/videos on the right side
 
 // in review, wait for invalidate. Also check flags (isloading vs isfetching, etc.)
+
+// improve ui for order history and admin history pages (create variantCard.tsx to use in cart and history?)
+
+// move addReview function to order history page

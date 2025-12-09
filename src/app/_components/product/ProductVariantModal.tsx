@@ -21,32 +21,14 @@ export function ProductVariantModal() {
   const utils = api.useUtils();
 
   // === 1. Global Modal State ===
-  const {
-    isOpen,
-    mode,
-    // productId,
-    editingItem,
-    closeModal,
-    initialOptions,
-    product,
-  } = useProductVariantModalStore();
+  const { isOpen, closeModal, mode, editedItem, product } =
+    useProductVariantModalStore();
 
   // === 2. Internal Component State ===
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >({});
   const [quantity, setQuantity] = useState(1);
-
-  // // === 3. Data Fetching ===
-  // // Fetch the full product details
-  // // Here can we just pass product info to useVariantModalStore and use it (instead of fetching product info from db again)?
-  // const { data: product, isLoading: isLoadingProduct } =
-  //   api.product.getById.useQuery(
-  //     { id: productId! },
-  //     {
-  //       enabled: !!productId && !preloadedProduct, // Only run query if productId is set or if we don't have the product passed
-  //     },
-  //   );
 
   // === 4. Guest Cart Mutations ===
   const addGuestItem = useGuestCartStore((state) => state.addItem);
@@ -112,29 +94,20 @@ export function ProductVariantModal() {
   }, [selectedOptions, product?.variants]);
 
   // This effect pre-fills the state when the modal opens
-  // === 6. UPDATE THIS useEffect ===
   useEffect(() => {
     if (isOpen && product) {
-      if (mode === "edit" && editingItem) {
-        // Pre-fill with item's data
+      if (mode === "edit" && editedItem) {
         const itemVariant = product.variants.find(
-          (v) => v.id === editingItem.variantId,
+          (v) => v.id === editedItem.variantId,
         );
         setSelectedOptions(itemVariant?.options ?? {});
-        setQuantity(editingItem.quantity);
-      } else if (mode === "add" && initialOptions) {
-        // --- THIS IS THE FIX ---
-        // Use the pre-selected options from the store
-        setSelectedOptions(initialOptions);
-        setQuantity(1);
-      } else {
-        // Fallback for "add" mode (e.g., from product card)
+        setQuantity(editedItem.quantity);
+      } else if (mode === "add") {
         setSelectedOptions(product.variants[0]?.options ?? {});
         setQuantity(1);
       }
     }
-    // --- ADD initialOptions to dependency array ---
-  }, [isOpen, product, mode, editingItem, initialOptions]);
+  }, [isOpen, product, mode, editedItem]);
 
   // === 7. Event Handlers ===
   const handleOptionChange = (optionName: string, value: string) => {
@@ -154,13 +127,13 @@ export function ProductVariantModal() {
         addGuestItem({ productVariantId: selectedVariant.id, quantity });
         closeModal();
       }
-    } else if (mode === "edit" && editingItem) {
-      const variantChanged = editingItem.variantId !== selectedVariant.id;
+    } else if (mode === "edit" && editedItem) {
+      const variantChanged = editedItem.variantId !== selectedVariant.id;
 
       if (session?.user) {
         if (variantChanged) {
           updateItem({
-            oldProductVariantId: editingItem.variantId,
+            oldProductVariantId: editedItem.variantId,
             newProductVariantId: selectedVariant.id,
             newQuantity: quantity,
           });
@@ -174,7 +147,7 @@ export function ProductVariantModal() {
         // Guest cart logic
         if (variantChanged) {
           // Remove old, add new
-          removeGuestItem(editingItem.variantId);
+          removeGuestItem(editedItem.variantId);
           addGuestItem({ productVariantId: selectedVariant.id, quantity });
         } else {
           updateGuestItem(selectedVariant.id, quantity);
@@ -319,7 +292,7 @@ export function ProductVariantModal() {
           <button
             onClick={handleSave}
             disabled={isPending || !selectedVariant || displayStock <= 0}
-            className="w-full cursor-pointer rounded bg-blue-600/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-blue-500/50 disabled:cursor-default disabled:bg-blue-600/50"
+            className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
           >
             {isPending
               ? "Saving..."
