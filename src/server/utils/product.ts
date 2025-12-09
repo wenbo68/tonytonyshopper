@@ -10,9 +10,6 @@ export function formatNumber(num: number) {
   }).format(num);
 }
 
-/**
- * Helper function to format the price string (from Drizzle) into a currency.
- */
 export function formatCurrency(priceString: string | null | undefined) {
   if (!priceString) {
     return "N/A";
@@ -24,11 +21,20 @@ export function formatCurrency(priceString: string | null | undefined) {
   }).format(price);
 }
 
+export const formatOptionsCaption = (
+  options: Record<string, string> | null,
+) => {
+  if (!options) return "";
+  return Object.entries(options)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(", ");
+};
+
 /**
  * Recalculates and updates the averageRating and reviewCount for a product.
  * MUST be called inside a Drizzle transaction.
  */
-export async function updateProductReviewStats(
+export async function updateProductReviewDenorms(
   tx: PgTransaction<any, any, any>, // The transaction object
   productId: string,
 ) {
@@ -61,7 +67,7 @@ export async function updateProductReviewStats(
  * Recalculates and updates the variant aggregate fields for a product.
  * MUST be called inside a Drizzle transaction.
  */
-export async function updateProductVariantStats(
+export async function updateProductVariantDenorms(
   tx: PgTransaction<any, any, any>, // The transaction object
   productId: string,
 ) {

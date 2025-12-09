@@ -28,7 +28,7 @@ import {
 } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { getProductsInputSchema } from "~/type";
-import { updateProductVariantStats } from "~/server/utils/product";
+import { updateProductVariantDenorms } from "~/server/utils/product";
 
 export const productRouter = createTRPCRouter({
   /**
@@ -315,7 +315,7 @@ export const productRouter = createTRPCRouter({
           });
 
           // Calculate stats
-          await updateProductVariantStats(tx, tee.id);
+          await updateProductVariantDenorms(tx, tee.id);
         }
 
         // 2. Jeans
@@ -349,7 +349,7 @@ export const productRouter = createTRPCRouter({
           });
 
           // Calculate stats
-          await updateProductVariantStats(tx, jeans.id);
+          await updateProductVariantDenorms(tx, jeans.id);
         }
       });
 

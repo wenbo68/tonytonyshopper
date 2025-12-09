@@ -30,7 +30,7 @@ import {
   type CommentTree,
   type FlatCommentWithUser,
 } from "~/type";
-import { updateProductReviewStats } from "~/server/utils/product";
+import { updateProductReviewDenorms } from "~/server/utils/product";
 
 export const commentRouter = createTRPCRouter({
   /**
@@ -238,7 +238,7 @@ export const commentRouter = createTRPCRouter({
 
         // 2. If a rating was provided, update the product stats
         if (rating !== undefined && rating !== null) {
-          await updateProductReviewStats(tx, productId);
+          await updateProductReviewDenorms(tx, productId);
         }
       });
 
@@ -300,7 +300,7 @@ export const commentRouter = createTRPCRouter({
         // 2. If the rating was changed, update stats
         // We must check if 'rating' was part of the input (even if it was set to null)
         if (rating !== undefined) {
-          await updateProductReviewStats(tx, originalComment.productId);
+          await updateProductReviewDenorms(tx, originalComment.productId);
         }
       });
 
@@ -345,7 +345,7 @@ export const commentRouter = createTRPCRouter({
         if (wasTopLevelReview && hadRating) {
           // If it was a top-level review that had a rating,
           // recalculate the stats for its product.
-          await updateProductReviewStats(tx, commentToDelete.productId);
+          await updateProductReviewDenorms(tx, commentToDelete.productId);
         }
       });
 

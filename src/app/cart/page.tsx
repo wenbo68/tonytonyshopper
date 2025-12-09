@@ -5,7 +5,7 @@ import { api } from "~/trpc/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useGuestCartStore } from "../_hooks/useGuestCartStore";
-import { formatCurrency } from "~/server/utils/product";
+import { formatCurrency, formatOptionsCaption } from "~/server/utils/product";
 import { useState } from "react";
 import { useProductVariantModalStore } from "../_hooks/useVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
@@ -142,14 +142,6 @@ export default function CartPage() {
     createCheckoutMutation.mutate(itemsToCheckout);
   };
 
-  // ==== Helpers ====
-  const formatOptions = (options: Record<string, string> | null) => {
-    if (!options) return "";
-    return Object.entries(options)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(", ");
-  };
-
   // ==== Constants ====
   const subtotal = cartItems.reduce(
     (acc, item) => acc + parseFloat(item.variant.price) * item.quantity,
@@ -226,7 +218,7 @@ export default function CartPage() {
                 </Link>
                 {/* Options */}
                 <p className="line-clamp-1 text-xs text-gray-500 capitalize">
-                  {formatOptions(variant.options)}
+                  {formatOptionsCaption(variant.options)}
                 </p>
               </div>
             </div>

@@ -21,7 +21,7 @@ import {
   productVariants,
   users,
 } from "~/server/db/schema";
-import { updateProductVariantStats } from "~/server/utils/product"; // <--- 1. Import this
+import { updateProductVariantDenorms } from "~/server/utils/product"; // <--- 1. Import this
 // import { Resend } from "resend"; // <--- Import Resend
 import { env } from "~/env";
 import { getSellHistoryInputSchema } from "~/type";
@@ -100,7 +100,7 @@ export const adminRouter = createTRPCRouter({
         );
 
         // 4. Update denormalized fields (minPrice, totalStock, etc.) <--- ADDED
-        await updateProductVariantStats(tx, newProductId);
+        await updateProductVariantDenorms(tx, newProductId);
 
         return { id: newProductId };
       });
@@ -212,7 +212,7 @@ export const adminRouter = createTRPCRouter({
         }
 
         // 4. Update denormalized fields (minPrice, totalStock, etc.) <--- ADDED
-        await updateProductVariantStats(tx, productId);
+        await updateProductVariantDenorms(tx, productId);
       });
 
       return { id: productId };

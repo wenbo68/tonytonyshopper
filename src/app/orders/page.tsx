@@ -4,17 +4,20 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { formatCurrency } from "~/server/utils/product";
+import { formatCurrency, formatOptionsCaption } from "~/server/utils/product";
 import { OrderFilterProvider } from "~/app/_contexts/OrderFilterProvider";
 import OrderFilters from "~/app/_components/order/OrderFilters";
 import OrderLabels from "~/app/_components/order/OrderLabels";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useSearchParams } from "next/navigation";
 import { getOrdersInputSchema } from "~/type";
+import { FaCartPlus, FaUndo } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 function OrderHistoryContent() {
   const { status } = useSession();
   const searchParams = useSearchParams();
+  const utils = api.useUtils();
 
   // Parse URL params to match input schema
   const rawInput = {
@@ -46,6 +49,27 @@ function OrderHistoryContent() {
       enabled: status === "authenticated" && parsedInput.success,
     },
   );
+
+  // Mutation to add item to cart
+  const addToCartMutation = api.cart.add.useMutation({
+    onSuccess: () => {
+      toast.success("Added to cart");
+      utils.cart.get.invalidate();
+    },
+    onError: (e) => {
+      toast.error(e.message);
+    },
+  });
+
+  const handleAddToCart = (variantId: string) => {
+    addToCartMutation.mutate({ productVariantId: variantId, quantity: 1 });
+  };
+
+  const handleReturn = () => {
+    toast("Return feature coming soon!", {
+      icon: "↩️",
+    });
+  };
 
   if (status === "loading" || isLoading) {
     return <div className="py-10 text-center">Loading order history...</div>;
@@ -140,46 +164,72 @@ function OrderHistoryContent() {
                 </div>
               )}
 
-              {/* Order Items */}
-              <div className="flex flex-col gap-4 p-4">
-                {order.orderItems.map((item) => {
-                  const variant = item.productVariant;
-                  const product = variant.product;
-                  const imageUrl =
-                    variant.images?.[0] ??
-                    "https://placehold.co/100x100/eee/ccc.png?text=No+Image";
+              {/* Order Items Grid */}
+              <div className="p-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5">
+                  {order.orderItems.map((item) => {
+                    const variant = item.productVariant;
+                    const product = variant.product;
+                    const imageUrl =
+                      variant.images?.[0] ??
+                      "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
 
-                  return (
-                    <div key={item.id} className="flex gap-4 text-left">
-                      <Image
-                        src={imageUrl}
-                        alt={product.name ?? "Product image"}
-                        width={80}
-                        height={80}
-                        className="h-20 w-20 rounded-md border border-gray-700 object-cover"
-                      />
-                      <div className="flex grow flex-col">
-                        <Link
-                          href={`/product/${variant.productId}`}
-                          className="font-semibold text-gray-300 hover:underline"
-                        >
-                          {product.name}
-                        </Link>
-                        <span className="text-sm text-gray-400">
-                          {variant.name}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          Qty: {item.quantity}
-                        </span>
+                    return (
+                      <div key={item.id} className="flex flex-col gap-2">
+                        <div className="relative overflow-hidden rounded bg-gray-800">
+                          <Link href={`/product/${variant.productId}`}>
+                            <Image
+                              src={imageUrl}
+                              alt={product.name ?? "Product image"}
+                              width={600}
+                              height={600}
+                              className="aspect-square h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                            />
+                          </Link>
+
+                          {/* Return Button (Top-Left) */}
+                          <button
+                            onClick={handleReturn}
+                            className="absolute top-1 left-1 z-10 flex h-6.5 w-6.5 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
+                            title="Return Item"
+                          >
+                            <FaUndo size={12} />
+                          </button>
+
+                          {/* Add to Cart Button (Top-Right) */}
+                          <button
+                            onClick={() => handleAddToCart(variant.id)}
+                            disabled={addToCartMutation.isPending}
+                            className="absolute top-1 right-1 z-10 flex h-6.5 w-6.5 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80 disabled:cursor-wait disabled:opacity-50"
+                            title="Buy Again"
+                          >
+                            <FaCartPlus size={14} />
+                          </button>
+
+                          {/* Price Tag (Bottom-Left) */}
+                          <div className="absolute bottom-1 left-1 z-10 rounded bg-black/60 px-1.5 py-1 text-xs font-semibold text-gray-100 backdrop-blur-sm">
+                            {formatCurrency(item.priceAtPurchase)} x
+                            {item.quantity}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-0 px-1">
+                          {/* Product Name */}
+                          <Link
+                            href={`/product/${variant.productId}`}
+                            className="line-clamp-1 text-sm font-semibold text-gray-300 hover:text-blue-400"
+                          >
+                            {product.name}
+                          </Link>
+                          {/* Options */}
+                          <p className="line-clamp-1 text-xs text-gray-500 capitalize">
+                            {formatOptionsCaption(variant.options)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end">
-                        <span className="font-medium text-gray-300">
-                          {formatCurrency(item.priceAtPurchase)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           ))}
