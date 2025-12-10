@@ -1,7 +1,7 @@
+// src/app/_components/product/ProductCard.tsx
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { formatCurrency, formatNumber } from "~/server/utils/product";
 import { AddToCartButton } from "../cart/AddToCartButton";
 import StarRating from "../rating/StarRating";
@@ -9,6 +9,13 @@ import type { ProductAndVariants } from "~/type";
 import { useSession } from "next-auth/react";
 import { FaPen } from "react-icons/fa";
 import { FaCartPlus } from "react-icons/fa6";
+import {
+  ImageCard,
+  OverlayLink,
+  OverlayTag,
+  overlayButtonClass,
+  positionClasses,
+} from "../ProductImageCard"; // Import shared UI
 
 export default function ProductCard({
   product,
@@ -17,7 +24,6 @@ export default function ProductCard({
 }) {
   const { data: session } = useSession();
 
-  // get the variant with the lowest price
   const variant = product.variants.reduce((prev, curr) =>
     parseFloat(curr.price) < parseFloat(prev.price) ? curr : prev,
   );
@@ -31,54 +37,42 @@ export default function ProductCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative overflow-hidden rounded">
-        <Link href={`/product/${product.id}`}>
-          <Image
-            src={image}
-            alt={product.name ?? "Product image"}
-            width={600}
-            height={600}
-            className="aspect-square h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-          />
-        </Link>
-
-        {/* Edit Button (Top-Left) */}
+      <ImageCard src={image} alt={product.name} href={`/product/${product.id}`}>
+        {/* Edit Button */}
         {session?.user?.role === "admin" && (
-          <Link
+          <OverlayLink
             href={`/product/edit/${product.id}`}
-            className="absolute top-2 left-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
+            position="topLeft"
             title="Edit Product"
           >
             <FaPen size={12} />
-          </Link>
+          </OverlayLink>
         )}
 
-        {/* Add to Cart Button (Top-Right) */}
+        {/* Add to Cart Button */}
         <AddToCartButton
-          // productId={product.id}
-          product={product} // <-- Pass the full product object here
-          className="absolute top-2 right-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
+          product={product}
+          // Combine shared overlay class with positioning
+          className={`${overlayButtonClass} ${positionClasses.topRight}`}
         >
           <FaCartPlus size={14} />
         </AddToCartButton>
 
-        {/* Price Tag (Bottom-Left) */}
-        <div className="absolute bottom-2 left-2 z-10 rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-100 backdrop-blur-sm">
+        {/* Price Tag */}
+        <OverlayTag position="bottomLeft">
           {product.minPrice === product.maxPrice
             ? formatCurrency(variant.price)
             : `From ${formatCurrency(product.minPrice)}`}
-        </div>
-      </div>
+        </OverlayTag>
+      </ImageCard>
 
       <div className="flex flex-col gap-0">
-        {/* product name */}
         <Link
           href={`/product/${product.id}`}
           className="line-clamp-2 text-sm font-semibold hover:text-blue-400"
         >
           {product.name}
         </Link>
-        {/* avg rating */}
         <Link
           href={`/product/${product.id}#review-filters`}
           className="flex cursor-pointer items-center gap-1"

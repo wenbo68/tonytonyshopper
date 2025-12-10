@@ -11,6 +11,12 @@ import { useProductVariantModalStore } from "../_hooks/useVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
 import type { VariantAndProduct } from "~/type";
 import { FaPen, FaTrash } from "react-icons/fa";
+import {
+  ImageCard,
+  OverlayButton,
+  OverlayTag,
+  ProductGrid,
+} from "../_components/ProductImageCard";
 
 type CartItem = {
   variant: VariantAndProduct;
@@ -158,7 +164,7 @@ export default function CartPage() {
       </div>
 
       {/* Grid Layout */}
-      <div className="grid grid-cols-2 gap-3 space-y-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5">
+      <ProductGrid>
         {cartItems.map((item) => {
           const variant = item.variant;
           const quantity = item.quantity;
@@ -168,55 +174,48 @@ export default function CartPage() {
 
           return (
             <div key={variant.id} className="flex flex-col gap-2">
-              <div className="relative overflow-hidden rounded">
-                <Link href={`/product/${variant.product.id}`}>
-                  <Image
-                    src={image}
-                    alt={variant.product.name}
-                    width={600}
-                    height={600}
-                    className="aspect-square h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                  />
-                </Link>
-
-                {/* Edit Button (Top-Left) */}
-                <button
+              <ImageCard
+                src={image}
+                alt={variant.product.name}
+                href={`/product/${variant.product.id}`}
+              >
+                {/* Edit Button */}
+                <OverlayButton
+                  position="topLeft"
                   onClick={() =>
                     openVariantModal(variant.product, "edit", {
                       variantId: variant.id,
                       quantity,
                     })
                   }
-                  className="absolute top-2 left-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
                   title="Edit Item"
                 >
                   <FaPen size={12} />
-                </button>
+                </OverlayButton>
 
-                {/* Delete Button (Top-Right) */}
-                <button
+                {/* Delete Button */}
+                <OverlayButton
+                  position="topRight"
                   onClick={() => handleRemoveCartItem(variant.id)}
-                  className="absolute top-2 right-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
                   title="Remove Item"
                 >
                   <FaTrash size={12} />
-                </button>
+                </OverlayButton>
 
-                {/* Price Tag (Bottom-Left) */}
-                <div className="absolute bottom-2 left-2 z-10 rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-100 backdrop-blur-sm">
+                {/* Price Tag */}
+                <OverlayTag position="bottomLeft">
                   {formatCurrency(variant.price)} x{quantity}
-                </div>
-              </div>
+                </OverlayTag>
+              </ImageCard>
 
               <div className="flex flex-col gap-0 px-1">
-                {/* Product Name */}
+                {/* ... name and options ... */}
                 <Link
                   href={`/product/${variant.product.id}`}
                   className="line-clamp-1 text-sm font-semibold text-gray-300 hover:text-blue-400"
                 >
                   {variant.product.name}
                 </Link>
-                {/* Options */}
                 <p className="line-clamp-1 text-xs text-gray-500 capitalize">
                   {formatOptionsCaption(variant.options)}
                 </p>
@@ -224,7 +223,7 @@ export default function CartPage() {
             </div>
           );
         })}
-      </div>
+      </ProductGrid>
 
       {/* Checkout Section */}
       <div className="sticky bottom-0 z-20 mt-auto border-t border-gray-800 bg-gray-950/90 py-4 backdrop-blur-md sm:relative">

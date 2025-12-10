@@ -1,10 +1,16 @@
 import z from "zod";
-import { products, productVariants, type comments } from "./server/db/schema";
+import {
+  orderItems,
+  orders,
+  products,
+  productVariants,
+  type comments,
+} from "./server/db/schema";
 
 // --- product & variant
-export type Variants = typeof productVariants.$inferSelect;
+export type Variant = typeof productVariants.$inferSelect;
 export type ProductAndVariants = typeof products.$inferSelect & {
-  variants: Variants[];
+  variants: Variant[];
 };
 export type VariantAndProduct = typeof productVariants.$inferSelect & {
   product: ProductAndVariants;
@@ -13,6 +19,15 @@ export type VariantAndProduct = typeof productVariants.$inferSelect & {
 // --- stock ----
 export const StockEnum = z.enum(["all", "some", "none"]);
 export type StockEnum = z.infer<typeof StockEnum>;
+
+// --- orders ---
+export type OrderItemAndVariantAndProduct = typeof orderItems.$inferSelect & {
+  variant: VariantAndProduct;
+};
+export type OrderAndOrderItemsAndVariantAndProduct =
+  typeof orders.$inferSelect & {
+    orderItems: OrderItemAndVariantAndProduct[];
+  };
 
 // --- search input schemas ---
 export const getSellHistoryInputSchema = z.object({

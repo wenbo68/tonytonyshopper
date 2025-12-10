@@ -48,17 +48,12 @@ export default function RootLayout({
 // might want optimistic update for adding items to cart
 
 // enable users to add images/videos to reviews
-
 // add review filter for reviews with images/videos
-
 // in review, add rating distribution under star rating. put this on the left side, then add list of images/videos on the right side
-
 // in review, wait for invalidate. Also check flags (isloading vs isfetching, etc.)
 
-// improve ui for order history and admin history pages (create variantCard.tsx to use in cart and history?)
+// figure out how to handle shipping fee and taxes
+// store card brand and last4 in db for each order
 
 // move addReview function to order history page
-
-// figure out how to handle shipping fee and taxes
-
-// store card brand and last4 in db for each order
+// add details modal to each order in orders/page.tsx

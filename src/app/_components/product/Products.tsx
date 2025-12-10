@@ -6,6 +6,7 @@ import { getProductsInputSchema } from "~/type";
 import ProductsSkeleton from "./ProductsSkeleton";
 import ProductCard from "./ProductCard";
 import PageSelector from "../pagination/Pagination";
+import { gridClassName, ProductGrid } from "../ProductImageCard";
 
 export default function Products() {
   const searchParams = useSearchParams();
@@ -64,13 +65,11 @@ export default function Products() {
 
   // 5. Show a skeleton while fetching new data
   const skeletonCount = 5;
-  const gridClasses =
-    "grid gap-3 space-y-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5";
 
   if (isFetching) {
     return (
       <ProductsSkeleton
-        gridClasses={gridClasses}
+        gridClasses={gridClassName}
         skeletonCount={skeletonCount}
       />
     );
@@ -83,11 +82,12 @@ export default function Products() {
 
     return (
       <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
-        <div className={gridClasses}>
+        {/* Replaced manual grid div with ProductGrid */}
+        <ProductGrid>
           {data.products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
-        </div>
+        </ProductGrid>
         <PageSelector
           type="product"
           currentPage={page ?? 1}

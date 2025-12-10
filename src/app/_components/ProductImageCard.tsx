@@ -4,6 +4,9 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import type { ReactNode } from "react";
 
+export const gridClassName =
+  "grid grid-cols-2 gap-3 space-y-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5";
+
 // --- 1. The Grid Layout ---
 // Replaces the repeated grid classes in Products, Cart, and Orders
 export function ProductGrid({
@@ -13,16 +16,7 @@ export function ProductGrid({
   children: ReactNode;
   className?: string;
 }) {
-  return (
-    <div
-      className={clsx(
-        "grid grid-cols-2 gap-3 space-y-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={clsx(gridClassName, className)}>{children}</div>;
 }
 
 // --- 2. The Image Container ---
@@ -67,16 +61,16 @@ export function ImageCard({
 
 // --- 3. Overlay Components (Buttons & Tags) ---
 
-const positionClasses = {
-  topLeft: "top-2 left-2",
-  topRight: "top-2 right-2",
-  bottomLeft: "bottom-2 left-2",
-  bottomRight: "bottom-2 right-2",
+export const positionClasses = {
+  topLeft: "top-1 left-1",
+  topRight: "top-1 right-1",
+  bottomLeft: "bottom-1 left-1",
+  bottomRight: "bottom-1 right-1",
 };
 
 // Common styles for the circular buttons (Edit, Delete, Add to Cart)
 export const overlayButtonClass =
-  "absolute z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80 disabled:cursor-wait disabled:opacity-50";
+  "absolute z-10 flex h-6.5 w-6.5 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-300 backdrop-blur-sm transition-colors hover:bg-black/80 disabled:cursor-default";
 
 interface OverlayProps {
   position?: keyof typeof positionClasses;
@@ -134,7 +128,7 @@ export function OverlayTag({
   return (
     <div
       className={clsx(
-        "absolute z-10 rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-100 backdrop-blur-sm",
+        "absolute z-10 rounded bg-black/60 px-1.5 py-1 text-xs font-semibold text-gray-300 backdrop-blur-sm",
         positionClasses[position],
         className,
       )}
@@ -157,7 +151,7 @@ export function OverlayTagGroup({
   return (
     <div
       className={clsx(
-        "absolute z-10 flex gap-2",
+        "absolute z-10 flex gap-1",
         positionClasses[position],
         className,
       )}

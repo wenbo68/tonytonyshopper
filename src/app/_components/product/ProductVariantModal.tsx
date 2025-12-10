@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import Image from "next/image";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import { useProductVariantModalStore } from "~/app/_hooks/useVariantModalStore";
 import { formatCurrency, formatNumber } from "~/server/utils/product";
 import { useSession } from "next-auth/react";
@@ -11,10 +10,12 @@ import Link from "next/link";
 import { FaPen } from "react-icons/fa";
 import StarRating from "../rating/StarRating";
 import { Dropdown } from "../Dropdown";
-
-// Get tRPC types
-type Product = RouterOutputs["product"]["getById"];
-type Variant = NonNullable<Product>["variants"][0];
+import {
+  ImageCard,
+  OverlayLink,
+  OverlayTag,
+  OverlayTagGroup,
+} from "../ProductImageCard";
 
 export function ProductVariantModal() {
   const { data: session } = useSession();
@@ -185,39 +186,39 @@ export function ProductVariantModal() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-3">
-          <div className="group relative overflow-hidden rounded">
-            <Link href={`/product/${product.id}`}>
-              <Image
-                src={displayImage}
-                alt={product.name ?? "Product image"}
-                width={600}
-                height={600}
-                className="aspect-square h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            </Link>
-
-            {/* Edit Button (Top-Left) */}
+          <ImageCard
+            src={displayImage}
+            alt={product.name ?? "Product image"}
+            href={`/product/${product.id}`}
+            className="group" // to keep hover scale effect on image
+          >
+            {/* Edit Button */}
             {session?.user?.role === "admin" && (
-              <Link
+              <OverlayLink
                 href={`/product/edit/${product.id}`}
-                className="absolute top-2 left-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-100 backdrop-blur-sm transition-colors hover:bg-black/80"
+                position="topLeft"
                 title="Edit Product"
               >
                 <FaPen size={12} />
-              </Link>
+              </OverlayLink>
             )}
 
-            {/* Price Tag (Bottom-Left) */}
-            <div className="absolute bottom-2 left-2 z-10 flex gap-2">
-              <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-300 backdrop-blur-sm">
+            {/* Tags Group */}
+            <OverlayTagGroup position="bottomLeft">
+              <OverlayTag
+                position="bottomLeft"
+                className="static" // Override absolute to allow flex flow
+              >
                 {displayPrice}
-              </div>
-              {/* Stock Tag */}
-              <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold text-gray-300 backdrop-blur-sm">
+              </OverlayTag>
+              <OverlayTag
+                position="bottomLeft"
+                className="static" // Override absolute
+              >
                 stock: {displayStock}
-              </div>
-            </div>
-          </div>
+              </OverlayTag>
+            </OverlayTagGroup>
+          </ImageCard>
 
           <div className="flex flex-col items-center gap-0">
             {/* product name */}

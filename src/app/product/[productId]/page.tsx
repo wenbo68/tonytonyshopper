@@ -14,21 +14,21 @@ import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 
 export default function ProductDetailPage() {
-  // --- hooks ---
+  // ==== hooks ====
   const { data: session } = useSession();
   const utils = api.useUtils();
   const queryClient = useQueryClient();
   const params = useParams();
   const productId = params.productId as string;
 
-  // --- states ---
+  // ==== states ====
   const [activeImage, setActiveImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >({});
 
-  // ---- mutations ----
+  // ==== mutations ====
   // to add item to guest/user cart
   const addItemToGuestCart = useGuestCartStore((state) => state.addItem);
   const { mutate: addItemToUserCart, isPending: isAddingToUserCart } =
@@ -38,7 +38,7 @@ export default function ProductDetailPage() {
       },
     });
 
-  // --- queries ---
+  // ==== queries ====
   // Find product from product/all client cache -> if not found, fetch from db
   const { data: product, isLoading } = api.product.getById.useQuery(
     {
@@ -75,7 +75,7 @@ export default function ProductDetailPage() {
     },
   );
 
-  // --- effect & memo: options ---
+  // ==== effect & memo: options ====
 
   // Using all variants, derive the product options (e.g., { color: ["Red", "Blue"], logo: ["A", "B"] })
   // This runs only when the product data loads
@@ -120,7 +120,7 @@ export default function ProductDetailPage() {
     });
   }, [selectedOptions, product?.variants]);
 
-  // --- effect & memo: images ---
+  // ==== effect & memo: images ====
 
   // Calculate the list of images to display
   const activeImageList = useMemo(() => {
@@ -142,7 +142,7 @@ export default function ProductDetailPage() {
     }
   }, [activeImageList]);
 
-  // --- Conditional Rendering ---
+  // ==== Conditional Rendering ====
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 text-center">
@@ -155,14 +155,14 @@ export default function ProductDetailPage() {
     notFound();
   }
 
-  // --- constants ---
+  // ==== constants ====
   const displayPrice = selectedVariant
     ? formatCurrency(selectedVariant.price)
     : "N/A";
   const displayStock = selectedVariant?.stock ?? 0;
   const isOptionAvailable = !selectedVariant && product.variants.length > 0;
 
-  // --- Handlers ---
+  // ==== Handlers ====
   const handleOptionChange = (optionName: string, value: string) => {
     setSelectedOptions((prev) => ({
       ...prev,
