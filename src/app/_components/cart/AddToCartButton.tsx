@@ -20,7 +20,7 @@ export function AddToCartButton({
   const handleOpenModal = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    openModal(product, "add", undefined, initialOptions);
+    openModal(product, "add", undefined);
   };
 
   return (

@@ -6,7 +6,7 @@ import {
   UnclickableLabel,
   LabelContainer,
 } from "../filter/Label";
-import { productOrderOptions } from "~/const";
+import { productSortOptions } from "~/const";
 import { useProductFilterContext } from "~/app/_contexts/ProductFilterProvider";
 import type { FilterOption } from "~/type";
 
@@ -123,7 +123,7 @@ export default function ProductLabels({
     // Order Label
     let orderLabel: string | null = null;
     if (order) {
-      for (const group of productOrderOptions) {
+      for (const group of productSortOptions) {
         const foundOption = group.options.find((opt) => opt.urlInput === order);
         if (foundOption) {
           orderLabel = `${group.groupLabel}: ${foundOption.label}`;

@@ -47,7 +47,7 @@ export default function OrderFilters() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-6 xl:gap-6"
+      className="grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-5 xl:gap-6"
     >
       {/* Order ID Search */}
       <div className="col-span-2 flex w-full flex-col gap-2 sm:col-span-2 lg:col-span-2">
@@ -59,7 +59,7 @@ export default function OrderFilters() {
             </div>
             <input
               type="text"
-              placeholder="Search Order ID..."
+              // placeholder="Search Order ID..."
               value={id}
               onChange={(e) => {
                 setId(e.target.value);
@@ -136,7 +136,7 @@ export default function OrderFilters() {
               min="0"
               value={priceMin}
               onChange={(e) => setPriceMin(e.target.value)}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
+              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <input
               type="number"
@@ -144,7 +144,7 @@ export default function OrderFilters() {
               min="0"
               value={priceMax}
               onChange={(e) => setPriceMax(e.target.value)}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
+              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           </div>
         </div>

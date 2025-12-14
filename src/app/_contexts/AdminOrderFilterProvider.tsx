@@ -12,7 +12,7 @@ import {
   type SetStateAction,
 } from "react";
 
-type SellHistoryFilterContextType = {
+type AdminOrderFilterContextType = {
   id: string;
   setId: Dispatch<SetStateAction<string>>;
   dateMin: string;
@@ -38,18 +38,18 @@ type SellHistoryFilterContextType = {
   handleSearch: (overrides?: any) => void;
 };
 
-const SellHistoryFilterContext = createContext<
-  SellHistoryFilterContextType | undefined
+const AdminOrderFilterContext = createContext<
+  AdminOrderFilterContextType | undefined
 >(undefined);
 
-export function useSellHistoryFilterContext() {
-  const context = useContext(SellHistoryFilterContext);
+export function useAdminOrderFilterContext() {
+  const context = useContext(AdminOrderFilterContext);
   if (!context)
     throw new Error("useSellHistoryFilterContext must be used within provider");
   return context;
 }
 
-export function SellHistoryFilterProvider({
+export function AdminOrderFilterProvider({
   children,
 }: {
   children: ReactNode;
@@ -126,7 +126,7 @@ export function SellHistoryFilterProvider({
   };
 
   return (
-    <SellHistoryFilterContext.Provider
+    <AdminOrderFilterContext.Provider
       value={{
         id,
         setId,
@@ -154,6 +154,6 @@ export function SellHistoryFilterProvider({
       }}
     >
       {children}
-    </SellHistoryFilterContext.Provider>
+    </AdminOrderFilterContext.Provider>
   );
 }

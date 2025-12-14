@@ -1,8 +1,8 @@
 import type { FilterGroupOption } from "./type";
 
-export const reviewOrderOptions: FilterGroupOption[] = [
+export const reviewSortOptions: FilterGroupOption[] = [
   {
-    groupLabel: "Created Date",
+    groupLabel: "Date Posted",
     options: [
       { label: "New→Old", urlInput: "created-desc" },
       { label: "Old→New", urlInput: "created-asc" },
@@ -17,7 +17,7 @@ export const reviewOrderOptions: FilterGroupOption[] = [
   },
 ];
 
-export const productOrderOptions: FilterGroupOption[] = [
+export const productSortOptions: FilterGroupOption[] = [
   {
     groupLabel: "Price",
     options: [

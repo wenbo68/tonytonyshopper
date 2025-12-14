@@ -8,6 +8,8 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { AuthProvider } from "./AuthProvider";
 import { ReviewFilterProvider } from "./ReviewFilterProvider";
 import { ProductFilterProvider } from "./ProductFilterProvider";
+import { OrderFilterProvider } from "./OrderFilterProvider";
+import { AdminOrderFilterProvider } from "./AdminOrderFilterProvider";
 // import { AuthProvider } from './AuthContext';
 // import { MediaPopupProvider } from './MediaPopupContext';
 
@@ -19,7 +21,11 @@ export function ContextProviders({ children }: { children: ReactNode }) {
     <TRPCReactProvider>
       <AuthProvider>
         <ProductFilterProvider>
-          <ReviewFilterProvider>{children}</ReviewFilterProvider>
+          <AdminOrderFilterProvider>
+            <OrderFilterProvider>
+              <ReviewFilterProvider>{children}</ReviewFilterProvider>
+            </OrderFilterProvider>
+          </AdminOrderFilterProvider>
         </ProductFilterProvider>
       </AuthProvider>
     </TRPCReactProvider>

@@ -1,15 +1,14 @@
-// src/app/_components/admin/SellHistoryFilters.tsx
 "use client";
 
 import { useState } from "react";
-import { useSellHistoryFilterContext } from "~/app/_contexts/SellHistoryFilterProvider";
-import Filter from "../filter/Filter";
+import { useAdminOrderFilterContext } from "~/app/_contexts/AdminOrderFilterProvider";
 import type { FilterOption, FilterGroupOption } from "~/type";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoSearchSharp } from "react-icons/io5";
 import { FaXmark } from "react-icons/fa6";
+import Filter from "../../filter/Filter";
 
-export default function SellHistoryFilters() {
+export default function AdminOrderFilters() {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   const {
@@ -36,7 +35,7 @@ export default function SellHistoryFilters() {
     sort,
     setSort,
     handleSearch,
-  } = useSellHistoryFilterContext();
+  } = useAdminOrderFilterContext();
 
   const statusOptions: FilterOption[] = [
     { label: "Paid", urlInput: "paid" },
@@ -49,15 +48,15 @@ export default function SellHistoryFilters() {
     {
       groupLabel: "Date",
       options: [
-        { label: "Newest First", urlInput: "date-desc" },
-        { label: "Oldest First", urlInput: "date-asc" },
+        { label: "New-Old", urlInput: "date-desc" },
+        { label: "Old-New", urlInput: "date-asc" },
       ],
     },
     {
       groupLabel: "Price",
       options: [
-        { label: "High to Low", urlInput: "price-desc" },
-        { label: "Low to High", urlInput: "price-asc" },
+        { label: "High-Low", urlInput: "price-desc" },
+        { label: "Low-High", urlInput: "price-asc" },
       ],
     },
     {
@@ -91,7 +90,7 @@ export default function SellHistoryFilters() {
             </div>
             <input
               type="text"
-              placeholder="Search Order ID..."
+              // placeholder="Search Order ID..."
               value={id}
               onChange={(e) => setId(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -187,7 +186,7 @@ export default function SellHistoryFilters() {
               min="0"
               value={priceMin}
               onChange={(e) => setPriceMin(e.target.value)}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
+              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <input
               type="number"
@@ -195,7 +194,7 @@ export default function SellHistoryFilters() {
               min="0"
               value={priceMax}
               onChange={(e) => setPriceMax(e.target.value)}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
+              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           </div>
         </div>

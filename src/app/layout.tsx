@@ -29,6 +29,7 @@ export default function RootLayout({
         {/* <Suspense fallback={null}> */}
         <ContextProviders>
           <CartMergeHandler />
+          {/* we don't use zustand for order modal bc its only used directly in the orders & orders/admin page */}
           <ProductVariantModal />
           <TopNav />
           <main className="mx-auto w-full max-w-7xl grow px-2 pt-4 pb-10 sm:pt-5 sm:pb-11 md:pt-6 md:pb-12 lg:pt-7 lg:pb-13 xl:pt-8 xl:pb-14">
@@ -56,4 +57,7 @@ export default function RootLayout({
 // store card brand and last4 in db for each order
 
 // move addReview function to order history page
-// add details modal to each order in orders/page.tsx
+// combine shipping modal with order modal in admin page
+// add order item name filter in orders and admin page
+
+// make all filter labels show order/sort by default

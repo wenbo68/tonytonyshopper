@@ -2,7 +2,7 @@
 
 import { useProductFilterContext } from "~/app/_contexts/ProductFilterProvider";
 import Filter from "../filter/Filter";
-import { productOrderOptions } from "~/const";
+import { productSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoSearchSharp } from "react-icons/io5";
@@ -39,15 +39,6 @@ export default function ProductFilters({
     setOrder,
     handleSearch,
   } = useProductFilterContext();
-
-  // dropdown options for all filters
-  const ratingOptions: FilterOption[] = [
-    { label: "1 star", urlInput: "1" },
-    { label: "2 star", urlInput: "2" },
-    { label: "3 star", urlInput: "3" },
-    { label: "4 star", urlInput: "4" },
-    { label: "5 star", urlInput: "5" },
-  ];
 
   const stockOptions: FilterOption[] = [
     { label: "No options have stock", urlInput: "none" },
@@ -184,8 +175,8 @@ export default function ProductFilters({
           </div>
         </div>
         <Filter
-          label="Order"
-          options={productOrderOptions}
+          label="Sort By"
+          options={productSortOptions}
           isGroupOptions={true}
           value={order}
           onChange={setOrder}

@@ -1,13 +1,108 @@
 "use client";
 
-import SeedButton from "../../_components/SeedButton";
-import Products from "~/app/_components/product/Products";
+import { useSearchParams } from "next/navigation";
+import PageSelector from "~/app/_components/pagination/Pagination";
+import ProductCard from "~/app/_components/product/ProductCard";
+import ProductsSkeleton from "~/app/_components/product/ProductsSkeleton";
+import { gridClassName, ProductGrid } from "~/app/_components/ProductImageCard";
+import { api } from "~/trpc/react";
+import { getProductsInputSchema } from "~/type";
 
-export default function ProductPage() {
+export default function ProductsPage() {
+  const searchParams = useSearchParams();
+  const name = searchParams.get("name") ?? undefined;
+  const category = searchParams.getAll("category");
+  const minPrice = searchParams.get("minPrice")
+    ? Number(searchParams.get("minPrice"))
+    : undefined;
+  const maxPrice = searchParams.get("maxPrice")
+    ? Number(searchParams.get("maxPrice"))
+    : undefined;
+  const maxRating = searchParams.get("maxRating")
+    ? Number(searchParams.get("maxRating"))
+    : undefined;
+  const minRating = searchParams.get("minRating")
+    ? Number(searchParams.get("minRating"))
+    : undefined;
+  const stock = searchParams.getAll("stock");
+  const order = searchParams.get("order") ?? undefined;
+  const page = searchParams.get("page")
+    ? Number(searchParams.get("page"))
+    : undefined;
+
+  const rawInput = {
+    name,
+    category: category.length > 0 ? category : undefined,
+    minPrice,
+    maxPrice,
+    minRating,
+    maxRating,
+    stock: stock.length > 0 ? stock : undefined,
+    order,
+    page,
+    pageSize: 30,
+  };
+
+  const parsedInput = getProductsInputSchema.safeParse(rawInput);
+
+  // 4. Use the `useQuery` hook, but only enable it if parsing succeeded
+  const { data, isFetching } = api.product.search.useQuery(
+    parsedInput.success ? parsedInput.data : (undefined as any),
+    {
+      enabled: parsedInput.success,
+      staleTime: 0,
+      refetchOnWindowFocus: false,
+    },
+  );
+
+  if (!parsedInput.success) {
+    // You can optionally render an error state if the filters are somehow invalid
+    console.error("Zod validation failed:", parsedInput.error);
+    return (
+      <p className="font-semibold text-gray-300">Invalid search options.</p>
+    );
+  }
+
+  // 5. Show a skeleton while fetching new data
+  const skeletonCount = 5;
+
+  if (isFetching) {
+    return (
+      <ProductsSkeleton
+        gridClasses={gridClassName}
+        skeletonCount={skeletonCount}
+      />
+    );
+  }
+
+  // 6. Render the results
+  if (data && data.products.length > 0) {
+    // const pageMediaIds = data.pageMedia.map((m) => m.media.id);
+    // const uniquePageMediaIds = [...new Set(pageMediaIds)];
+
+    return (
+      <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
+        {/* Replaced manual grid div with ProductGrid */}
+        <ProductGrid>
+          {data.products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </ProductGrid>
+        <PageSelector
+          type="product"
+          currentPage={page ?? 1}
+          totalPages={data.totalPages}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-5">
-      <SeedButton />
-      <Products />
+    <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+      <p className="font-semibold text-gray-300">No results found.</p>
+      <p className="text-sm font-semibold">
+        No products found. Please check back later!
+      </p>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import type { ReactNode } from "react";
 
 export const gridClassName =
-  "grid grid-cols-2 gap-3 space-y-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5";
+  "grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 space-y-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5";
 
 // --- 1. The Grid Layout ---
 // Replaces the repeated grid classes in Products, Cart, and Orders

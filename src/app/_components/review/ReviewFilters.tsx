@@ -2,7 +2,7 @@
 
 import Filter from "../filter/Filter";
 import { useReviewFilterContext } from "~/app/_contexts/ReviewFilterProvider";
-import { reviewOrderOptions } from "~/const";
+import { reviewSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
 
 export default function ReviewFilters() {
@@ -41,7 +41,7 @@ export default function ReviewFilters() {
         />
         <Filter
           label="Order"
-          options={reviewOrderOptions}
+          options={reviewSortOptions}
           isGroupOptions={true}
           value={order}
           onChange={setOrder}

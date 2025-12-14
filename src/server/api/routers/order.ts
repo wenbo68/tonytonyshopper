@@ -186,7 +186,7 @@ export const orderRouter = createTRPCRouter({
   /**
    * Get filtered orders for the currently logged-in user.
    */
-  getMyOrders: protectedProcedure
+  getUserOrders: protectedProcedure
     .input(getOrdersInputSchema) // Use the new schema
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -258,6 +258,9 @@ export const orderRouter = createTRPCRouter({
         limit: pageSize,
         offset: (page - 1) * pageSize,
         with: {
+          user: {
+            columns: { name: true, email: true, image: true },
+          },
           orderItems: {
             with: {
               productVariant: {

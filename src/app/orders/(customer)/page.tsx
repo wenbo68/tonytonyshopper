@@ -1,75 +1,97 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+// import Image from "next/image";
 import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { formatCurrency, formatOptionsCaption } from "~/server/utils/product";
-import { useSearchParams } from "next/navigation";
 import PageSelector from "~/app/_components/pagination/Pagination";
-import { useState } from "react";
-import { getSellHistoryInputSchema } from "~/type";
-import OrderDetailsModal from "~/app/_components/order/OrderModal";
+import { useSearchParams } from "next/navigation";
+import { getOrdersInputSchema } from "~/type";
+import { FaCartPlus, FaUndo } from "react-icons/fa";
+import toast from "react-hot-toast";
 import {
   ImageCard,
+  OverlayButton,
   OverlayTag,
   ProductGrid,
-} from "~/app/_components/ProductImageCard";
-import { ShipOrderModal } from "~/app/_components/order/admin/ShipModal";
+} from "../../_components/ProductImageCard";
+import { useState } from "react";
+import OrderDetailsModal from "../../_components/order/OrderModal";
 
-type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
+// Infer type for better safety
+type Order = RouterOutputs["order"]["getUserOrders"]["orders"][number];
 
-export default function AdminOrdersPage() {
-  const { data: session, status } = useSession();
+export default function OrdersPage() {
+  const { status } = useSession();
   const searchParams = useSearchParams();
+  const utils = api.useUtils();
 
-  // --- Modal State ---
-  const [shippingOrder, setShippingOrder] = useState<AdminOrder | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  // states
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  // Parse params
+  // Parse URL params to match input schema
   const rawInput = {
     page: searchParams.get("page") ? Number(searchParams.get("page")) : 1,
-    pageSize: 20,
+    pageSize: 10,
     id: searchParams.get("id") ?? undefined,
+    status:
+      searchParams.getAll("status").length > 0
+        ? searchParams.getAll("status")
+        : undefined,
     dateMin: searchParams.get("dateMin") ?? undefined,
     dateMax: searchParams.get("dateMax") ?? undefined,
-    customerName: searchParams.get("customerName") ?? undefined,
-    customerEmail: searchParams.get("customerEmail") ?? undefined,
     priceMin: searchParams.get("priceMin")
       ? Number(searchParams.get("priceMin"))
       : undefined,
     priceMax: searchParams.get("priceMax")
       ? Number(searchParams.get("priceMax"))
       : undefined,
-    status:
-      searchParams.getAll("status").length > 0
-        ? searchParams.getAll("status")
-        : undefined,
     carrier: searchParams.get("carrier") ?? undefined,
     trackingNumber: searchParams.get("trackingNumber") ?? undefined,
-    sort: searchParams.get("sort") ?? undefined,
   };
 
-  const parsedInput = getSellHistoryInputSchema.safeParse(rawInput);
+  // Safely parse with Zod
+  const parsedInput = getOrdersInputSchema.safeParse(rawInput);
 
-  const { data, isLoading, refetch } = api.admin.getAllOrders.useQuery(
+  const { data, isLoading } = api.order.getUserOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
     {
-      enabled:
-        status === "authenticated" &&
-        session?.user?.role === "admin" &&
-        parsedInput.success,
+      enabled: status === "authenticated" && parsedInput.success,
     },
   );
 
+  // Mutation to add item to cart
+  const addToCartMutation = api.cart.add.useMutation({
+    onSuccess: () => {
+      toast.success("Added to cart");
+      utils.cart.get.invalidate();
+    },
+    onError: (e) => {
+      toast.error(e.message);
+    },
+  });
+
+  const handleAddToCart = (e: React.MouseEvent, variantId: string) => {
+    e.stopPropagation(); // Stop click from opening the modal
+    addToCartMutation.mutate({ productVariantId: variantId, quantity: 1 });
+  };
+
+  const handleReturn = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop click from opening the modal
+    toast("Return feature coming soon!", {
+      icon: "↩️",
+    });
+  };
+
   if (status === "loading" || isLoading) {
-    return <div className="py-10 text-center">Loading sales...</div>;
+    return <div className="py-10 text-center">Loading order history...</div>;
   }
 
-  if (status === "unauthenticated" || session?.user?.role !== "admin") {
+  if (status === "unauthenticated") {
     return (
-      <div className="py-10 text-center text-red-500">
-        Access Denied. Admins only.
+      <div className="py-10 text-center">
+        Please log in to view your orders.
       </div>
     );
   }
@@ -87,14 +109,7 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
-      {/* --- Modals --- */}
-      <ShipOrderModal
-        isOpen={!!shippingOrder}
-        order={shippingOrder}
-        onClose={() => setShippingOrder(null)}
-        onSuccess={() => refetch()}
-      />
-
+      {/* Modal */}
       <OrderDetailsModal
         order={selectedOrder}
         isOpen={!!selectedOrder}
@@ -132,12 +147,6 @@ export default function AdminOrdersPage() {
                   </button>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <label className="min-w-14 font-semibold">User:</label>
-                  <span className="">
-                    {order.user?.name ?? order.user?.email ?? order.guestEmail}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
                   <label className="min-w-14 font-semibold">Total:</label>
                   <span className="">{formatCurrency(order.totalAmount)}</span>
                 </div>
@@ -145,19 +154,9 @@ export default function AdminOrdersPage() {
                   <label className="min-w-14 font-semibold">Items:</label>
                   <span className="">{order.orderItems.length}</span>
                 </div>
-                <div className="flex justify-between">
-                  <div className="flex items-center gap-2 text-sm">
-                    <label className="min-w-14 font-semibold">Status:</label>
-                    <span className="capitalize">{order.status}</span>
-                  </div>
-                  {(order.status === "paid" || order.status === "shipped") && (
-                    <button
-                      className="hover: cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-400"
-                      onClick={() => setShippingOrder(order)}
-                    >
-                      Ship
-                    </button>
-                  )}
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="min-w-14 font-semibold">Status:</label>
+                  <span className="capitalize">{order.status}</span>
                 </div>
               </div>
 
@@ -177,6 +176,25 @@ export default function AdminOrdersPage() {
                         alt={product.name ?? "Product image"}
                         href={`/product/${variant.productId}`}
                       >
+                        {/* Return Button */}
+                        <OverlayButton
+                          position="topLeft"
+                          onClick={handleReturn}
+                          title="Return Item"
+                        >
+                          <FaUndo size={12} />
+                        </OverlayButton>
+
+                        {/* Buy Again Button */}
+                        <OverlayButton
+                          position="topRight"
+                          onClick={(e) => handleAddToCart(e, variant.id)}
+                          disabled={addToCartMutation.isPending}
+                          title="Buy Again"
+                        >
+                          <FaCartPlus size={14} />
+                        </OverlayButton>
+
                         {/* Price Tag */}
                         <OverlayTag position="bottomLeft">
                           {formatCurrency(item.priceAtPurchase)} x
@@ -217,3 +235,10 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
+
+// export default function OrderHistoryPage() {
+//   return (
+//       <OrderHistoryContent />
+//     </OrderFilterProvider>
+//   );
+// }

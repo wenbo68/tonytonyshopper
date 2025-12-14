@@ -7,7 +7,7 @@ import {
   LabelContainer,
 } from "../filter/Label";
 import { useReviewFilterContext } from "~/app/_contexts/ReviewFilterProvider";
-import { reviewOrderOptions } from "~/const";
+import { reviewSortOptions } from "~/const";
 
 type ActiveLabel = {
   key: string;
@@ -46,7 +46,7 @@ export default function ReviewLabels(
     // Order Label
     let orderLabel: string | null = null;
     if (order) {
-      for (const group of reviewOrderOptions) {
+      for (const group of reviewSortOptions) {
         const foundOption = group.options.find((opt) => opt.urlInput === order);
         if (foundOption) {
           orderLabel = `${group.groupLabel}: ${foundOption.label}`;

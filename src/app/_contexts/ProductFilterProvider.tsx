@@ -81,7 +81,7 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
   );
   const [stock, setStock] = useState(() => searchParams.getAll("stock"));
   const [order, setOrder] = useSessionStorageState(
-    "order",
+    "product-filter-order",
     searchParams.get("order") ?? "",
   );
 

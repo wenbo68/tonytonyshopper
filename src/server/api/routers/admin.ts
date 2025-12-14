@@ -25,6 +25,7 @@ import { updateProductVariantDenorms } from "~/server/utils/product"; // <--- 1.
 // import { Resend } from "resend"; // <--- Import Resend
 import { env } from "~/env";
 import { getSellHistoryInputSchema } from "~/type";
+import { TRPCError } from "@trpc/server";
 
 // Zod schema for a single variant
 const variantSchema = z.object({
@@ -221,7 +222,7 @@ export const adminRouter = createTRPCRouter({
   /**
    * Get all orders in the system (Admin Only) with Filters & Sorting
    */
-  getSellHistory: adminProcedure
+  getAllOrders: adminProcedure
     .input(getSellHistoryInputSchema) // Use new schema
     .query(async ({ ctx, input }) => {
       const {
@@ -381,7 +382,7 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  markAsShipped: adminProcedure
+  updateShippingInfo: adminProcedure
     .input(
       z.object({
         orderId: z.string(),
@@ -446,6 +447,44 @@ export const adminRouter = createTRPCRouter({
       //   // Don't block the UI if email fails, just log it
       //   console.error("Failed to send shipping email:", error);
       // }
+
+      return { success: true };
+    }),
+
+  revertToPaid: adminProcedure
+    .input(z.object({ orderId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (tx) => {
+        // 1️⃣ Fetch current status
+        const order = await tx.query.orders.findFirst({
+          where: eq(orders.id, input.orderId),
+          columns: { status: true },
+        });
+
+        if (!order) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Order not found",
+          });
+        }
+
+        if (order.status !== "shipped") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only shipped orders can be reverted to paid",
+          });
+        }
+
+        // 2️⃣ Update only if status was shipped
+        await tx
+          .update(orders)
+          .set({
+            status: "paid",
+            carrier: null,
+            trackingNumber: null,
+          })
+          .where(eq(orders.id, input.orderId));
+      });
 
       return { success: true };
     }),

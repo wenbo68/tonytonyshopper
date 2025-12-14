@@ -2,14 +2,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { useSellHistoryFilterContext } from "~/app/_contexts/SellHistoryFilterProvider";
+import { useAdminOrderFilterContext } from "~/app/_contexts/AdminOrderFilterProvider";
 import {
   ClickableLabel,
   LabelContainer,
   UnclickableLabel,
-} from "../filter/Label";
+} from "../../filter/Label";
 
-export default function SellHistoryLabels() {
+export default function AdminOrderLabels() {
   const {
     id,
     setId,
@@ -33,7 +33,7 @@ export default function SellHistoryLabels() {
     setTrackingNumber,
     sort,
     handleSearch,
-  } = useSellHistoryFilterContext();
+  } = useAdminOrderFilterContext();
 
   const activeLabels = useMemo(() => {
     const labels = [];
