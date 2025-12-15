@@ -6,10 +6,10 @@ import type { ReactNode } from "react";
 // import { FilterProvider } from '~/app/_contexts/SearchContext'; // Adjust the import path
 import { TRPCReactProvider } from "~/trpc/react";
 import { AuthProvider } from "./AuthProvider";
-import { ReviewFilterProvider } from "./ReviewFilterProvider";
-import { ProductFilterProvider } from "./ProductFilterProvider";
-import { OrderFilterProvider } from "./OrderFilterProvider";
-import { AdminOrderFilterProvider } from "./AdminOrderFilterProvider";
+import { ReviewFilterProvider } from "./filter/ReviewFilterProvider";
+import { ProductFilterProvider } from "./filter/ProductFilterProvider";
+import { OrderFilterProvider } from "./filter/OrderFilterProvider";
+import { AdminOrderFilterProvider } from "./filter/AdminOrderFilterProvider";
 // import { AuthProvider } from './AuthContext';
 // import { MediaPopupProvider } from './MediaPopupContext';
 

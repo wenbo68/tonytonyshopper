@@ -1,4 +1,3 @@
-// Path: ~/server/api/routers/stripe.ts
 import { z } from "zod";
 import {
   createTRPCRouter,

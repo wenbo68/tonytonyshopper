@@ -1,12 +1,12 @@
 "use client";
 
-import { useProductFilterContext } from "~/app/_contexts/ProductFilterProvider";
-import DropdownFilter from "../filter/DropdownFilter";
+import { useProductFilterContext } from "~/app/_contexts/filter/ProductFilterProvider";
+import DropdownFilter from "../DropdownFilter";
 import { productSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
 import { IoIosArrowDown } from "react-icons/io";
 import { useSessionStorageState } from "~/app/_hooks/useSessionStorage";
-import TextFilter from "../filter/TextFilter";
+import TextFilter from "../TextFilter";
 
 export default function ProductFilters({
   categoryOptions,
@@ -26,7 +26,7 @@ export default function ProductFilters({
     ratingMin,
     ratingMax,
     stock,
-    order,
+    sort,
     setName,
     setCategory,
     setminPrice,
@@ -34,7 +34,7 @@ export default function ProductFilters({
     setRatingMin,
     setRatingMax,
     setStock,
-    setOrder,
+    setSort,
     handleSearch,
   } = useProductFilterContext();
 
@@ -162,8 +162,8 @@ export default function ProductFilters({
           label="Sort By"
           options={productSortOptions}
           isGroupOptions={true}
-          value={order}
-          onChange={setOrder}
+          value={sort}
+          onChange={setSort}
           mode="single"
         />
       </div>

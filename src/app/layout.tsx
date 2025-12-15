@@ -5,10 +5,10 @@ import { Geist } from "next/font/google";
 
 // import { TRPCReactProvider } from '~/trpc/react';
 import { ContextProviders } from "./_contexts/ContextProviders";
-import { CartMergeHandler } from "./_components/cart/CartMergeHandler";
 import { TopNav } from "./_components/nav/TopNav";
 import { Toaster } from "react-hot-toast";
-import { ProductVariantModal } from "./_components/product/ProductVariantModal";
+import { ProductVariantModal } from "./_components/modal/ProductVariantModal";
+import { CartMergeHandler } from "./_components/CartMergeHandler";
 
 export const metadata: Metadata = {
   title: "TonyTonyShopper",
@@ -62,3 +62,7 @@ export default function RootLayout({
 // add number of items & item name filter in orders and admin page
 
 // make all filter labels show sort by default
+
+// filter context providers should not be global
+
+// create fallback skeletons for cart & orders page

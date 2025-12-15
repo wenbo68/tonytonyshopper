@@ -1,36 +1,36 @@
 "use client";
 
 import { useMemo } from "react";
-import { useOrderFilterContext } from "~/app/_contexts/OrderFilterProvider";
-import {
-  ClickablePill,
-  PillContainer,
-  UnclickablePill,
-} from "../filter/FilterPill";
+import { useAdminOrderFilterContext } from "~/app/_contexts/filter/AdminOrderFilterProvider";
+import { ClickablePill, PillContainer, UnclickablePill } from "../FilterPill";
 import type { PillConfig } from "~/type";
-import { orderSortOptions } from "~/const";
+import { adminOrderSortOptions } from "~/const";
 
-export default function OrderFilterPills() {
+export default function AdminOrderFilterPills() {
   const {
     id,
-    dateMin,
-    dateMax,
-    priceMin,
-    priceMax,
-    status,
-    carrier,
-    trackingNumber,
     setId,
+    dateMin,
     setDateMin,
+    dateMax,
     setDateMax,
+    customerName,
+    setCustomerName,
+    customerEmail,
+    setCustomerEmail,
+    priceMin,
     setPriceMin,
+    priceMax,
     setPriceMax,
+    status,
     setStatus,
+    carrier,
     setCarrier,
+    trackingNumber,
     setTrackingNumber,
     sort,
     handleSearch,
-  } = useOrderFilterContext();
+  } = useAdminOrderFilterContext();
 
   const { pillConfigs, sortLabel } = useMemo(() => {
     const configs: PillConfig[] = [];
@@ -67,6 +67,29 @@ export default function OrderFilterPills() {
           handleSearch({ dateMax: "" });
         },
         color: 2,
+      });
+    }
+
+    if (customerName) {
+      configs.push({
+        key: "name",
+        label: `Name: ${customerName}`,
+        onRemove: () => {
+          setCustomerName("");
+          handleSearch({ customerName: "" });
+        },
+        color: 3,
+      });
+    }
+    if (customerEmail) {
+      configs.push({
+        key: "email",
+        label: `Email: ${customerEmail}`,
+        onRemove: () => {
+          setCustomerEmail("");
+          handleSearch({ customerEmail: "" });
+        },
+        color: 3,
       });
     }
 
@@ -132,7 +155,7 @@ export default function OrderFilterPills() {
     // Sort Label
     let sortLabel: string | null = null;
     if (sort) {
-      for (const group of orderSortOptions) {
+      for (const group of adminOrderSortOptions) {
         const foundOption = group.options.find((opt) => opt.urlInput === sort);
         if (foundOption) {
           sortLabel = `${group.groupLabel}: ${foundOption.label}`;
@@ -146,6 +169,8 @@ export default function OrderFilterPills() {
     id,
     dateMin,
     dateMax,
+    customerName,
+    customerEmail,
     priceMin,
     priceMax,
     status,
@@ -154,12 +179,13 @@ export default function OrderFilterPills() {
     setId,
     setDateMin,
     setDateMax,
+    setCustomerName,
+    setCustomerEmail,
     setPriceMin,
     setPriceMax,
     setStatus,
     setCarrier,
     setTrackingNumber,
-    sort,
     handleSearch,
   ]);
 

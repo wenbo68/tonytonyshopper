@@ -1,17 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  ClickablePill,
-  UnclickablePill,
-  PillContainer,
-} from "../filter/FilterPill";
-import { useReviewFilterContext } from "~/app/_contexts/ReviewFilterProvider";
+import { ClickablePill, UnclickablePill, PillContainer } from "../FilterPill";
+import { useReviewFilterContext } from "~/app/_contexts/filter/ReviewFilterProvider";
 import { reviewSortOptions } from "~/const";
 import type { PillConfig } from "~/type";
 
 export default function ReviewFilterPills() {
-  const { rating, setRating, order, handleSearch } = useReviewFilterContext();
+  const { rating, setRating, sort, handleSearch } = useReviewFilterContext();
 
   const { pillConfigs, sortLabel } = useMemo(() => {
     const configs: PillConfig[] = [];
@@ -32,9 +28,9 @@ export default function ReviewFilterPills() {
 
     // Order Label
     let sortLabel: string | null = null;
-    if (order) {
+    if (sort) {
       for (const group of reviewSortOptions) {
-        const foundOption = group.options.find((opt) => opt.urlInput === order);
+        const foundOption = group.options.find((opt) => opt.urlInput === sort);
         if (foundOption) {
           sortLabel = `${group.groupLabel}: ${foundOption.label}`;
           break;
@@ -43,7 +39,7 @@ export default function ReviewFilterPills() {
     }
 
     return { pillConfigs: configs, sortLabel };
-  }, [rating, setRating, order, handleSearch]);
+  }, [rating, setRating, sort, handleSearch]);
 
   return (
     <PillContainer>

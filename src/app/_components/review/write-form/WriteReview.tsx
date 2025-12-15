@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
-import StarRating from "../../rating/StarRating";
+import StarRating from "../rating/StarRating";
 import type { UpdateCommentInput } from "~/type";
 import toast from "react-hot-toast";
 import { useProductContext } from "~/app/_contexts/ProductProvider";

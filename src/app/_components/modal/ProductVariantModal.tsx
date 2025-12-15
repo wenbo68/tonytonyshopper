@@ -8,14 +8,14 @@ import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 import Link from "next/link";
 import { FaPen } from "react-icons/fa";
-import StarRating from "../rating/StarRating";
+import StarRating from "../review/rating/StarRating";
 import { Dropdown } from "../Dropdown";
+import { ItemImage } from "../item/ItemImage";
 import {
-  ImageCard,
   OverlayLink,
   OverlayTag,
   OverlayTagGroup,
-} from "../ProductImageCard";
+} from "../item/ItemImageOverlays";
 
 export function ProductVariantModal() {
   const { data: session } = useSession();
@@ -186,7 +186,7 @@ export function ProductVariantModal() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-3">
-          <ImageCard
+          <ItemImage
             src={displayImage}
             alt={product.name ?? "Product image"}
             href={`/product/${product.id}`}
@@ -218,7 +218,7 @@ export function ProductVariantModal() {
                 stock: {displayStock}
               </OverlayTag>
             </OverlayTagGroup>
-          </ImageCard>
+          </ItemImage>
 
           <div className="flex flex-col items-center gap-0">
             {/* product name */}

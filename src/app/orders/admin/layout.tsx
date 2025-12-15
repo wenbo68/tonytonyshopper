@@ -1,5 +1,5 @@
-import AdminOrderFilters from "~/app/_components/order/admin/AdminOrderFilters";
-import AdminOrderFilterPills from "~/app/_components/order/admin/AdminOrderFilterPills";
+import AdminOrderFilters from "~/app/_components/filter/filters/AdminOrderFilters";
+import AdminOrderFilterPills from "~/app/_components/filter/filterPills/AdminOrderFilterPills";
 
 export default async function Layout({
   children,

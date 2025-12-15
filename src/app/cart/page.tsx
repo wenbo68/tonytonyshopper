@@ -14,12 +14,12 @@ import { useProductVariantModalStore } from "../_hooks/useVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
 import type { VariantAndProduct } from "~/type";
 import { FaPen, FaTrash } from "react-icons/fa";
+import { ItemImage } from "../_components/item/ItemImage";
+import { ItemGrid } from "../_components/item/ItemGrid";
 import {
-  ImageCard,
   OverlayButton,
   OverlayTag,
-  ProductGrid,
-} from "../_components/ProductImageCard";
+} from "../_components/item/ItemImageOverlays";
 
 type CartItem = {
   variant: VariantAndProduct;
@@ -167,7 +167,7 @@ export default function CartPage() {
       </div>
 
       {/* Grid Layout */}
-      <ProductGrid>
+      <ItemGrid>
         {cartItems.map((item) => {
           const variant = item.variant;
           const quantity = item.quantity;
@@ -177,7 +177,7 @@ export default function CartPage() {
 
           return (
             <div key={variant.id} className="flex flex-col gap-2">
-              <ImageCard
+              <ItemImage
                 src={image}
                 alt={variant.product.name}
                 href={`/product/${variant.product.id}`}
@@ -209,7 +209,7 @@ export default function CartPage() {
                 <OverlayTag position="bottomLeft">
                   {formatCurrency(variant.price)} x{quantity}
                 </OverlayTag>
-              </ImageCard>
+              </ItemImage>
 
               <div className="flex flex-col gap-0 px-1">
                 {/* ... name and options ... */}
@@ -226,7 +226,7 @@ export default function CartPage() {
             </div>
           );
         })}
-      </ProductGrid>
+      </ItemGrid>
 
       {/* Checkout Section */}
       <div className="sticky bottom-0 z-20 mt-auto border-t border-gray-800 bg-gray-950/90 py-4 backdrop-blur-md sm:relative">

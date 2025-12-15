@@ -1,30 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { useOrderFilterContext } from "~/app/_contexts/OrderFilterProvider";
-import DropdownFilter from "../filter/DropdownFilter";
+import { useAdminOrderFilterContext } from "~/app/_contexts/filter/AdminOrderFilterProvider";
 import type { FilterOption } from "~/type";
 import { IoIosArrowDown } from "react-icons/io";
-import TextFilter from "../filter/TextFilter";
+import DropdownFilter from "../DropdownFilter";
+import TextFilter from "../TextFilter"; // Adjust path as needed
+import { adminOrderSortOptions } from "~/const";
 import { isValidDate } from "~/server/utils/generic";
-import { orderSortOptions } from "~/const";
 
-export default function OrderFilters() {
+export default function AdminOrderFilters() {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   const {
     id,
     setId,
-    status,
-    setStatus,
     dateMin,
     setDateMin,
     dateMax,
     setDateMax,
+    customerName,
+    setCustomerName,
+    customerEmail,
+    setCustomerEmail,
     priceMin,
     setPriceMin,
     priceMax,
     setPriceMax,
+    status,
+    setStatus,
     carrier,
     setCarrier,
     trackingNumber,
@@ -32,7 +36,7 @@ export default function OrderFilters() {
     sort,
     setSort,
     handleSearch,
-  } = useOrderFilterContext();
+  } = useAdminOrderFilterContext();
 
   const statusOptions: FilterOption[] = [
     { label: "Paid", urlInput: "paid" },
@@ -48,7 +52,7 @@ export default function OrderFilters() {
 
   return (
     <form
-      id="order-filters"
+      id="admin-order-filters"
       onSubmit={handleSubmit}
       className="grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-5 xl:gap-6"
     >
@@ -82,9 +86,8 @@ export default function OrderFilters() {
         />
       </div>
 
-      {/* Collapsible Filters */}
+      {/* Collapsible Section */}
       <div className={`${isFilterVisible ? "contents" : "hidden"} sm:contents`}>
-        {/* Date Range */}
         <TextFilter
           label="Date: yyyy/mm/dd"
           inputs={[
@@ -102,6 +105,28 @@ export default function OrderFilters() {
               onChange: (val) => {
                 setDateMax(val);
                 if (isValidDate(val)) handleSearch({ dateMax: val });
+              },
+            },
+          ]}
+        />
+
+        <TextFilter
+          label="Customer"
+          inputs={[
+            {
+              value: customerName,
+              placeholder: "Name",
+              onChange: (val) => {
+                setCustomerName(val);
+                handleSearch({ customerName: val });
+              },
+            },
+            {
+              value: customerEmail,
+              placeholder: "Email",
+              onChange: (val) => {
+                setCustomerEmail(val);
+                handleSearch({ customerEmail: val });
               },
             },
           ]}
@@ -134,7 +159,6 @@ export default function OrderFilters() {
           ]}
         />
 
-        {/* Status Filter */}
         <DropdownFilter
           label="Status"
           options={statusOptions}
@@ -168,7 +192,7 @@ export default function OrderFilters() {
 
         <DropdownFilter
           label="Sort By"
-          options={orderSortOptions}
+          options={adminOrderSortOptions}
           isGroupOptions={true}
           value={sort}
           onChange={setSort}

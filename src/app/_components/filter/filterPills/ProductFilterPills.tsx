@@ -1,13 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  ClickablePill,
-  UnclickablePill,
-  PillContainer,
-} from "../filter/FilterPill";
+import { ClickablePill, UnclickablePill, PillContainer } from "../FilterPill";
 import { productSortOptions } from "~/const";
-import { useProductFilterContext } from "~/app/_contexts/ProductFilterProvider";
+import { useProductFilterContext } from "~/app/_contexts/filter/ProductFilterProvider";
 import type { FilterOption, PillConfig } from "~/type";
 
 export default function ProductFilterPills({
@@ -23,7 +19,7 @@ export default function ProductFilterPills({
     ratingMin,
     ratingMax,
     stock,
-    order,
+    sort: order,
     setName,
     setCategory,
     setminPrice,

@@ -14,14 +14,14 @@ export default function Reviews() {
   // 1. Get input from url (zod optional doesn't accept null so must use undefined)
   const searchParams = useSearchParams();
   const rating = searchParams.getAll("rating").map(Number);
-  const order = searchParams.get("order") ?? undefined;
+  const sort = searchParams.get("sort") ?? undefined;
   const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1; // must not let it default to 0 when page is empty string
 
   // 2. Construct the tRPC input object from the context state
   const rawInput = {
     productId,
     rating,
-    order,
+    sort,
     page,
     pageSize: 10,
   };

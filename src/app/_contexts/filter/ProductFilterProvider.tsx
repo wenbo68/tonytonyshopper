@@ -10,8 +10,19 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { useSessionStorageState } from "../_hooks/useSessionStorage";
+import { useSessionStorageState } from "../../_hooks/useSessionStorage";
 import { defaultProductSort } from "~/const";
+
+type Overrides = Partial<{
+  name: string;
+  categories: string[];
+  minPrice: string;
+  maxPrice: string;
+  ratingMin: string;
+  ratingMax: string;
+  stock: string[];
+  sort: string;
+}>;
 
 // Define the context type
 type ProductFilterContextType = {
@@ -29,20 +40,9 @@ type ProductFilterContextType = {
   setRatingMax: Dispatch<SetStateAction<string>>;
   stock: string[];
   setStock: Dispatch<SetStateAction<string[]>>;
-  order: string;
-  setOrder: Dispatch<SetStateAction<string>>;
-  handleSearch: (
-    overrides?: Partial<{
-      name: string;
-      categories: string[];
-      minPrice: string;
-      maxPrice: string;
-      ratingMin: string;
-      ratingMax: string;
-      stock: string[];
-      order: string;
-    }>,
-  ) => void;
+  sort: string;
+  setSort: Dispatch<SetStateAction<string>>;
+  handleSearch: (overrides?: Overrides) => void;
 };
 
 const ProductFilterContext = createContext<
@@ -81,9 +81,9 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     () => searchParams.get("ratingMax") ?? "",
   );
   const [stock, setStock] = useState(() => searchParams.getAll("stock"));
-  const [order, setOrder] = useSessionStorageState(
+  const [sort, setSort] = useSessionStorageState(
     "product-sort",
-    searchParams.get("order") ?? defaultProductSort,
+    searchParams.get("sort") ?? defaultProductSort,
   );
 
   // 2. sync url to states
@@ -95,22 +95,11 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     setRatingMin(searchParams.get("ratingMin") ?? "");
     setRatingMax(searchParams.get("ratingMax") ?? "");
     setStock(searchParams.getAll("stock"));
-    setOrder(searchParams.get("order") ?? defaultProductSort);
+    setSort(searchParams.get("sort") ?? defaultProductSort);
   }, [searchParams]);
 
   // 3. sync state (or arbitrary value) to url
-  type SearchParamsOverride = Partial<{
-    name: string;
-    categories: string[];
-    minPrice: string;
-    maxPrice: string;
-    ratingMin: string;
-    ratingMax: string;
-    stock: string[];
-    order: string;
-  }>;
-
-  const handleSearch = (overrides: SearchParamsOverride = {}) => {
+  const handleSearch = (overrides: Overrides = {}) => {
     const newParams = new URLSearchParams();
 
     // Use overrides if provided, otherwise fall back to state
@@ -122,7 +111,7 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     const finalRatingMin = overrides.ratingMin ?? ratingMin;
     const finalRatingMax = overrides.ratingMax ?? ratingMax;
     const finalStock = overrides.stock ?? stock;
-    const finalOrder = overrides.order ?? order;
+    const finalSort = overrides.sort ?? sort;
 
     // finalRating.forEach((v) => newParams.append("rating", v));
     if (finalName) newParams.set("name", finalName);
@@ -132,11 +121,11 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     if (finalRatingMin) newParams.set("ratingMin", finalRatingMin);
     if (finalRatingMax) newParams.set("ratingMax", finalRatingMax);
     finalStock.forEach((v) => newParams.append("stock", v));
-    if (finalOrder) {
-      newParams.set("order", finalOrder);
+    if (finalSort) {
+      newParams.set("sort", finalSort);
     } else {
-      setOrder(defaultProductSort);
-      newParams.set("order", defaultProductSort);
+      setSort(defaultProductSort);
+      newParams.set("sort", defaultProductSort);
     }
 
     // Always reset to page 1 for a new search
@@ -161,8 +150,8 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     setRatingMax,
     stock,
     setStock,
-    order,
-    setOrder,
+    sort,
+    setSort,
     handleSearch,
   };
 

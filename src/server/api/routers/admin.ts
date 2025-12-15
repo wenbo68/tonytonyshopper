@@ -24,7 +24,7 @@ import {
 import { updateProductVariantDenorms } from "~/server/utils/product"; // <--- 1. Import this
 // import { Resend } from "resend"; // <--- Import Resend
 import { env } from "~/env";
-import { getSellHistoryInputSchema } from "~/type";
+import { getAllOrdersInputSchema } from "~/type";
 import { TRPCError } from "@trpc/server";
 
 // Zod schema for a single variant
@@ -223,7 +223,7 @@ export const adminRouter = createTRPCRouter({
    * Get all orders in the system (Admin Only) with Filters & Sorting
    */
   getAllOrders: adminProcedure
-    .input(getSellHistoryInputSchema) // Use new schema
+    .input(getAllOrdersInputSchema) // Use new schema
     .query(async ({ ctx, input }) => {
       const {
         page,

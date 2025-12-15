@@ -47,7 +47,7 @@ export const productRouter = createTRPCRouter({
         ratingMin,
         ratingMax,
         stock,
-        order,
+        sort,
       } = input;
 
       const db = ctx.db;
@@ -124,7 +124,7 @@ export const productRouter = createTRPCRouter({
 
       // --- 2. Build Dynamic ORDER BY clause ---
       let orderByClause;
-      switch (order) {
+      switch (sort) {
         case "name-desc":
           orderByClause = desc(products.name);
           break;

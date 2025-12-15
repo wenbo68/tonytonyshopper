@@ -85,7 +85,7 @@ export const commentRouter = createTRPCRouter({
   getCommentTree: publicProcedure
     .input(GetCommentTreeInputSchema)
     .query(async ({ ctx, input }) => {
-      const { productId, rating, order, page, pageSize } = input;
+      const { productId, rating, sort, page, pageSize } = input;
 
       const conditions = [isNull(comments.parentId)];
       conditions.push(eq(comments.productId, productId));
@@ -106,7 +106,7 @@ export const commentRouter = createTRPCRouter({
       let topLevelOrderByClause;
       let finalOrderByClause;
 
-      switch (order) {
+      switch (sort) {
         case "rating-desc":
           topLevelOrderByClause = desc(comments.rating); // Use Drizzle's desc() helper
           finalOrderByClause = sql`root_rating DESC, "createdAt" ASC`;

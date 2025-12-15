@@ -1,10 +1,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { ItemGrid, itemGridClassName } from "~/app/_components/item/ItemGrid";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import ProductCard from "~/app/_components/product/ProductCard";
 import ProductsSkeleton from "~/app/_components/product/ProductsSkeleton";
-import { gridClassName, ProductGrid } from "~/app/_components/ProductImageCard";
 import { api } from "~/trpc/react";
 import { getProductsInputSchema } from "~/type";
 
@@ -25,7 +25,7 @@ export default function ProductsPage() {
     ? Number(searchParams.get("minRating"))
     : undefined;
   const stock = searchParams.getAll("stock");
-  const order = searchParams.get("order") ?? undefined;
+  const sort = searchParams.get("sort") ?? undefined;
   const page = searchParams.get("page")
     ? Number(searchParams.get("page"))
     : undefined;
@@ -38,7 +38,7 @@ export default function ProductsPage() {
     minRating,
     maxRating,
     stock: stock.length > 0 ? stock : undefined,
-    order,
+    sort,
     page,
     pageSize: 30,
   };
@@ -69,7 +69,7 @@ export default function ProductsPage() {
   if (isFetching) {
     return (
       <ProductsSkeleton
-        gridClasses={gridClassName}
+        gridClasses={itemGridClassName}
         skeletonCount={skeletonCount}
       />
     );
@@ -83,11 +83,11 @@ export default function ProductsPage() {
     return (
       <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
         {/* Replaced manual grid div with ProductGrid */}
-        <ProductGrid>
+        <ItemGrid>
           {data.products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
-        </ProductGrid>
+        </ItemGrid>
         <PageSelector
           type="product"
           currentPage={page ?? 1}

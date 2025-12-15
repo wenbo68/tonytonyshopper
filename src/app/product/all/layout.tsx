@@ -1,5 +1,5 @@
-import ProductFilters from "~/app/_components/product/ProductFilters";
-import ProductFilterPills from "~/app/_components/product/ProductFilterPills";
+import ProductFilters from "~/app/_components/filter/filters/ProductFilters";
+import ProductFilterPills from "~/app/_components/filter/filterPills/ProductFilterPills";
 import { api } from "~/trpc/server";
 
 export default async function Layout({

@@ -1,11 +1,11 @@
 "use client"; // 1. Make this a Client Component
 
-import ReviewFilters from "./ReviewFilters";
-import AvgRating from "../rating/AvgRating";
+import ReviewFilters from "../filter/filters/ReviewFilters";
+import AvgRating from "./rating/AvgRating";
 import WriteReview from "./write-form/WriteReview";
-import Reviews from "./reviews/Reviews";
-import ReviewFilterPills from "./ReviewFilterPills";
+import ReviewFilterPills from "../filter/filterPills/ReviewFilterPills";
 import { ProductProvider } from "~/app/_contexts/ProductProvider";
+import Reviews from "./reviews/Reviews";
 
 export default function ReviewSection({ productId }: { productId: string }) {
   return (

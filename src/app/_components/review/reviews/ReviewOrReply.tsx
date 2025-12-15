@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import Image from 'next/image';
-import type { CommentTree, UpdateCommentInput } from '~/type';
-import StarRating from '../../rating/StarRating';
-import { api } from '~/trpc/react';
-import WriteReply from '../write-form/WriteReply';
-import WriteReview from '../write-form/WriteReview';
-import { TbDotsVertical } from 'react-icons/tb';
-import { useMutationState } from '@tanstack/react-query';
-import { dequal } from 'dequal';
-import toast from 'react-hot-toast';
+import { useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import type { CommentTree, UpdateCommentInput } from "~/type";
+import StarRating from "../rating/StarRating";
+import { api } from "~/trpc/react";
+import WriteReply from "../write-form/WriteReply";
+import WriteReview from "../write-form/WriteReview";
+import { TbDotsVertical } from "react-icons/tb";
+import { useMutationState } from "@tanstack/react-query";
+import { dequal } from "dequal";
+import toast from "react-hot-toast";
 
 export default function ReviewOrReply({
   comment,
@@ -27,8 +27,8 @@ export default function ReviewOrReply({
   const [isEditing, setIsEditing] = useState(false);
   const [isWritingReply, setIsWritingReply] = useState(false);
 
-  const [updateError, setUpdateError] = useState('');
-  const [deleteError, setDeleteError] = useState('');
+  const [updateError, setUpdateError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -43,10 +43,10 @@ export default function ReviewOrReply({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
       // Cleanup the event listener on component unmount
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -103,17 +103,17 @@ export default function ReviewOrReply({
 
   const handleUpdate = ({ e, id, type, rating, text }: UpdateCommentInput) => {
     e.preventDefault();
-    if (type === 'review') {
+    if (type === "review") {
       if (rating === 0) {
-        setUpdateError('Please provide a rating.');
+        setUpdateError("Please provide a rating.");
         return;
       }
     }
-    if (text.trim() === '') {
-      setUpdateError('Please provide a valid comment.');
+    if (text.trim() === "") {
+      setUpdateError("Please provide a valid comment.");
       return;
     }
-    setUpdateError('');
+    setUpdateError("");
     updateMutation.mutate({
       id,
       text,
@@ -125,7 +125,7 @@ export default function ReviewOrReply({
 
   // Check if a reply is being added to this comment
   const pendingAddMutations = useMutationState({
-    filters: { status: 'pending' }, // We only care about pending mutations
+    filters: { status: "pending" }, // We only care about pending mutations
     // The predicate function gives us full control to inspect each mutation
     select: (mutation) => ({
       // We select both the key and the variables for our check
@@ -136,8 +136,8 @@ export default function ReviewOrReply({
   const isAddingReply = pendingAddMutations.some(
     (m) =>
       // dequal is a fast way to check if two arrays are identical
-      dequal(m.key?.[0], ['comment', 'add']) && // Does the path match?
-      m.variables?.parentId === comment.id // Does the parentId match?
+      dequal(m.key?.[0], ["comment", "add"]) && // Does the path match?
+      m.variables?.parentId === comment.id, // Does the parentId match?
   );
 
   // NEW: Create a single flag to know if this comment is busy
@@ -154,7 +154,7 @@ export default function ReviewOrReply({
     {
       display: !!session,
       // disabled: isAddingReply,
-      label: 'Reply',
+      label: "Reply",
       // disabledLabel: 'Replying',
       onClick: () => {
         setIsWritingReply((prev) => !prev);
@@ -164,7 +164,7 @@ export default function ReviewOrReply({
     {
       display: isAuthor,
       // disabled: updateMutation.isPending,
-      label: 'Edit',
+      label: "Edit",
       // disabledLabel: 'Editing',
       onClick: () => {
         setIsEditing(true);
@@ -174,7 +174,7 @@ export default function ReviewOrReply({
     {
       display: isAuthor,
       // disabled: updateMutation.isPending, // disable delete when updating
-      label: 'Delete',
+      label: "Delete",
       // disabledLabel: 'Deleting',
       onClick: () => {
         handleDelete();
@@ -184,7 +184,7 @@ export default function ReviewOrReply({
   ];
 
   return (
-    <div className={`bg-gray-900 rounded ${className ?? ''}`}>
+    <div className={`rounded bg-gray-900 ${className ?? ""}`}>
       {isEditing ? (
         comment.parentId ? (
           // rely edit mode: need an error here (bc handleUpdate is defined here)
@@ -226,13 +226,13 @@ export default function ReviewOrReply({
           {deleteError && <p className="text-sm text-red-400">{deleteError}</p>}
           <div className="flex gap-3">
             <Image
-              src={comment.user.image ?? ''}
-              alt={comment.user.name ?? 'User'}
+              src={comment.user.image ?? ""}
+              alt={comment.user.name ?? "User"}
               width={40}
               height={40}
-              className="w-8 h-8 rounded-full"
+              className="h-8 w-8 rounded-full"
             />
-            <div className="w-full flex flex-col gap-2">
+            <div className="flex w-full flex-col gap-2">
               <div className="flex flex-col">
                 <div className="flex justify-between">
                   {/* username */}
@@ -240,7 +240,7 @@ export default function ReviewOrReply({
                     {comment.user.name}
                   </p>
 
-                  <div className="relative flex gap-2 items-center">
+                  <div className="relative flex items-center gap-2">
                     {/* rating */}
                     {comment.rating ? (
                       <StarRating rating={comment.rating} interactive={false} />
@@ -266,7 +266,7 @@ export default function ReviewOrReply({
                                   key={option.label}
                                   type="button"
                                   onClick={option.onClick}
-                                  className={`w-full rounded p-2 text-left text-xs font-semibold hover:bg-gray-900 hover:text-blue-400 disabled:hover:bg-gray-800 disabled:hover:text-gray-400 transition-colors cursor-pointer disabled:cursor-default`}
+                                  className={`w-full cursor-pointer rounded p-2 text-left text-xs font-semibold transition-colors hover:bg-gray-900 hover:text-blue-400 disabled:cursor-default disabled:hover:bg-gray-800 disabled:hover:text-gray-400`}
                                 >
                                   {option.label}
                                 </button>
@@ -289,7 +289,7 @@ export default function ReviewOrReply({
                   <div className="flex gap-3 text-xs text-gray-500">
                     {/* time */}
                     <span className="">
-                      {new Date(comment.createdAt).toLocaleDateString('ja-JP')}
+                      {new Date(comment.createdAt).toLocaleDateString("ja-JP")}
                     </span>
                   </div>
                 )}
@@ -319,7 +319,7 @@ export default function ReviewOrReply({
             <ReviewOrReply
               key={reply.id}
               comment={reply}
-              className="pl-10 mt-5"
+              className="mt-5 pl-10"
             />
           ))}
         </div>

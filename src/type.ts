@@ -23,7 +23,6 @@ export type CommentAndUser = typeof comments.$inferSelect & {
     image: string | null;
   };
 };
-// return type of getCommentTree procedure
 export type CommentTree = CommentAndUser & {
   replies: CommentTree[];
 };
@@ -51,11 +50,10 @@ export type OrderAndOrderItemsAndVariantAndProduct =
   };
 
 // ==== search input schemas ====
-export const getSellHistoryInputSchema = z.object({
+export const getAllOrdersInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(20),
 
-  // Filters
   id: z.string().optional(),
   dateMin: z.string().optional(),
   dateMax: z.string().optional(),
@@ -69,7 +67,6 @@ export const getSellHistoryInputSchema = z.object({
   carrier: z.string().optional(),
   trackingNumber: z.string().optional(),
 
-  // Sort
   sort: z
     .enum([
       "date-desc",
@@ -84,33 +81,30 @@ export const getSellHistoryInputSchema = z.object({
     .optional()
     .default("date-desc"),
 });
-export type GetSellHistoryInput = z.infer<typeof getSellHistoryInputSchema>;
+export type GetAllOrdersInput = z.infer<typeof getAllOrdersInputSchema>;
 
-export const getOrdersInputSchema = z.object({
-  // Pagination
+export const getUserOrdersInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(10),
 
-  // Filters
   id: z.string().optional(),
   status: z
     .array(z.enum(["pending", "paid", "shipped", "cancelled"]))
     .optional(),
-  dateMin: z.string().optional(), // YYYY-MM-DD
-  dateMax: z.string().optional(), // YYYY-MM-DD
+  dateMin: z.string().optional(),
+  dateMax: z.string().optional(),
   priceMin: z.number().optional(),
   priceMax: z.number().optional(),
   carrier: z.string().optional(),
   trackingNumber: z.string().optional(),
 
-  // Sorting (Optional, defaulting to Date DESC)
   sort: z
-    .enum(["date-desc", "date-asc", "total-desc", "total-asc"])
+    .enum(["date-desc", "date-asc", "price-desc", "price-asc"])
     .optional()
     .default("date-desc"),
 });
 
-export const productOrderEnum = z.enum([
+export const productSortEnum = z.enum([
   "name-asc",
   "name-desc",
   "price-asc",
@@ -120,13 +114,12 @@ export const productOrderEnum = z.enum([
   "created-asc",
   "created-desc",
 ]);
-export type ProductOrderEnum = z.infer<typeof productOrderEnum>;
+export type ProductSortEnum = z.infer<typeof productSortEnum>;
 
 export const getProductsInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(20),
 
-  // Filters
   name: z.string().optional(),
   categories: z.array(z.string()).optional(),
   minPrice: z.number().optional(),
@@ -135,15 +128,15 @@ export const getProductsInputSchema = z.object({
   ratingMax: z.number().min(1).max(5).optional(),
   stock: z.array(StockEnum).optional(),
 
-  // Sorting
-  order: productOrderEnum.optional().default("created-desc"),
+  // Changed from order to sort
+  sort: productSortEnum.optional().default("created-desc"),
 });
 
-// input type of getCommentTree procedure
 export const GetCommentTreeInputSchema = z.object({
   productId: z.string(),
   rating: z.array(z.number()).optional(),
-  order: z.string().optional().default("created-desc"),
+  // Changed from order to sort
+  sort: z.string().optional().default("created-desc"),
   page: z.number().min(1),
   pageSize: z.number().min(1),
 });
@@ -154,8 +147,6 @@ export type GetCommentTreeInput = z.infer<typeof GetCommentTreeInputSchema>;
 // Frontend Types
 // ==================================
 
-// ==== comment =====
-// used for handleUpdate() when clicking edit on review/reply
 export type UpdateCommentInput = {
   e: React.FormEvent;
   id: string;
@@ -171,7 +162,6 @@ export type UpdateCommentInput = {
     }
 );
 
-// ==== filter types ====
 export type FilterOption = { label: string; urlInput: string };
 export type FilterGroupOption = { groupLabel: string; options: FilterOption[] };
 export type PillConfig = {

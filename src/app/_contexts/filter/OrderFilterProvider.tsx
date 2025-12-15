@@ -11,8 +11,20 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { useSessionStorageState } from "../_hooks/useSessionStorage";
+import { useSessionStorageState } from "../../_hooks/useSessionStorage";
 import { defaultOrderSort } from "~/const";
+
+type Overrides = Partial<{
+  id: string;
+  status: string[];
+  dateMin: string;
+  dateMax: string;
+  priceMin: string;
+  priceMax: string;
+  carrier: string;
+  trackingNumber: string;
+  sort: string;
+}>;
 
 type OrderFilterContextType = {
   id: string;
@@ -33,7 +45,7 @@ type OrderFilterContextType = {
   setTrackingNumber: Dispatch<SetStateAction<string>>;
   sort: string;
   setSort: Dispatch<SetStateAction<string>>;
-  handleSearch: (overrides?: any) => void;
+  handleSearch: (overrides?: Overrides) => void;
 };
 
 const OrderFilterContext = createContext<OrderFilterContextType | undefined>(
@@ -94,7 +106,7 @@ export function OrderFilterProvider({ children }: { children: ReactNode }) {
     setSort(searchParams.get("sort") ?? defaultOrderSort);
   }, [searchParams]);
 
-  const handleSearch = (overrides: any = {}) => {
+  const handleSearch = (overrides: Overrides = {}) => {
     const newParams = new URLSearchParams();
 
     const finalId = overrides.id ?? id;

@@ -10,14 +10,12 @@ import {
 import { useSearchParams } from "next/navigation";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useState } from "react";
-import { getSellHistoryInputSchema } from "~/type";
-import OrderDetailsModal from "~/app/_components/order/OrderModal";
-import {
-  ImageCard,
-  OverlayTag,
-  ProductGrid,
-} from "~/app/_components/ProductImageCard";
-import { ShipOrderModal } from "~/app/_components/order/admin/ShipModal";
+import { getAllOrdersInputSchema } from "~/type";
+import OrderDetailsModal from "~/app/_components/modal/OrderModal";
+import { ItemImage } from "~/app/_components/item/ItemImage";
+import { ShipOrderModal } from "~/app/_components/modal/ShipModal";
+import { ItemGrid } from "~/app/_components/item/ItemGrid";
+import { OverlayTag } from "~/app/_components/item/ItemImageOverlays";
 
 type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
@@ -53,7 +51,7 @@ export default function AdminOrdersPage() {
     sort: searchParams.get("sort") ?? undefined,
   };
 
-  const parsedInput = getSellHistoryInputSchema.safeParse(rawInput);
+  const parsedInput = getAllOrdersInputSchema.safeParse(rawInput);
 
   const { data, isLoading, refetch } = api.admin.getAllOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
@@ -171,7 +169,7 @@ export default function AdminOrdersPage() {
                 </div>
 
                 {/* Order Items Grid */}
-                <ProductGrid>
+                <ItemGrid>
                   {order.orderItems.map((item) => {
                     const variant = item.productVariant;
                     const product = variant.product;
@@ -181,7 +179,7 @@ export default function AdminOrdersPage() {
 
                     return (
                       <div key={item.id} className="flex flex-col gap-2">
-                        <ImageCard
+                        <ItemImage
                           src={imageUrl}
                           alt={product.name ?? "Product image"}
                           href={`/product/${variant.productId}`}
@@ -191,7 +189,7 @@ export default function AdminOrdersPage() {
                             {formatCurrency(item.priceAtPurchase)} x
                             {item.quantity}
                           </OverlayTag>
-                        </ImageCard>
+                        </ItemImage>
 
                         <div className="flex flex-col gap-0 px-1">
                           {/* ... Name and Options ... */}
@@ -209,7 +207,7 @@ export default function AdminOrdersPage() {
                       </div>
                     );
                   })}
-                </ProductGrid>
+                </ItemGrid>
               </div>
               {order !== orders[orders.length - 1] && (
                 <hr className="border-gray-800" />

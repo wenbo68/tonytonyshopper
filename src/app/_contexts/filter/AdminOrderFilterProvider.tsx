@@ -11,8 +11,22 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { useSessionStorageState } from "../_hooks/useSessionStorage";
+import { useSessionStorageState } from "../../_hooks/useSessionStorage";
 import { defaultOrderSort } from "~/const";
+
+type Overrides = Partial<{
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  dateMin: string;
+  dateMax: string;
+  priceMin: string;
+  priceMax: string;
+  status: string[];
+  carrier: string;
+  trackingNumber: string;
+  sort: string;
+}>;
 
 type AdminOrderFilterContextType = {
   id: string;
@@ -37,21 +51,7 @@ type AdminOrderFilterContextType = {
   setTrackingNumber: Dispatch<SetStateAction<string>>;
   sort: string;
   setSort: Dispatch<SetStateAction<string>>;
-  handleSearch: (
-    overrides?: Partial<{
-      id: string;
-      customerName: string;
-      customerEmail: string;
-      dateMin: string;
-      dateMax: string;
-      priceMin: string;
-      priceMax: string;
-      status: string[];
-      carrier: string;
-      trackingNumber: string;
-      sort: string;
-    }>,
-  ) => void;
+  handleSearch: (overrides?: Overrides) => void;
 };
 
 const AdminOrderFilterContext = createContext<
@@ -111,39 +111,33 @@ export function AdminOrderFilterProvider({
   }, [searchParams]);
 
   // Sync State -> URL
-  const handleSearch = (overrides: any = {}) => {
+  const handleSearch = (overrides: Overrides = {}) => {
     const newParams = new URLSearchParams();
-    const v = (key: string, val: any, defaultVal: any) =>
-      overrides[key] ?? val ?? defaultVal;
 
-    const fId = v("id", id, "");
-    const fDateMin = v("dateMin", dateMin, "");
-    const fDateMax = v("dateMax", dateMax, "");
-    const fName = v("customerName", customerName, "");
-    const fEmail = v("customerEmail", customerEmail, "");
-    const fPriceMin = v("priceMin", priceMin, "");
-    const fPriceMax = v("priceMax", priceMax, "");
-    const fStatus = overrides.status ?? status;
-    const fCarrier = v("carrier", carrier, "");
-    const fTracking = v("trackingNumber", trackingNumber, "");
-    const fSort = v("sort", sort, "date-desc");
+    const finalId = overrides.id ?? id;
+    const finalCustomerName = overrides.customerName ?? customerName;
+    const finalCustomerEmail = overrides.customerEmail ?? customerEmail;
+    const finalDateMin = overrides.dateMin ?? dateMin;
+    const finalDateMax = overrides.dateMax ?? dateMax;
+    const finalPriceMin = overrides.priceMin ?? priceMin;
+    const finalPriceMax = overrides.priceMax ?? priceMax;
+    const finalStatus = overrides.status ?? status;
+    const finalCarrier = overrides.carrier ?? carrier;
+    const finalTrackingNumber = overrides.trackingNumber ?? trackingNumber;
+    const finalSort = overrides.sort ?? sort;
 
-    if (fId) newParams.set("id", fId);
-    if (fDateMin) newParams.set("dateMin", fDateMin);
-    if (fDateMax) newParams.set("dateMax", fDateMax);
-    if (fName) newParams.set("customerName", fName);
-    if (fEmail) newParams.set("customerEmail", fEmail);
-    if (fPriceMin) newParams.set("priceMin", fPriceMin);
-    if (fPriceMax) newParams.set("priceMax", fPriceMax);
-    fStatus.forEach((s: string) => newParams.append("status", s));
-    if (fCarrier) newParams.set("carrier", fCarrier);
-    if (fTracking) newParams.set("trackingNumber", fTracking);
-    if (fSort) {
-      newParams.set("sort", fSort);
-    } else {
-      setSort(defaultOrderSort);
-      newParams.set("sort", defaultOrderSort);
-    }
+    if (finalId) newParams.set("id", finalId);
+    if (finalCustomerName) newParams.set("customerName", finalCustomerName);
+    if (finalCustomerEmail) newParams.set("customerEmail", finalCustomerEmail);
+    if (finalDateMin) newParams.set("dateMin", finalDateMin);
+    if (finalDateMax) newParams.set("dateMax", finalDateMax);
+    if (finalPriceMin) newParams.set("priceMin", finalPriceMin);
+    if (finalPriceMax) newParams.set("priceMax", finalPriceMax);
+    finalStatus.forEach((s: string) => newParams.append("status", s));
+    if (finalCarrier) newParams.set("carrier", finalCarrier);
+    if (finalTrackingNumber)
+      newParams.set("trackingNumber", finalTrackingNumber);
+    if (finalSort) newParams.set("sort", finalSort);
 
     newParams.set("page", "1"); // Reset page
     router.push(`/orders/admin?${newParams.toString()}`);

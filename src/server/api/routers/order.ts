@@ -21,11 +21,12 @@ import {
   ilike,
   lte,
   gte,
+  asc,
 } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { Stripe } from "stripe";
 import { env } from "~/env.js";
-import { getOrdersInputSchema } from "~/type";
+import { getUserOrdersInputSchema } from "~/type";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
@@ -187,7 +188,7 @@ export const orderRouter = createTRPCRouter({
    * Get filtered orders for the currently logged-in user.
    */
   getUserOrders: protectedProcedure
-    .input(getOrdersInputSchema) // Use the new schema
+    .input(getUserOrdersInputSchema) // Use the new schema
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
       const {
@@ -201,6 +202,7 @@ export const orderRouter = createTRPCRouter({
         priceMax,
         carrier,
         trackingNumber,
+        sort,
       } = input;
 
       // 1. Build Conditions
@@ -242,6 +244,24 @@ export const orderRouter = createTRPCRouter({
       }
 
       const whereClause = and(...conditions);
+
+      // 2. Build Sort Clause
+      let orderByClause;
+      switch (sort) {
+        case "date-asc":
+          orderByClause = asc(orders.createdAt);
+          break;
+        case "price-desc":
+          orderByClause = desc(orders.totalAmount);
+          break;
+        case "price-asc":
+          orderByClause = asc(orders.totalAmount);
+          break;
+        case "date-desc":
+        default:
+          orderByClause = desc(orders.createdAt);
+          break;
+      }
 
       // 2. Pagination: Get total count
       const [totalResult] = await ctx.db

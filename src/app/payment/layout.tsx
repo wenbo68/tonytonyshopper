@@ -1,4 +1,4 @@
-import BackButton from "../_components/BackButton";
+import BackButton from "../_components/button/BackButton";
 
 export default async function Layout({
   children,

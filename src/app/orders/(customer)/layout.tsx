@@ -1,8 +1,8 @@
 // import ProductFilters from "~/app/_components/product/ProductFilters";
 // import ProductLabels from "~/app/_components/product/ProductLabels";
 // import { api } from "~/trpc/server";
-import OrderFilters from "../../_components/order/OrderFilters";
-import OrderFilterPills from "../../_components/order/OrderFilterPills";
+import OrderFilters from "../../_components/filter/filters/OrderFilters";
+import OrderFilterPills from "../../_components/filter/filterPills/OrderFilterPills";
 // import { OrderFilterProvider } from "../_contexts/OrderFilterProvider";
 
 export default async function Layout({

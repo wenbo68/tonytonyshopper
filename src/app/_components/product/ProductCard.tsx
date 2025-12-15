@@ -3,19 +3,19 @@
 
 import Link from "next/link";
 import { formatCurrency, formatNumber } from "~/server/utils/product";
-import { AddToCartButton } from "../cart/AddToCartButton";
-import StarRating from "../rating/StarRating";
+import { AddToCartButton } from "../button/AddToCartButton";
+import StarRating from "../review/rating/StarRating";
 import type { ProductAndVariants } from "~/type";
 import { useSession } from "next-auth/react";
 import { FaPen } from "react-icons/fa";
 import { FaCartPlus } from "react-icons/fa6";
+import { ItemImage } from "../item/ItemImage"; // Import shared UI
 import {
-  ImageCard,
+  circularOverlayClass,
   OverlayLink,
+  overlayPositionClasses,
   OverlayTag,
-  overlayButtonClass,
-  positionClasses,
-} from "../ProductImageCard"; // Import shared UI
+} from "../item/ItemImageOverlays";
 
 export default function ProductCard({
   product,
@@ -37,7 +37,7 @@ export default function ProductCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <ImageCard src={image} alt={product.name} href={`/product/${product.id}`}>
+      <ItemImage src={image} alt={product.name} href={`/product/${product.id}`}>
         {/* Edit Button */}
         {session?.user?.role === "admin" && (
           <OverlayLink
@@ -53,7 +53,7 @@ export default function ProductCard({
         <AddToCartButton
           product={product}
           // Combine shared overlay class with positioning
-          className={`${overlayButtonClass} ${positionClasses.topRight}`}
+          className={`${circularOverlayClass} ${overlayPositionClasses.topRight}`}
         >
           <FaCartPlus size={14} />
         </AddToCartButton>
@@ -64,7 +64,7 @@ export default function ProductCard({
             ? formatCurrency(variant.price)
             : `From ${formatCurrency(product.minPrice)}`}
         </OverlayTag>
-      </ImageCard>
+      </ItemImage>
 
       <div className="flex flex-col gap-0">
         <Link

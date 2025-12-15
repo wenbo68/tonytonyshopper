@@ -10,17 +10,17 @@ import {
 } from "~/server/utils/product";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useSearchParams } from "next/navigation";
-import { getOrdersInputSchema } from "~/type";
+import { getUserOrdersInputSchema } from "~/type";
 import { FaCartPlus, FaUndo } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { ItemImage } from "../../_components/item/ItemImage";
+import { useState } from "react";
+import OrderDetailsModal from "../../_components/modal/OrderModal";
+import { ItemGrid } from "~/app/_components/item/ItemGrid";
 import {
-  ImageCard,
   OverlayButton,
   OverlayTag,
-  ProductGrid,
-} from "../../_components/ProductImageCard";
-import { useState } from "react";
-import OrderDetailsModal from "../../_components/order/OrderModal";
+} from "~/app/_components/item/ItemImageOverlays";
 
 // Infer type for better safety
 type Order = RouterOutputs["order"]["getUserOrders"]["orders"][number];
@@ -55,7 +55,7 @@ export default function OrdersPage() {
   };
 
   // Safely parse with Zod
-  const parsedInput = getOrdersInputSchema.safeParse(rawInput);
+  const parsedInput = getUserOrdersInputSchema.safeParse(rawInput);
 
   const { data, isLoading } = api.order.getUserOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
@@ -164,7 +164,7 @@ export default function OrdersPage() {
               </div>
 
               {/* Order Items Grid */}
-              <ProductGrid>
+              <ItemGrid>
                 {order.orderItems.map((item) => {
                   const variant = item.productVariant;
                   const product = variant.product;
@@ -174,7 +174,7 @@ export default function OrdersPage() {
 
                   return (
                     <div key={item.id} className="flex flex-col gap-2">
-                      <ImageCard
+                      <ItemImage
                         src={imageUrl}
                         alt={product.name ?? "Product image"}
                         href={`/product/${variant.productId}`}
@@ -203,7 +203,7 @@ export default function OrdersPage() {
                           {formatCurrency(item.priceAtPurchase)} x
                           {item.quantity}
                         </OverlayTag>
-                      </ImageCard>
+                      </ItemImage>
 
                       <div className="flex flex-col gap-0 px-1">
                         {/* ... Name and Options ... */}
@@ -221,7 +221,7 @@ export default function OrdersPage() {
                     </div>
                   );
                 })}
-              </ProductGrid>
+              </ItemGrid>
             </div>
             {order !== orders[orders.length - 1] && (
               <hr className="border-gray-800" />
