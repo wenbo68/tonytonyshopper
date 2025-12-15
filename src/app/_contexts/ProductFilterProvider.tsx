@@ -11,6 +11,7 @@ import {
   type SetStateAction,
 } from "react";
 import { useSessionStorageState } from "../_hooks/useSessionStorage";
+import { defaultProductSort } from "~/const";
 
 // Define the context type
 type ProductFilterContextType = {
@@ -81,8 +82,8 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
   );
   const [stock, setStock] = useState(() => searchParams.getAll("stock"));
   const [order, setOrder] = useSessionStorageState(
-    "product-filter-order",
-    searchParams.get("order") ?? "",
+    "product-sort",
+    searchParams.get("order") ?? defaultProductSort,
   );
 
   // 2. sync url to states
@@ -94,7 +95,7 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     setRatingMin(searchParams.get("ratingMin") ?? "");
     setRatingMax(searchParams.get("ratingMax") ?? "");
     setStock(searchParams.getAll("stock"));
-    setOrder(searchParams.get("order") ?? "");
+    setOrder(searchParams.get("order") ?? defaultProductSort);
   }, [searchParams]);
 
   // 3. sync state (or arbitrary value) to url
@@ -134,14 +135,14 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     if (finalOrder) {
       newParams.set("order", finalOrder);
     } else {
-      setOrder("created-desc");
-      newParams.set("order", "created-desc");
+      setOrder(defaultProductSort);
+      newParams.set("order", defaultProductSort);
     }
 
     // Always reset to page 1 for a new search
     newParams.set("page", "1");
 
-    const url = `/product/all?${newParams.toString()}#product-filters`;
+    const url = `/product/all?${newParams.toString()}`;
     router.push(url);
   };
 

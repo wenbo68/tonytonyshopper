@@ -3,7 +3,10 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { formatCurrency, formatOptionsCaption } from "~/server/utils/product";
+import {
+  formatCurrency,
+  formatProductOptionsCaption,
+} from "~/server/utils/product";
 import { useSearchParams } from "next/navigation";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useState } from "react";
@@ -78,15 +81,15 @@ export default function AdminOrdersPage() {
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-bold">No Orders Found</h2>
-        <p className="">Try adjusting your search filters.</p>
+      <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+        <p className="font-semibold text-gray-300">No results found.</p>
+        <p className="text-sm font-semibold">Please check back later!</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
+    <>
       {/* --- Modals --- */}
       <ShipOrderModal
         isOpen={!!shippingOrder}
@@ -101,119 +104,126 @@ export default function AdminOrdersPage() {
         onClose={() => setSelectedOrder(null)}
       />
 
-      {/* orders */}
-      {orders.map((order) => {
-        return (
-          <div
-            key={order.id}
-            className="flex flex-col gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8"
-          >
-            <div className="flex flex-col gap-3">
-              {/* Order Header */}
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between">
-                  <div className="flex items-center gap-2 text-sm">
-                    <label className="min-w-14 font-semibold">Date:</label>
-                    <span className="">
-                      {new Date(order.createdAt).toLocaleString("ja-JP", {
-                        year: "numeric",
-                        month: "numeric",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <button
-                    className="hover: cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-400"
-                    onClick={() => setSelectedOrder(order)}
-                  >
-                    More Info
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <label className="min-w-14 font-semibold">User:</label>
-                  <span className="">
-                    {order.user?.name ?? order.user?.email ?? order.guestEmail}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <label className="min-w-14 font-semibold">Total:</label>
-                  <span className="">{formatCurrency(order.totalAmount)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <label className="min-w-14 font-semibold">Items:</label>
-                  <span className="">{order.orderItems.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <div className="flex items-center gap-2 text-sm">
-                    <label className="min-w-14 font-semibold">Status:</label>
-                    <span className="capitalize">{order.status}</span>
-                  </div>
-                  {(order.status === "paid" || order.status === "shipped") && (
+      <div className="flex flex-col gap-7 sm:gap-8 md:gap-9 lg:gap-10 xl:gap-11">
+        {/* orders */}
+        {orders.map((order) => {
+          return (
+            <div
+              key={order.id}
+              className="flex flex-col gap-5 sm:gap-6 md:gap-7 lg:gap-8 xl:gap-9"
+            >
+              <div className="flex flex-col gap-3">
+                {/* Order Header */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      <label className="min-w-14 font-semibold">Date:</label>
+                      <span className="">
+                        {new Date(order.createdAt).toLocaleString("ja-JP", {
+                          year: "numeric",
+                          month: "numeric",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
                     <button
                       className="hover: cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-400"
-                      onClick={() => setShippingOrder(order)}
+                      onClick={() => setSelectedOrder(order)}
                     >
-                      Ship
+                      More Info
                     </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Order Items Grid */}
-              <ProductGrid>
-                {order.orderItems.map((item) => {
-                  const variant = item.productVariant;
-                  const product = variant.product;
-                  const imageUrl =
-                    variant.images?.[0] ??
-                    "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
-
-                  return (
-                    <div key={item.id} className="flex flex-col gap-2">
-                      <ImageCard
-                        src={imageUrl}
-                        alt={product.name ?? "Product image"}
-                        href={`/product/${variant.productId}`}
-                      >
-                        {/* Price Tag */}
-                        <OverlayTag position="bottomLeft">
-                          {formatCurrency(item.priceAtPurchase)} x
-                          {item.quantity}
-                        </OverlayTag>
-                      </ImageCard>
-
-                      <div className="flex flex-col gap-0 px-1">
-                        {/* ... Name and Options ... */}
-                        <Link
-                          href={`/product/${variant.productId}`}
-                          className="line-clamp-1 text-sm font-semibold hover:text-blue-400"
-                          onClick={(e) => e.stopPropagation()} // Prevent modal opening
-                        >
-                          {product.name}
-                        </Link>
-                        <p className="line-clamp-1 text-xs text-gray-500 capitalize">
-                          {formatOptionsCaption(variant.options)}
-                        </p>
-                      </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <label className="min-w-14 font-semibold">Cstmr:</label>
+                    <span className="">
+                      {order.user?.name ??
+                        order.user?.email ??
+                        order.guestEmail}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <label className="min-w-14 font-semibold">Items:</label>
+                    <span className="">{order.orderItems.length}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <label className="min-w-14 font-semibold">Total:</label>
+                    <span className="">
+                      {formatCurrency(order.totalAmount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      <label className="min-w-14 font-semibold">Status:</label>
+                      <span className="capitalize">{order.status}</span>
                     </div>
-                  );
-                })}
-              </ProductGrid>
-            </div>
-            {order !== orders[orders.length - 1] && (
-              <hr className="border-gray-800" />
-            )}
-          </div>
-        );
-      })}
+                    {(order.status === "paid" ||
+                      order.status === "shipped") && (
+                      <button
+                        className="hover: cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-400"
+                        onClick={() => setShippingOrder(order)}
+                      >
+                        Ship
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-      <PageSelector
-        type="product" // Reusing style
-        currentPage={data?.currentPage ?? 1}
-        totalPages={data?.totalPages ?? 1}
-      />
-    </div>
+                {/* Order Items Grid */}
+                <ProductGrid>
+                  {order.orderItems.map((item) => {
+                    const variant = item.productVariant;
+                    const product = variant.product;
+                    const imageUrl =
+                      variant.images?.[0] ??
+                      "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
+
+                    return (
+                      <div key={item.id} className="flex flex-col gap-2">
+                        <ImageCard
+                          src={imageUrl}
+                          alt={product.name ?? "Product image"}
+                          href={`/product/${variant.productId}`}
+                        >
+                          {/* Price Tag */}
+                          <OverlayTag position="bottomLeft">
+                            {formatCurrency(item.priceAtPurchase)} x
+                            {item.quantity}
+                          </OverlayTag>
+                        </ImageCard>
+
+                        <div className="flex flex-col gap-0 px-1">
+                          {/* ... Name and Options ... */}
+                          <Link
+                            href={`/product/${variant.productId}`}
+                            className="line-clamp-1 text-sm font-semibold hover:text-blue-400"
+                            onClick={(e) => e.stopPropagation()} // Prevent modal opening
+                          >
+                            {product.name}
+                          </Link>
+                          <p className="line-clamp-1 text-xs text-gray-500 capitalize">
+                            {formatProductOptionsCaption(variant.options)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </ProductGrid>
+              </div>
+              {order !== orders[orders.length - 1] && (
+                <hr className="border-gray-800" />
+              )}
+            </div>
+          );
+        })}
+
+        <PageSelector
+          type="product" // Reusing style
+          currentPage={data?.currentPage ?? 1}
+          totalPages={data?.totalPages ?? 1}
+        />
+      </div>
+    </>
   );
 }

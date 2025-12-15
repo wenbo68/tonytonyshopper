@@ -382,7 +382,7 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  updateShippingInfo: adminProcedure
+  updateShipping: adminProcedure
     .input(
       z.object({
         orderId: z.string(),
@@ -451,7 +451,7 @@ export const adminRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  revertToPaid: adminProcedure
+  cancelShipping: adminProcedure
     .input(z.object({ orderId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db.transaction(async (tx) => {

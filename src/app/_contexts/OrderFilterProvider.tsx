@@ -11,6 +11,8 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
+import { useSessionStorageState } from "../_hooks/useSessionStorage";
+import { defaultOrderSort } from "~/const";
 
 type OrderFilterContextType = {
   id: string;
@@ -29,6 +31,8 @@ type OrderFilterContextType = {
   setCarrier: Dispatch<SetStateAction<string>>;
   trackingNumber: string;
   setTrackingNumber: Dispatch<SetStateAction<string>>;
+  sort: string;
+  setSort: Dispatch<SetStateAction<string>>;
   handleSearch: (overrides?: any) => void;
 };
 
@@ -71,8 +75,13 @@ export function OrderFilterProvider({ children }: { children: ReactNode }) {
   const [trackingNumber, setTrackingNumber] = useState(
     () => searchParams.get("trackingNumber") ?? "",
   );
+  const [sort, setSort] = useSessionStorageState(
+    "order-sort",
+    searchParams.get("sort") ?? defaultOrderSort,
+  );
 
   // Sync URL changes to State
+  // This will run once on mount (and then whenever searchParams change)
   useEffect(() => {
     setId(searchParams.get("id") ?? "");
     setStatus(searchParams.getAll("status"));
@@ -82,6 +91,7 @@ export function OrderFilterProvider({ children }: { children: ReactNode }) {
     setPriceMax(searchParams.get("priceMax") ?? "");
     setCarrier(searchParams.get("carrier") ?? "");
     setTrackingNumber(searchParams.get("trackingNumber") ?? "");
+    setSort(searchParams.get("sort") ?? defaultOrderSort);
   }, [searchParams]);
 
   const handleSearch = (overrides: any = {}) => {
@@ -95,6 +105,7 @@ export function OrderFilterProvider({ children }: { children: ReactNode }) {
     const finalPriceMax = overrides.priceMax ?? priceMax;
     const finalCarrier = overrides.carrier ?? carrier;
     const finalTracking = overrides.trackingNumber ?? trackingNumber;
+    const finalSort = overrides.sort ?? sort;
 
     if (finalId) newParams.set("id", finalId);
     finalStatus.forEach((s: string) => newParams.append("status", s));
@@ -104,6 +115,12 @@ export function OrderFilterProvider({ children }: { children: ReactNode }) {
     if (finalPriceMax) newParams.set("priceMax", finalPriceMax);
     if (finalCarrier) newParams.set("carrier", finalCarrier);
     if (finalTracking) newParams.set("trackingNumber", finalTracking);
+    if (finalSort) {
+      newParams.set("sort", finalSort);
+    } else {
+      setSort(defaultOrderSort);
+      newParams.set("sort", defaultOrderSort);
+    }
 
     // Always reset to page 1 on filter change
     newParams.set("page", "1");
@@ -128,6 +145,8 @@ export function OrderFilterProvider({ children }: { children: ReactNode }) {
     setCarrier,
     trackingNumber,
     setTrackingNumber,
+    sort,
+    setSort,
     handleSearch,
   };
 

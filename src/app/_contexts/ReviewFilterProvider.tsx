@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   createContext,
   useContext,
@@ -11,6 +11,7 @@ import {
   type SetStateAction,
 } from "react";
 import { useSessionStorageState } from "../_hooks/useSessionStorage";
+import { defaultReviewSort } from "~/const";
 
 // Define the context type
 type ReviewFilterContextType = {
@@ -20,7 +21,6 @@ type ReviewFilterContextType = {
   setOrder: Dispatch<SetStateAction<string>>;
   handleSearch: (
     overrides?: Partial<{
-      packageType: string[];
       rating: string[];
       order: string;
     }>,
@@ -42,18 +42,21 @@ export function useReviewFilterContext() {
 export function ReviewFilterProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams(); // 2. Get the route parameters
+
+  const productId = params.productId as string;
 
   // 1. use states for instant highlight on selected filter options
   const [rating, setRating] = useState(() => searchParams.getAll("rating"));
   const [order, setOrder] = useSessionStorageState(
-    "order",
-    searchParams.get("order") ?? "",
+    "review-sort",
+    searchParams.get("order") ?? defaultReviewSort,
   );
 
   // 2. sync url to states
   useEffect(() => {
     setRating(searchParams.getAll("rating"));
-    setOrder(searchParams.get("order") ?? "");
+    setOrder(searchParams.get("order") ?? defaultReviewSort);
   }, [searchParams]);
 
   // 3. sync state (or arbitrary value) to url
@@ -73,14 +76,14 @@ export function ReviewFilterProvider({ children }: { children: ReactNode }) {
     if (finalOrder) {
       newParams.set("order", finalOrder);
     } else {
-      setOrder("created-desc");
-      newParams.set("order", "created-desc");
+      setOrder(defaultReviewSort);
+      newParams.set("order", defaultReviewSort);
     }
 
     // Always reset to page 1 for a new search
     newParams.set("page", "1");
 
-    const url = `/services?${newParams.toString()}#review-filters`;
+    const url = `/product/${productId}?${newParams.toString()}#review-filters`;
     router.push(url);
   };
 

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useAdminOrderFilterContext } from "~/app/_contexts/AdminOrderFilterProvider";
-import type { FilterOption, FilterGroupOption } from "~/type";
+import type { FilterOption } from "~/type";
 import { IoIosArrowDown } from "react-icons/io";
-import { IoSearchSharp } from "react-icons/io5";
-import { FaXmark } from "react-icons/fa6";
-import Filter from "../../filter/Filter";
+import DropdownFilter from "../../filter/DropdownFilter";
+import TextFilter from "../../filter/TextFilter"; // Adjust path as needed
+import { adminOrderSortOptions } from "~/const";
+import { isValidDate } from "~/server/utils/generic";
 
 export default function AdminOrderFilters() {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -44,32 +45,6 @@ export default function AdminOrderFilters() {
     { label: "Pending", urlInput: "pending" },
   ];
 
-  const sortOptions: FilterGroupOption[] = [
-    {
-      groupLabel: "Date",
-      options: [
-        { label: "New-Old", urlInput: "date-desc" },
-        { label: "Old-New", urlInput: "date-asc" },
-      ],
-    },
-    {
-      groupLabel: "Price",
-      options: [
-        { label: "High-Low", urlInput: "price-desc" },
-        { label: "Low-High", urlInput: "price-asc" },
-      ],
-    },
-    {
-      groupLabel: "Customer",
-      options: [
-        { label: "Name A-Z", urlInput: "name-asc" },
-        { label: "Name Z-A", urlInput: "name-desc" },
-        { label: "Email A-Z", urlInput: "email-asc" },
-        { label: "Email Z-A", urlInput: "email-desc" },
-      ],
-    },
-  ];
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleSearch();
@@ -77,55 +52,114 @@ export default function AdminOrderFilters() {
 
   return (
     <form
+      id="admin-order-filters"
       onSubmit={handleSubmit}
-      className="grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-6 xl:gap-6"
+      className="grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-5 xl:gap-6"
     >
-      {/* Main Search Bar (Order ID) */}
-      <div className="col-span-2 flex w-full flex-col gap-2 lg:col-span-2">
-        <span className="w-full font-semibold">Order ID / Tracking</span>
-        <div className="flex w-full items-center gap-2">
-          <div className="flex w-full items-center rounded bg-gray-900">
-            <div className="p-2">
-              <IoSearchSharp size={20} />
-            </div>
-            <input
-              type="text"
-              // placeholder="Search Order ID..."
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="w-full bg-transparent text-gray-200 outline-none"
-            />
-            {id && (
-              <button
-                type="button"
-                onClick={() => {
-                  setId("");
-                  handleSearch({ id: "" });
-                }}
-                className="p-2 text-gray-500 hover:text-gray-300"
-              >
-                <FaXmark size={16} />
-              </button>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsFilterVisible(!isFilterVisible)}
-            className="cursor-pointer rounded bg-gray-900 p-2 sm:hidden"
-          >
-            <IoIosArrowDown
-              size={20}
-              className={`transition ${isFilterVisible ? "rotate-180" : ""}`}
-            />
-          </button>
-        </div>
+      {/* Order ID with Mobile Toggle Action */}
+      <div className="col-span-2 sm:col-span-1">
+        <TextFilter
+          label="Order ID"
+          inputs={[
+            {
+              value: id,
+              placeholder: "Enter ID...",
+              onChange: (val) => {
+                setId(val);
+                handleSearch({ id: val });
+              },
+            },
+          ]}
+          action={
+            <button
+              type="button"
+              onClick={() => setIsFilterVisible(!isFilterVisible)}
+              className="cursor-pointer rounded bg-gray-900 p-2 sm:hidden"
+            >
+              <IoIosArrowDown
+                className={`h-5 w-5 transform transition-transform duration-200 ${
+                  isFilterVisible ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+          }
+        />
       </div>
 
       {/* Collapsible Section */}
       <div className={`${isFilterVisible ? "contents" : "hidden"} sm:contents`}>
-        {/* Status */}
-        <Filter
+        <TextFilter
+          label="Date: yyyy/mm/dd"
+          inputs={[
+            {
+              value: dateMin,
+              placeholder: "Start",
+              onChange: (val) => {
+                setDateMin(val);
+                if (isValidDate(val)) handleSearch({ dateMin: val });
+              },
+            },
+            {
+              value: dateMax,
+              placeholder: "End",
+              onChange: (val) => {
+                setDateMax(val);
+                if (isValidDate(val)) handleSearch({ dateMax: val });
+              },
+            },
+          ]}
+        />
+
+        <TextFilter
+          label="Customer"
+          inputs={[
+            {
+              value: customerName,
+              placeholder: "Name",
+              onChange: (val) => {
+                setCustomerName(val);
+                handleSearch({ customerName: val });
+              },
+            },
+            {
+              value: customerEmail,
+              placeholder: "Email",
+              onChange: (val) => {
+                setCustomerEmail(val);
+                handleSearch({ customerEmail: val });
+              },
+            },
+          ]}
+        />
+
+        {/* Grand Total - Two Inputs */}
+        <TextFilter
+          label="Total"
+          inputs={[
+            {
+              value: priceMin,
+              placeholder: "Min",
+              type: "number",
+              min: 0,
+              onChange: (val) => {
+                setPriceMin(val);
+                handleSearch({ priceMin: val });
+              },
+            },
+            {
+              value: priceMax,
+              placeholder: "Max",
+              type: "number",
+              min: 0,
+              onChange: (val) => {
+                setPriceMax(val);
+                handleSearch({ priceMax: val });
+              },
+            },
+          ]}
+        />
+
+        <DropdownFilter
           label="Status"
           options={statusOptions}
           isGroupOptions={false}
@@ -134,112 +168,36 @@ export default function AdminOrderFilters() {
           mode="multi"
         />
 
-        {/* Date Range */}
-        <div className="col-span-2 flex flex-col gap-2 sm:col-span-2 lg:col-span-2">
-          <span className="font-semibold">Date Range</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={dateMin}
-              onChange={(e) => setDateMin(e.target.value)}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
-            />
-            <span className="text-gray-500">-</span>
-            <input
-              type="date"
-              value={dateMax}
-              onChange={(e) => setDateMax(e.target.value)}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
-            />
-          </div>
-        </div>
+        <TextFilter
+          label="Delivery"
+          inputs={[
+            {
+              value: carrier,
+              placeholder: "Carrier",
+              onChange: (val) => {
+                setCarrier(val);
+                handleSearch({ carrier: val });
+              },
+            },
+            {
+              value: trackingNumber,
+              placeholder: "Tracking",
+              onChange: (val) => {
+                setTrackingNumber(val);
+                handleSearch({ trackingNumber: val });
+              },
+            },
+          ]}
+        />
 
-        {/* Customer Info */}
-        <div className="flex flex-col gap-2">
-          <span className="font-semibold">Customer Name</span>
-          <input
-            type="text"
-            placeholder="e.g. John Doe"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <span className="font-semibold">Customer Email</span>
-          <input
-            type="text"
-            placeholder="e.g. john@example.com"
-            value={customerEmail}
-            onChange={(e) => setCustomerEmail(e.target.value)}
-            className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
-          />
-        </div>
-
-        {/* Price */}
-        <div className="flex flex-col gap-2">
-          <span className="font-semibold">Total Price</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              placeholder="Min"
-              min="0"
-              value={priceMin}
-              onChange={(e) => setPriceMin(e.target.value)}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <input
-              type="number"
-              placeholder="Max"
-              min="0"
-              value={priceMax}
-              onChange={(e) => setPriceMax(e.target.value)}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          </div>
-        </div>
-
-        {/* Shipping */}
-        <div className="flex flex-col gap-2">
-          <span className="font-semibold">Carrier</span>
-          <input
-            type="text"
-            placeholder="Carrier"
-            value={carrier}
-            onChange={(e) => setCarrier(e.target.value)}
-            className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <span className="font-semibold">Tracking #</span>
-          <input
-            type="text"
-            placeholder="Tracking"
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
-            className="w-full rounded bg-gray-900 px-3 py-2 text-gray-200 outline-none"
-          />
-        </div>
-
-        {/* Sort */}
-        <Filter
-          label="Sort Order"
-          options={sortOptions}
+        <DropdownFilter
+          label="Sort By"
+          options={adminOrderSortOptions}
           isGroupOptions={true}
           value={sort}
           onChange={setSort}
           mode="single"
         />
-
-        {/* Apply Button */}
-        <div className="flex items-end">
-          <button
-            type="submit"
-            className="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700"
-          >
-            Apply Filters
-          </button>
-        </div>
       </div>
     </form>
   );

@@ -1,14 +1,12 @@
 "use client";
 
 import { useProductFilterContext } from "~/app/_contexts/ProductFilterProvider";
-import Filter from "../filter/Filter";
+import DropdownFilter from "../filter/DropdownFilter";
 import { productSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
 import { IoIosArrowDown } from "react-icons/io";
-import { IoSearchSharp } from "react-icons/io5";
-
 import { useSessionStorageState } from "~/app/_hooks/useSessionStorage";
-import { FaXmark } from "react-icons/fa6";
+import TextFilter from "../filter/TextFilter";
 
 export default function ProductFilters({
   categoryOptions,
@@ -55,45 +53,41 @@ export default function ProductFilters({
     <form
       id="product-filters"
       onSubmit={handleSubmit}
-      className="grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-6 xl:gap-6"
+      className="grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-5 xl:gap-6"
     >
-      <div className="col-span-2 flex w-full flex-col gap-2 sm:col-span-1">
-        <span className="w-full font-semibold">Product Name</span>
-        <div className="flex w-full items-center gap-2">
-          <div className="flex w-full items-center rounded bg-gray-900">
-            <div className="p-2">
-              <IoSearchSharp size={20} />
-            </div>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                handleSearch({ name: e.target.value });
-              }}
-              className="w-full outline-none"
-            />
+      {/* Order ID with Mobile Toggle Action */}
+      <div className="col-span-2 sm:col-span-1">
+        <TextFilter
+          label="Product Name"
+          inputs={[
+            {
+              value: name,
+              placeholder: "Enter ID...",
+              onChange: (val) => {
+                setName(val);
+                handleSearch({ name: val });
+              },
+            },
+          ]}
+          action={
             <button
-              onClick={() => {
-                setName("");
-              }}
-              className={`cursor-pointer p-2 text-gray-500`}
+              type="button"
+              onClick={() => setIsFilterVisible(!isFilterVisible)}
+              className="cursor-pointer rounded bg-gray-900 p-2 sm:hidden"
             >
-              <FaXmark size={20} />
+              <IoIosArrowDown
+                className={`h-5 w-5 transform transition-transform duration-200 ${
+                  isFilterVisible ? "rotate-180" : ""
+                }`}
+              />
             </button>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsFilterVisible(!isFilterVisible)}
-            className="cursor-pointer rounded bg-gray-900 p-2 sm:hidden"
-          >
-            <IoIosArrowDown size={20} />
-          </button>
-        </div>
+          }
+        />
       </div>
+
       {/* Filter Components */}
       <div className={`${isFilterVisible ? "contents" : "hidden"} sm:contents`}>
-        <Filter
+        <DropdownFilter
           label="Category"
           options={categoryOptions}
           isGroupOptions={false}
@@ -101,7 +95,7 @@ export default function ProductFilters({
           onChange={setCategory}
           mode="multi"
         />
-        <Filter
+        <DropdownFilter
           label="Stock"
           options={stockOptions}
           isGroupOptions={false}
@@ -109,72 +103,62 @@ export default function ProductFilters({
           onChange={setStock}
           mode="multi"
         />
-        {/* Price Filter */}
-        <div className="flex flex-col gap-2">
-          <span className="font-semibold">Price</span>
-          <div className="flex items-center gap-2">
-            <div className="flex w-full items-center rounded bg-gray-900 px-3 py-2">
-              <input
-                type="number"
-                placeholder="Min"
-                min="0"
-                value={minPrice}
-                onChange={(e) => setminPrice(e.target.value)}
-                onBlur={() => handleSearch()}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="w-full bg-transparent text-gray-200 placeholder-gray-500 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-            </div>
-            {/* <span className="text-gray-500">-</span> */}
-            <div className="flex w-full items-center rounded bg-gray-900 px-3 py-2">
-              <input
-                type="number"
-                placeholder="Max"
-                min="0"
-                value={maxPrice}
-                onChange={(e) => setmaxPrice(e.target.value)}
-                onBlur={() => handleSearch()}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="w-full bg-transparent text-gray-200 placeholder-gray-500 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-            </div>
-          </div>
-        </div>
 
-        {/* Rating Filter */}
-        <div className="flex flex-col gap-2">
-          <span className="font-semibold">Rating</span>
-          <div className="flex items-center gap-2">
-            <div className="flex w-full items-center rounded bg-gray-900 px-3 py-2">
-              <input
-                type="number"
-                placeholder="Min"
-                min="0"
-                max="5"
-                value={ratingMin}
-                onChange={(e) => setRatingMin(e.target.value)}
-                onBlur={() => handleSearch()}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="w-full bg-transparent text-gray-300 placeholder-gray-500 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-            </div>
-            {/* <span className="text-gray-500">-</span> */}
-            <div className="flex w-full items-center rounded bg-gray-900 px-3 py-2">
-              <input
-                type="number"
-                placeholder="Max"
-                min="0"
-                max="5"
-                value={ratingMax}
-                onChange={(e) => setRatingMax(e.target.value)}
-                onBlur={() => handleSearch()}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="w-full bg-transparent text-gray-300 placeholder-gray-500 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-            </div>
-          </div>
-        </div>
-        <Filter
+        {/* Grand Total - Two Inputs */}
+        <TextFilter
+          label="Price"
+          inputs={[
+            {
+              value: minPrice,
+              placeholder: "Min",
+              type: "number",
+              min: 0,
+              onChange: (val) => {
+                setminPrice(val);
+                handleSearch({ minPrice: val });
+              },
+            },
+            {
+              value: maxPrice,
+              placeholder: "Max",
+              type: "number",
+              min: 0,
+              onChange: (val) => {
+                setmaxPrice(val);
+                handleSearch({ maxPrice: val });
+              },
+            },
+          ]}
+        />
+
+        {/* Grand Total - Two Inputs */}
+        <TextFilter
+          label="Rating"
+          inputs={[
+            {
+              value: ratingMin,
+              placeholder: "Min",
+              type: "number",
+              min: 0,
+              onChange: (val) => {
+                setRatingMin(val);
+                handleSearch({ ratingMin: val });
+              },
+            },
+            {
+              value: ratingMax,
+              placeholder: "Max",
+              type: "number",
+              min: 0,
+              onChange: (val) => {
+                setRatingMax(val);
+                handleSearch({ ratingMax: val });
+              },
+            },
+          ]}
+        />
+
+        <DropdownFilter
           label="Sort By"
           options={productSortOptions}
           isGroupOptions={true}

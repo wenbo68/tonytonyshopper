@@ -2,7 +2,7 @@
 // import ProductLabels from "~/app/_components/product/ProductLabels";
 // import { api } from "~/trpc/server";
 import OrderFilters from "../../_components/order/OrderFilters";
-import OrderLabels from "../../_components/order/OrderLabels";
+import OrderFilterPills from "../../_components/order/OrderFilterPills";
 // import { OrderFilterProvider } from "../_contexts/OrderFilterProvider";
 
 export default async function Layout({
@@ -23,7 +23,7 @@ export default async function Layout({
         Order History
       </h1> */}
       <OrderFilters />
-      <OrderLabels />
+      <OrderFilterPills />
       {children}
     </section>
   );

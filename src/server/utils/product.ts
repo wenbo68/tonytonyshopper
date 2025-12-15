@@ -1,4 +1,3 @@
-// src/server/api/routers/helpers.ts (or just at the top of your router file)
 import { eq, avg, count, sql, min, max, sum } from "drizzle-orm";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 import { products, comments, productVariants } from "~/server/db/schema";
@@ -21,7 +20,7 @@ export function formatCurrency(priceString: string | null | undefined) {
   }).format(price);
 }
 
-export const formatOptionsCaption = (
+export const formatProductOptionsCaption = (
   options: Record<string, string> | null,
 ) => {
   if (!options) return "";

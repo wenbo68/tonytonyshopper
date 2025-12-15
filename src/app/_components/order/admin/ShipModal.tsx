@@ -10,7 +10,7 @@ interface ShipOrderModalProps {
   order: AdminOrder | null;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: () => Promise<any>;
 }
 
 export function ShipOrderModal({
@@ -33,13 +33,13 @@ export function ShipOrderModal({
     }
   }, [order]);
 
-  const updateShippingInfoMutation = api.admin.updateShippingInfo.useMutation({
-    onSuccess: () => {
-      toast.success("Order marked as shipped!");
+  const updateShippingMutation = api.admin.updateShipping.useMutation({
+    onSuccess: async () => {
+      // toast.success("Order marked as shipped!");
       // Reset form
       setCarrier("");
       setTrackingNumber("");
-      onSuccess(); // Trigger refresh in parent
+      await onSuccess(); // Trigger refresh in parent
       onClose();
     },
     onError: (error) => {
@@ -47,10 +47,10 @@ export function ShipOrderModal({
     },
   });
 
-  const revertToPaidMutation = api.admin.revertToPaid.useMutation({
-    onSuccess: () => {
-      toast.success("Order reverted to Paid status!");
-      onSuccess();
+  const cancelShippingMutation = api.admin.cancelShipping.useMutation({
+    onSuccess: async () => {
+      // toast.success("Order reverted to Paid status!");
+      await onSuccess();
       onClose();
     },
     onError: (error) => {
@@ -67,7 +67,7 @@ export function ShipOrderModal({
       return;
     }
 
-    updateShippingInfoMutation.mutate({
+    updateShippingMutation.mutate({
       orderId: order.id,
       carrier,
       trackingNumber,
@@ -77,9 +77,11 @@ export function ShipOrderModal({
   // --- ADDED: Revert Handler ---
   const handleRevert = () => {
     if (
-      confirm("Are you sure you want to revert this order to 'Paid' status?")
+      confirm(
+        'Reverting order status to "Paid" and deleting carrier & tracking number. Continue?',
+      )
     ) {
-      revertToPaidMutation.mutate({ orderId: order.id });
+      cancelShippingMutation.mutate({ orderId: order.id });
     }
   };
 
@@ -123,22 +125,20 @@ export function ShipOrderModal({
             <button
               type="button"
               onClick={handleRevert}
-              disabled={revertToPaidMutation.isPending}
+              disabled={cancelShippingMutation.isPending}
               className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
             >
-              {revertToPaidMutation.isPending
+              {cancelShippingMutation.isPending
                 ? "Canceling..."
                 : "Cancel Shipment"}
             </button>
           )}
           <button
             type="submit"
-            disabled={updateShippingInfoMutation.isPending}
+            disabled={updateShippingMutation.isPending}
             className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
           >
-            {updateShippingInfoMutation.isPending
-              ? "Saving..."
-              : "Save Shipment"}
+            {updateShippingMutation.isPending ? "Saving..." : "Save Shipment"}
           </button>
         </div>
       </form>

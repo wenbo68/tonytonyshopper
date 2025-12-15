@@ -11,18 +11,20 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
+import { useSessionStorageState } from "../_hooks/useSessionStorage";
+import { defaultOrderSort } from "~/const";
 
 type AdminOrderFilterContextType = {
   id: string;
   setId: Dispatch<SetStateAction<string>>;
-  dateMin: string;
-  setDateMin: Dispatch<SetStateAction<string>>;
-  dateMax: string;
-  setDateMax: Dispatch<SetStateAction<string>>;
   customerName: string;
   setCustomerName: Dispatch<SetStateAction<string>>;
   customerEmail: string;
   setCustomerEmail: Dispatch<SetStateAction<string>>;
+  dateMin: string;
+  setDateMin: Dispatch<SetStateAction<string>>;
+  dateMax: string;
+  setDateMax: Dispatch<SetStateAction<string>>;
   priceMin: string;
   setPriceMin: Dispatch<SetStateAction<string>>;
   priceMax: string;
@@ -35,7 +37,21 @@ type AdminOrderFilterContextType = {
   setTrackingNumber: Dispatch<SetStateAction<string>>;
   sort: string;
   setSort: Dispatch<SetStateAction<string>>;
-  handleSearch: (overrides?: any) => void;
+  handleSearch: (
+    overrides?: Partial<{
+      id: string;
+      customerName: string;
+      customerEmail: string;
+      dateMin: string;
+      dateMax: string;
+      priceMin: string;
+      priceMax: string;
+      status: string[];
+      carrier: string;
+      trackingNumber: string;
+      sort: string;
+    }>,
+  ) => void;
 };
 
 const AdminOrderFilterContext = createContext<
@@ -74,7 +90,10 @@ export function AdminOrderFilterProvider({
   const [trackingNumber, setTrackingNumber] = useState(
     searchParams.get("trackingNumber") ?? "",
   );
-  const [sort, setSort] = useState(searchParams.get("sort") ?? "date-desc");
+  const [sort, setSort] = useSessionStorageState(
+    "order-sort",
+    searchParams.get("sort") ?? defaultOrderSort,
+  );
 
   // Sync URL -> State
   useEffect(() => {
@@ -88,12 +107,12 @@ export function AdminOrderFilterProvider({
     setStatus(searchParams.getAll("status"));
     setCarrier(searchParams.get("carrier") ?? "");
     setTrackingNumber(searchParams.get("trackingNumber") ?? "");
-    setSort(searchParams.get("sort") ?? "date-desc");
+    setSort(searchParams.get("sort") ?? defaultOrderSort);
   }, [searchParams]);
 
   // Sync State -> URL
   const handleSearch = (overrides: any = {}) => {
-    const params = new URLSearchParams();
+    const newParams = new URLSearchParams();
     const v = (key: string, val: any, defaultVal: any) =>
       overrides[key] ?? val ?? defaultVal;
 
@@ -109,20 +128,25 @@ export function AdminOrderFilterProvider({
     const fTracking = v("trackingNumber", trackingNumber, "");
     const fSort = v("sort", sort, "date-desc");
 
-    if (fId) params.set("id", fId);
-    if (fDateMin) params.set("dateMin", fDateMin);
-    if (fDateMax) params.set("dateMax", fDateMax);
-    if (fName) params.set("customerName", fName);
-    if (fEmail) params.set("customerEmail", fEmail);
-    if (fPriceMin) params.set("priceMin", fPriceMin);
-    if (fPriceMax) params.set("priceMax", fPriceMax);
-    fStatus.forEach((s: string) => params.append("status", s));
-    if (fCarrier) params.set("carrier", fCarrier);
-    if (fTracking) params.set("trackingNumber", fTracking);
-    if (fSort && fSort !== "date-desc") params.set("sort", fSort);
+    if (fId) newParams.set("id", fId);
+    if (fDateMin) newParams.set("dateMin", fDateMin);
+    if (fDateMax) newParams.set("dateMax", fDateMax);
+    if (fName) newParams.set("customerName", fName);
+    if (fEmail) newParams.set("customerEmail", fEmail);
+    if (fPriceMin) newParams.set("priceMin", fPriceMin);
+    if (fPriceMax) newParams.set("priceMax", fPriceMax);
+    fStatus.forEach((s: string) => newParams.append("status", s));
+    if (fCarrier) newParams.set("carrier", fCarrier);
+    if (fTracking) newParams.set("trackingNumber", fTracking);
+    if (fSort) {
+      newParams.set("sort", fSort);
+    } else {
+      setSort(defaultOrderSort);
+      newParams.set("sort", defaultOrderSort);
+    }
 
-    params.set("page", "1"); // Reset page
-    router.push(`/admin/sell-history?${params.toString()}`);
+    newParams.set("page", "1"); // Reset page
+    router.push(`/orders/admin?${newParams.toString()}`);
   };
 
   return (

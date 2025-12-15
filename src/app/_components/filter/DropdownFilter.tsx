@@ -5,7 +5,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import type { FilterOption, FilterGroupOption } from "~/type";
 
-type FilterProps = {
+type DropdownFilterProps = {
   label: string;
   placeholder?: string;
 } & (
@@ -25,7 +25,7 @@ type FilterProps = {
     | { options: FilterOption[]; isGroupOptions: false }
   );
 
-export default function Filter(props: FilterProps) {
+export default function DropdownFilter(props: DropdownFilterProps) {
   const { label, options, isGroupOptions, placeholder, mode, value, onChange } =
     props;
 
@@ -146,7 +146,7 @@ export default function Filter(props: FilterProps) {
         </div>
         {/** dropdown */}
         {isDropdownOpen && (
-          <div className="scrollbar-thin absolute top-full z-10 mt-2 flex max-h-96 w-full flex-col overflow-y-auto rounded bg-gray-800 p-1 text-xs font-semibold">
+          <div className="scrollbar-thin absolute top-full z-20 mt-2 flex max-h-96 w-full flex-col overflow-y-auto rounded bg-gray-800 p-1 text-xs font-semibold">
             {isGroupOptions
               ? (filteredOptions as FilterGroupOption[]).map((group) => (
                   <div key={group.groupLabel}>

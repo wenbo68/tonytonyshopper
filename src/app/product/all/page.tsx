@@ -100,9 +100,7 @@ export default function ProductsPage() {
   return (
     <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
       <p className="font-semibold text-gray-300">No results found.</p>
-      <p className="text-sm font-semibold">
-        No products found. Please check back later!
-      </p>
+      <p className="text-sm font-semibold">Please check back later!</p>
     </div>
   );
 }

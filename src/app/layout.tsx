@@ -57,7 +57,8 @@ export default function RootLayout({
 // store card brand and last4 in db for each order
 
 // move addReview function to order history page
-// combine shipping modal with order modal in admin page
-// add order item name filter in orders and admin page
 
-// make all filter labels show order/sort by default
+// add date added filter for products
+// add number of items & item name filter in orders and admin page
+
+// make all filter labels show sort by default

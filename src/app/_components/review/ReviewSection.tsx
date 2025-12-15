@@ -4,7 +4,7 @@ import ReviewFilters from "./ReviewFilters";
 import AvgRating from "../rating/AvgRating";
 import WriteReview from "./write-form/WriteReview";
 import Reviews from "./reviews/Reviews";
-import ReviewLabels from "./ReviewLabels";
+import ReviewFilterPills from "./ReviewFilterPills";
 import { ProductProvider } from "~/app/_contexts/ProductProvider";
 
 export default function ReviewSection({ productId }: { productId: string }) {
@@ -23,7 +23,7 @@ export default function ReviewSection({ productId }: { productId: string }) {
         {/* 4. Remove productId prop from all children */}
         <AvgRating />
         <ReviewFilters />
-        <ReviewLabels />
+        <ReviewFilterPills />
         <Reviews />
         <WriteReview />
       </section>

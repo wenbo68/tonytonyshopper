@@ -4,7 +4,10 @@ import { useSession } from "next-auth/react";
 // import Image from "next/image";
 import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { formatCurrency, formatOptionsCaption } from "~/server/utils/product";
+import {
+  formatCurrency,
+  formatProductOptionsCaption,
+} from "~/server/utils/product";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useSearchParams } from "next/navigation";
 import { getOrdersInputSchema } from "~/type";
@@ -147,12 +150,12 @@ export default function OrdersPage() {
                   </button>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <label className="min-w-14 font-semibold">Total:</label>
-                  <span className="">{formatCurrency(order.totalAmount)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
                   <label className="min-w-14 font-semibold">Items:</label>
                   <span className="">{order.orderItems.length}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="min-w-14 font-semibold">Total:</label>
+                  <span className="">{formatCurrency(order.totalAmount)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <label className="min-w-14 font-semibold">Status:</label>
@@ -212,7 +215,7 @@ export default function OrdersPage() {
                           {product.name}
                         </Link>
                         <p className="line-clamp-1 text-xs text-gray-500 capitalize">
-                          {formatOptionsCaption(variant.options)}
+                          {formatProductOptionsCaption(variant.options)}
                         </p>
                       </div>
                     </div>
@@ -235,10 +238,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-// export default function OrderHistoryPage() {
-//   return (
-//       <OrderHistoryContent />
-//     </OrderFilterProvider>
-//   );
-// }

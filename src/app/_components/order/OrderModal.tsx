@@ -34,7 +34,7 @@ export default function OrderDetailsModal({
 
   // Helper to safely render JSON address data
   const renderAddress = (addressJson: unknown) => {
-    if (!addressJson) return <span className="text-gray-500">N/A</span>;
+    if (!addressJson) return <span className="">N/A</span>;
     try {
       const addr =
         typeof addressJson === "string" ? JSON.parse(addressJson) : addressJson;
@@ -51,7 +51,7 @@ export default function OrderDetailsModal({
         // <span className="">{`${line1}, ${line2 ? `${line2}, ` : ``}${city}, ${state} ${postal_code}, ${country}`}</span>
       );
     } catch (e) {
-      return <span className="">Address Unavailable</span>;
+      return <span className="">N/A</span>;
     }
   };
 
@@ -68,59 +68,72 @@ export default function OrderDetailsModal({
         className="scrollbar-hide flex max-h-[80vh] w-lg max-w-[90vw] flex-col gap-3 overflow-y-auto rounded bg-gray-900 p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col gap-0 text-sm">
-          <label className="min-w-14 font-semibold text-gray-500">
-            Order ID
-          </label>
-          <span className="">{order.id}</span>
+        <div className="flex flex-col gap-0">
+          <label className="text-sm font-semibold">Order</label>
+          <div className="flex gap-2 text-sm">
+            <label className="min-w-16 font-semibold text-gray-500">ID:</label>
+            <span className="">{order.id}</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-0 text-sm">
-          <label className="min-w-14 font-semibold text-gray-500">
-            Customer Name
-          </label>
-          <span className="">
-            {order.user?.name ?? "Please contact support"}
-          </span>
+
+        <hr className="border-gray-800" />
+
+        <div className="flex flex-col gap-0">
+          <label className="text-sm font-semibold">Customer</label>
+          <div className="flex gap-2 text-sm">
+            <label className="min-w-16 font-semibold text-gray-500">
+              Name:
+            </label>
+            <span className="">{order.user?.name ?? "N/A"}</span>
+          </div>
+          <div className="flex gap-2 text-sm">
+            <label className="min-w-16 font-semibold text-gray-500">
+              Email:
+            </label>
+            <span className="">
+              {order.user?.email ?? order.guestEmail ?? "N/A"}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col gap-0 text-sm">
-          <label className="min-w-14 font-semibold text-gray-500">
-            Customer Email
-          </label>
-          <span className="">
-            {order.user?.email ?? "Please contact support"}
-          </span>
+
+        <hr className="border-gray-800" />
+
+        <div className="flex flex-col gap-0">
+          <label className="text-sm font-semibold">Address</label>
+          <div className="flex gap-2 text-sm">
+            <label className="min-w-16 font-semibold text-gray-500">
+              Shipping:
+            </label>
+            {renderAddress(order.shippingAddress)}
+          </div>
+          <div className="flex gap-2 text-sm">
+            <label className="min-w-16 font-semibold text-gray-500">
+              Billing:
+            </label>
+            {renderAddress(order.billingAddress)}
+          </div>
         </div>
-        <div className="flex flex-col gap-0 text-sm">
-          <label className="min-w-14 font-semibold text-gray-500">
-            Shipping Address
-          </label>
-          {renderAddress(order.shippingAddress)}
-        </div>
-        <div className="flex flex-col gap-0 text-sm">
-          <label className="min-w-14 font-semibold text-gray-500">
-            Billing Address
-          </label>
-          {renderAddress(order.billingAddress)}
-        </div>
-        <div className="flex flex-col gap-0 text-sm">
-          <label className="min-w-14 font-semibold text-gray-500">
-            Delivery Carrier
-          </label>
-          <span className="">
-            {isShipped
-              ? (order.carrier ?? "Please contact support")
-              : "Not shipped yet"}
-          </span>
-        </div>
-        <div className="flex flex-col gap-0 text-sm">
-          <label className="min-w-14 font-semibold text-gray-500">
-            Tracking Number
-          </label>
-          <span className="">
-            {isShipped
-              ? (order.trackingNumber ?? "Please contact support")
-              : "Not shipped yet"}
-          </span>
+
+        <hr className="border-gray-800" />
+
+        <div className="flex flex-col gap-0">
+          <label className="text-sm font-semibold">Delivery</label>
+          <div className="flex gap-2 text-sm">
+            <label className="min-w-16 font-semibold text-gray-500">
+              Carrier:
+            </label>
+            <span className="">
+              {isShipped ? (order.carrier ?? "N/A") : "Not shipped yet"}
+            </span>
+          </div>
+          <div className="flex gap-2 text-sm">
+            <label className="min-w-16 font-semibold text-gray-500">
+              Tracking:
+            </label>
+            <span className="">
+              {isShipped ? (order.trackingNumber ?? "N/A") : "Not shipped yet"}
+            </span>
+          </div>
         </div>
       </div>
     </div>

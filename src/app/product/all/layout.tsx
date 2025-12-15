@@ -1,5 +1,5 @@
 import ProductFilters from "~/app/_components/product/ProductFilters";
-import ProductLabels from "~/app/_components/product/ProductLabels";
+import ProductFilterPills from "~/app/_components/product/ProductFilterPills";
 import { api } from "~/trpc/server";
 
 export default async function Layout({
@@ -17,7 +17,7 @@ export default async function Layout({
   return (
     <section className="flex flex-col justify-center gap-8 sm:gap-9 md:gap-10 lg:gap-11 xl:gap-12">
       <ProductFilters categoryOptions={categoryOptions} />
-      <ProductLabels categoryOptions={categoryOptions} />
+      <ProductFilterPills categoryOptions={categoryOptions} />
       {children}
     </section>
   );

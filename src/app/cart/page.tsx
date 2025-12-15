@@ -5,7 +5,10 @@ import { api } from "~/trpc/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useGuestCartStore } from "../_hooks/useGuestCartStore";
-import { formatCurrency, formatOptionsCaption } from "~/server/utils/product";
+import {
+  formatCurrency,
+  formatProductOptionsCaption,
+} from "~/server/utils/product";
 import { useState } from "react";
 import { useProductVariantModalStore } from "../_hooks/useVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
@@ -217,7 +220,7 @@ export default function CartPage() {
                   {variant.product.name}
                 </Link>
                 <p className="line-clamp-1 text-xs text-gray-500 capitalize">
-                  {formatOptionsCaption(variant.options)}
+                  {formatProductOptionsCaption(variant.options)}
                 </p>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import Filter from "../filter/Filter";
+import DropdownFilter from "../filter/DropdownFilter";
 import { useReviewFilterContext } from "~/app/_contexts/ReviewFilterProvider";
 import { reviewSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
@@ -31,7 +31,7 @@ export default function ReviewFilters() {
     >
       {/* Filter Components */}
       <div className="contents">
-        <Filter
+        <DropdownFilter
           label="Rating"
           options={ratingOptions}
           isGroupOptions={false}
@@ -39,7 +39,7 @@ export default function ReviewFilters() {
           onChange={setRating}
           mode="multi"
         />
-        <Filter
+        <DropdownFilter
           label="Order"
           options={reviewSortOptions}
           isGroupOptions={true}

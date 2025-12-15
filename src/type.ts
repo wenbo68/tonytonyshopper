@@ -6,8 +6,29 @@ import {
   productVariants,
   type comments,
 } from "./server/db/schema";
+import type { colorClassMap } from "./const";
 
-// --- product & variant
+// ==================================
+// Backend Types
+// ==================================
+
+// ==== comments ====
+export type FlatCommentWithUser = typeof comments.$inferSelect & {
+  userName: string | null;
+  userImage: string | null;
+};
+export type CommentAndUser = typeof comments.$inferSelect & {
+  user: {
+    name: string | null;
+    image: string | null;
+  };
+};
+// return type of getCommentTree procedure
+export type CommentTree = CommentAndUser & {
+  replies: CommentTree[];
+};
+
+// ==== product & variant ====
 export type Variant = typeof productVariants.$inferSelect;
 export type ProductAndVariants = typeof products.$inferSelect & {
   variants: Variant[];
@@ -16,11 +37,11 @@ export type VariantAndProduct = typeof productVariants.$inferSelect & {
   product: ProductAndVariants;
 };
 
-// --- stock ----
+// ==== stock ====
 export const StockEnum = z.enum(["all", "some", "none"]);
 export type StockEnum = z.infer<typeof StockEnum>;
 
-// --- orders ---
+// ==== orders ====
 export type OrderItemAndVariantAndProduct = typeof orderItems.$inferSelect & {
   variant: VariantAndProduct;
 };
@@ -29,7 +50,7 @@ export type OrderAndOrderItemsAndVariantAndProduct =
     orderItems: OrderItemAndVariantAndProduct[];
   };
 
-// --- search input schemas ---
+// ==== search input schemas ====
 export const getSellHistoryInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(20),
@@ -129,21 +150,11 @@ export const GetCommentTreeInputSchema = z.object({
 
 export type GetCommentTreeInput = z.infer<typeof GetCommentTreeInputSchema>;
 
-export type FlatCommentWithUser = typeof comments.$inferSelect & {
-  userName: string | null;
-  userImage: string | null;
-};
-export type CommentAndUser = typeof comments.$inferSelect & {
-  user: {
-    name: string | null;
-    image: string | null;
-  };
-};
-// return type of getCommentTree procedure
-export type CommentTree = CommentAndUser & {
-  replies: CommentTree[];
-};
+// ==================================
+// Frontend Types
+// ==================================
 
+// ==== comment =====
 // used for handleUpdate() when clicking edit on review/reply
 export type UpdateCommentInput = {
   e: React.FormEvent;
@@ -160,6 +171,13 @@ export type UpdateCommentInput = {
     }
 );
 
-// --- filter types ---
+// ==== filter types ====
 export type FilterOption = { label: string; urlInput: string };
 export type FilterGroupOption = { groupLabel: string; options: FilterOption[] };
+export type PillConfig = {
+  key: string;
+  label: string;
+  color: keyof typeof colorClassMap;
+  onRemove?: () => void;
+  className?: string;
+};
