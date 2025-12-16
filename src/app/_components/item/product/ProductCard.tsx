@@ -3,19 +3,19 @@
 
 import Link from "next/link";
 import { formatCurrency, formatNumber } from "~/server/utils/product";
-import { AddToCartButton } from "../button/AddToCartButton";
-import StarRating from "../review/rating/StarRating";
 import type { ProductAndVariants } from "~/type";
 import { useSession } from "next-auth/react";
 import { FaPen } from "react-icons/fa";
 import { FaCartPlus } from "react-icons/fa6";
-import { ItemImage } from "../item/ItemImage"; // Import shared UI
+import { ItemImage } from "../ItemImage";
 import {
   circularOverlayClass,
   OverlayLink,
   overlayPositionClasses,
   OverlayTag,
-} from "../item/ItemImageOverlays";
+} from "../ItemImageOverlays";
+import { AddToCartButton } from "../../button/AddToCartButton";
+import StarRating from "../../review/rating/StarRating";
 
 export default function ProductCard({
   product,

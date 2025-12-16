@@ -3,7 +3,7 @@
 import { useProductFilterContext } from "~/app/_contexts/filter/ProductFilterProvider";
 import { productSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
-import { GenericFilterPills, type BasePillConfig } from "../GenericFilterPills";
+import { GenericFilterPills, type BasePillConfig } from "./GenericFilterPills";
 // import { GenericFilterPills, type PillDefinition } from "./GenericFilterPills";
 
 export default function ProductFilterPills({

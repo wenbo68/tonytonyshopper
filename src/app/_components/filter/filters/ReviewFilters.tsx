@@ -1,10 +1,9 @@
 "use client";
 
-import DropdownFilter from "../DropdownFilter";
 import { useReviewFilterContext } from "~/app/_contexts/filter/ReviewFilterProvider";
 import { reviewSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
-import { FiltersGrid } from "../FiltersGrid";
+import { GenericFilters, type FilterConfig } from "./GenericFilters";
 
 const ratingOptions: FilterOption[] = [
   { label: "1 star", urlInput: "1" },
@@ -15,35 +14,29 @@ const ratingOptions: FilterOption[] = [
 ];
 
 export default function ReviewFilters() {
-  const { filters, setFilter, sort, setSort, handleSearch } =
-    useReviewFilterContext();
+  const context = useReviewFilterContext();
+
+  const fields: FilterConfig<typeof context.filters>[] = [
+    {
+      type: "dropdown",
+      key: "rating",
+      label: "Rating",
+      options: ratingOptions,
+      isGroupOptions: false,
+      mode: "multi",
+    },
+  ];
 
   return (
-    <FiltersGrid
+    <GenericFilters
       id="review-filters"
-      onSubmit={() => handleSearch()}
+      context={context}
+      filterConfigs={fields}
+      // Review filters are always expanded, so we don't strictly need a 'mainFilterKey'
+      // but passing one allows the grid to organize it correctly if we turn off alwaysExpanded.
+      mainFilterKey="rating"
+      sortOptions={reviewSortOptions}
       alwaysExpanded={true}
-      gridClasses="grid w-full grid-cols-2 gap-2 text-sm"
-      mainFilter={() => (
-        <DropdownFilter
-          label="Rating"
-          options={ratingOptions}
-          isGroupOptions={false}
-          value={filters.rating}
-          onChange={(val) => setFilter("rating", val)}
-          mode="multi"
-        />
-      )}
-      expandableFilters={
-        <DropdownFilter
-          label="Sort"
-          options={reviewSortOptions}
-          isGroupOptions={true}
-          value={sort}
-          onChange={setSort}
-          mode="single"
-        />
-      }
     />
   );
 }

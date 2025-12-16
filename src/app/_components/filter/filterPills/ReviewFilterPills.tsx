@@ -2,7 +2,7 @@
 
 import { useReviewFilterContext } from "~/app/_contexts/filter/ReviewFilterProvider";
 import { reviewSortOptions } from "~/const";
-import { GenericFilterPills, type BasePillConfig } from "../GenericFilterPills";
+import { GenericFilterPills, type BasePillConfig } from "./GenericFilterPills";
 // import { GenericFilterPills, type PillDefinition } from "./GenericFilterPills";
 
 export default function ReviewFilterPills() {

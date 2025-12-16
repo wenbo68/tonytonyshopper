@@ -1,12 +1,10 @@
 "use client";
 
-import DropdownFilter from "../DropdownFilter";
-import TextFilter from "../TextFilter";
+import { useAdminOrderFilterContext } from "~/app/_contexts/filter/AdminOrderFilterProvider";
 import { orderSortOptions } from "~/const";
 import { isValidDate } from "~/server/utils/generic";
 import type { FilterOption } from "~/type";
-import { FiltersGrid } from "../FiltersGrid";
-import { useAdminOrderFilterContext } from "~/app/_contexts/filter/AdminOrderFilterProvider";
+import { GenericFilters, type FilterConfig } from "./GenericFilters";
 
 const statusOptions: FilterOption[] = [
   { label: "Paid", urlInput: "paid" },
@@ -15,128 +13,79 @@ const statusOptions: FilterOption[] = [
   { label: "Pending", urlInput: "pending" },
 ];
 
-export default function OrderFilters() {
-  const { filters, setFilter, sort, setSort, handleSearch } =
-    useAdminOrderFilterContext();
+export default function AdminOrderFilters() {
+  const context = useAdminOrderFilterContext();
 
-  const update = <K extends keyof typeof filters>(
-    key: K,
-    val: (typeof filters)[K],
-    validate?: (v: (typeof filters)[K]) => boolean,
-  ) => {
-    setFilter(key, val);
-    if (!validate || validate(val)) handleSearch({ [key]: val } as any);
-  };
+  const fields: FilterConfig<typeof context.filters>[] = [
+    {
+      type: "text",
+      key: "id",
+      label: "Order ID",
+      inputs: [{ key: "id", placeholder: "Enter ID...", type: "text" }],
+    },
+    {
+      type: "text",
+      key: "date",
+      label: "Date: yyyy/mm/dd",
+      inputs: [
+        {
+          key: "dateMin",
+          placeholder: "Start",
+          type: "text",
+          validate: isValidDate,
+        },
+        {
+          key: "dateMax",
+          placeholder: "End",
+          type: "text",
+          validate: isValidDate,
+        },
+      ],
+    },
+    {
+      type: "text",
+      key: "customer",
+      label: "Customer",
+      inputs: [
+        { key: "customerName", placeholder: "Name", type: "text" },
+        { key: "customerEmail", placeholder: "Email", type: "text" },
+      ],
+    },
+    {
+      type: "text",
+      key: "total",
+      label: "Total",
+      inputs: [
+        { key: "priceMin", placeholder: "Min", type: "number", min: 0 },
+        { key: "priceMax", placeholder: "Max", type: "number", min: 0 },
+      ],
+    },
+    {
+      type: "dropdown",
+      key: "status",
+      label: "Status",
+      options: statusOptions,
+      isGroupOptions: false,
+      mode: "multi",
+    },
+    {
+      type: "text",
+      key: "delivery",
+      label: "Delivery",
+      inputs: [
+        { key: "carrier", placeholder: "Carrier", type: "text" },
+        { key: "trackingNumber", placeholder: "Tracking", type: "text" },
+      ],
+    },
+  ];
 
   return (
-    <FiltersGrid
+    <GenericFilters
       id="order-filters"
-      onSubmit={() => handleSearch()}
-      mainFilter={({ toggleAction }) => (
-        <TextFilter
-          label="Order ID"
-          inputs={[
-            {
-              value: filters.id,
-              placeholder: "Enter ID...",
-              onChange: (val) => update("id", val),
-            },
-          ]}
-          action={toggleAction}
-        />
-      )}
-      expandableFilters={
-        <>
-          <TextFilter
-            label="Date: yyyy/mm/dd"
-            inputs={[
-              {
-                value: filters.dateMin,
-                placeholder: "Start",
-                onChange: (val) => {
-                  update("dateMin", val, isValidDate);
-                },
-              },
-              {
-                value: filters.dateMax,
-                placeholder: "End",
-                onChange: (val) => {
-                  update("dateMax", val, isValidDate);
-                },
-              },
-            ]}
-          />
-          <TextFilter
-            label="Customer"
-            inputs={[
-              {
-                value: filters.customerName,
-                placeholder: "Name",
-                onChange: (val) => {
-                  update("customerName", val);
-                },
-              },
-              {
-                value: filters.customerEmail,
-                placeholder: "Email",
-                onChange: (val) => {
-                  update("customerEmail", val);
-                },
-              },
-            ]}
-          />
-          <TextFilter
-            label="Total"
-            inputs={[
-              {
-                value: filters.priceMin,
-                placeholder: "Min",
-                type: "number",
-                min: 0,
-                onChange: (val) => update("priceMin", val),
-              },
-              {
-                value: filters.priceMax,
-                placeholder: "Max",
-                type: "number",
-                min: 0,
-                onChange: (val) => update("priceMax", val),
-              },
-            ]}
-          />
-          <DropdownFilter
-            label="Status"
-            options={statusOptions}
-            isGroupOptions={false}
-            value={filters.status}
-            onChange={(val) => setFilter("status", val)}
-            mode="multi"
-          />
-          <TextFilter
-            label="Delivery"
-            inputs={[
-              {
-                value: filters.carrier,
-                placeholder: "Carrier",
-                onChange: (val) => update("carrier", val),
-              },
-              {
-                value: filters.trackingNumber,
-                placeholder: "Tracking",
-                onChange: (val) => update("trackingNumber", val),
-              },
-            ]}
-          />
-          <DropdownFilter
-            label="Sort By"
-            options={orderSortOptions}
-            isGroupOptions={true}
-            value={sort}
-            onChange={setSort}
-            mode="single"
-          />
-        </>
-      }
+      context={context}
+      filterConfigs={fields}
+      mainFilterKey="id"
+      sortOptions={orderSortOptions}
     />
   );
 }

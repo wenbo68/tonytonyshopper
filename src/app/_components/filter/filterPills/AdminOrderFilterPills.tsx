@@ -1,10 +1,8 @@
 "use client";
 
-import { useOrderFilterContext } from "~/app/_contexts/filter/OrderFilterProvider";
 import { orderSortOptions } from "~/const";
-import { GenericFilterPills, type BasePillConfig } from "../GenericFilterPills";
+import { GenericFilterPills, type BasePillConfig } from "./GenericFilterPills";
 import { useAdminOrderFilterContext } from "~/app/_contexts/filter/AdminOrderFilterProvider";
-// import { GenericFilterPills, type PillDefinition } from "./GenericFilterPills";
 
 export default function OrderFilterPills() {
   const context = useAdminOrderFilterContext();

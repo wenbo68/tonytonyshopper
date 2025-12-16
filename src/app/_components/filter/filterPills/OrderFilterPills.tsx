@@ -2,7 +2,7 @@
 
 import { useOrderFilterContext } from "~/app/_contexts/filter/OrderFilterProvider";
 import { orderSortOptions } from "~/const";
-import { GenericFilterPills, type BasePillConfig } from "../GenericFilterPills";
+import { GenericFilterPills, type BasePillConfig } from "./GenericFilterPills";
 
 export default function OrderFilterPills() {
   const context = useOrderFilterContext();

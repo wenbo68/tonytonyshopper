@@ -4,7 +4,7 @@ type InputConfig = {
   value: string | number;
   onChange: (value: string) => void;
   placeholder?: string;
-  type?: "text" | "number";
+  type: "text" | "number";
   min?: string | number;
   max?: string | number;
 };
@@ -27,7 +27,7 @@ export default function TextFilter({ label, inputs, action }: TextFilterProps) {
         {inputs.map((input, idx) => (
           <input
             key={idx}
-            type={input.type ?? "text"}
+            type={input.type}
             value={input.value}
             onChange={(e) => input.onChange(e.target.value)}
             placeholder={input.placeholder}

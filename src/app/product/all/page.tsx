@@ -2,9 +2,9 @@
 
 import { useSearchParams } from "next/navigation";
 import { ItemGrid, itemGridClassName } from "~/app/_components/item/ItemGrid";
+import ProductCard from "~/app/_components/item/product/ProductCard";
+import ProductsSkeleton from "~/app/_components/item/product/ProductsSkeleton";
 import PageSelector from "~/app/_components/pagination/Pagination";
-import ProductCard from "~/app/_components/product/ProductCard";
-import ProductsSkeleton from "~/app/_components/product/ProductsSkeleton";
 import { api } from "~/trpc/react";
 import { getProductsInputSchema } from "~/type";
 
