@@ -6,7 +6,7 @@ import TextFilter from "../TextFilter";
 import { orderSortOptions } from "~/const";
 import { isValidDate } from "~/server/utils/generic";
 import type { FilterOption } from "~/type";
-import { FilterLayout } from "../FilterLayout";
+import { FiltersGrid } from "../FiltersGrid";
 
 const statusOptions: FilterOption[] = [
   { label: "Paid", urlInput: "paid" },
@@ -28,7 +28,7 @@ export default function OrderFilters() {
   };
 
   return (
-    <FilterLayout
+    <FiltersGrid
       id="order-filters"
       onSubmit={() => handleSearch()}
       mainFilter={({ toggleAction }) => (

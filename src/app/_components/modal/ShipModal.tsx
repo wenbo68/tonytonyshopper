@@ -35,11 +35,9 @@ export function ShipOrderModal({
 
   const updateShippingMutation = api.admin.updateShipping.useMutation({
     onSuccess: async () => {
-      // toast.success("Order marked as shipped!");
-      // Reset form
+      await onSuccess();
       setCarrier("");
       setTrackingNumber("");
-      await onSuccess(); // Trigger refresh in parent
       onClose();
     },
     onError: (error) => {

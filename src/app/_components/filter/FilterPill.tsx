@@ -11,6 +11,11 @@ export function PillContainer({ children }: { children: React.ReactNode }) {
   );
 }
 
+// 4. The Skeleton Pill for the Fallback
+export function PillSkeleton({ width }: { width: string }) {
+  return <div className={`h-6 ${width} animate-pulse rounded bg-gray-700`} />;
+}
+
 // 2. The Clickable Filter Pill
 type UnclickablePillProps = {
   label: string;
@@ -51,9 +56,4 @@ export function ClickablePill({
       {label}
     </button>
   );
-}
-
-// 4. The Skeleton Pill for the Fallback
-export function PillSkeleton({ width }: { width: string }) {
-  return <div className={`h-6 ${width} animate-pulse rounded bg-gray-700`} />;
 }

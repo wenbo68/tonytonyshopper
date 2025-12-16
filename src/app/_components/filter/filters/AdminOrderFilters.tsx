@@ -1,12 +1,11 @@
 "use client";
 
-import { useOrderFilterContext } from "~/app/_contexts/filter/OrderFilterProvider";
 import DropdownFilter from "../DropdownFilter";
 import TextFilter from "../TextFilter";
 import { orderSortOptions } from "~/const";
 import { isValidDate } from "~/server/utils/generic";
 import type { FilterOption } from "~/type";
-import { FilterLayout } from "../FilterLayout";
+import { FiltersGrid } from "../FiltersGrid";
 import { useAdminOrderFilterContext } from "~/app/_contexts/filter/AdminOrderFilterProvider";
 
 const statusOptions: FilterOption[] = [
@@ -30,7 +29,7 @@ export default function OrderFilters() {
   };
 
   return (
-    <FilterLayout
+    <FiltersGrid
       id="order-filters"
       onSubmit={() => handleSearch()}
       mainFilter={({ toggleAction }) => (

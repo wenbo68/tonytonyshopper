@@ -4,7 +4,7 @@ import DropdownFilter from "../DropdownFilter";
 import { useReviewFilterContext } from "~/app/_contexts/filter/ReviewFilterProvider";
 import { reviewSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
-import { FilterLayout } from "../FilterLayout";
+import { FiltersGrid } from "../FiltersGrid";
 
 const ratingOptions: FilterOption[] = [
   { label: "1 star", urlInput: "1" },
@@ -19,14 +19,12 @@ export default function ReviewFilters() {
     useReviewFilterContext();
 
   return (
-    <FilterLayout
+    <FiltersGrid
       id="review-filters"
       onSubmit={() => handleSearch()}
       alwaysExpanded={true}
+      gridClasses="grid w-full grid-cols-2 gap-2 text-sm"
       mainFilter={() => (
-        // Review filters didn't have a "Main" input in your original code,
-        // so we treat the first dropdown as main, or just split them equally.
-        // Here we just render the first one.
         <DropdownFilter
           label="Rating"
           options={ratingOptions}

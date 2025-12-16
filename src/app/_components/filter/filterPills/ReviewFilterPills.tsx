@@ -2,7 +2,7 @@
 
 import { useReviewFilterContext } from "~/app/_contexts/filter/ReviewFilterProvider";
 import { reviewSortOptions } from "~/const";
-import { GenericFilterPills, type PillDefinition } from "../GenericFilterPills";
+import { GenericFilterPills, type BasePillConfig } from "../GenericFilterPills";
 // import { GenericFilterPills, type PillDefinition } from "./GenericFilterPills";
 
 export default function ReviewFilterPills() {
@@ -12,15 +12,15 @@ export default function ReviewFilterPills() {
   // Typescript will ensure keys match the Review Filters schema
   const definitions: Record<
     "rating",
-    PillDefinition<typeof context.filters>
+    BasePillConfig<typeof context.filters>
   > = {
-    rating: { label: (val) => `${val} Star`, color: 2 },
+    rating: { getLabelFromFilterState: (val) => `${val} Star`, color: 2 },
   };
 
   return (
     <GenericFilterPills
       context={context}
-      definitions={definitions}
+      basePillConfigs={definitions}
       sortOptions={reviewSortOptions}
     />
   );

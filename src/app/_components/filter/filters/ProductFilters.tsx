@@ -5,7 +5,7 @@ import DropdownFilter from "../DropdownFilter";
 import TextFilter from "../TextFilter";
 import { productSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
-import { FilterLayout } from "../FilterLayout";
+import { FiltersGrid } from "../FiltersGrid";
 
 const stockOptions: FilterOption[] = [
   { label: "No options have stock", urlInput: "none" },
@@ -21,8 +21,6 @@ export default function ProductFilters({
   const { filters, setFilter, sort, setSort, handleSearch } =
     useProductFilterContext();
 
-  // Helper to reduce boilerplate
-  // This updates local state AND triggers the search immediately
   const update = <K extends keyof typeof filters>(
     key: K,
     val: (typeof filters)[K],
@@ -32,7 +30,7 @@ export default function ProductFilters({
   };
 
   return (
-    <FilterLayout
+    <FiltersGrid
       id="product-filters"
       onSubmit={() => handleSearch()}
       mainFilter={({ toggleAction }) => (
