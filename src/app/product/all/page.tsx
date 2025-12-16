@@ -12,17 +12,17 @@ export default function ProductsPage() {
   const searchParams = useSearchParams();
   const name = searchParams.get("name") ?? undefined;
   const category = searchParams.getAll("category");
-  const minPrice = searchParams.get("minPrice")
-    ? Number(searchParams.get("minPrice"))
+  const priceMin = searchParams.get("priceMin")
+    ? Number(searchParams.get("priceMin"))
     : undefined;
-  const maxPrice = searchParams.get("maxPrice")
-    ? Number(searchParams.get("maxPrice"))
+  const priceMax = searchParams.get("priceMax")
+    ? Number(searchParams.get("priceMax"))
     : undefined;
-  const maxRating = searchParams.get("maxRating")
-    ? Number(searchParams.get("maxRating"))
+  const ratingMin = searchParams.get("ratingMin")
+    ? Number(searchParams.get("ratingMin"))
     : undefined;
-  const minRating = searchParams.get("minRating")
-    ? Number(searchParams.get("minRating"))
+  const ratingMax = searchParams.get("ratingMax")
+    ? Number(searchParams.get("ratingMax"))
     : undefined;
   const stock = searchParams.getAll("stock");
   const sort = searchParams.get("sort") ?? undefined;
@@ -33,10 +33,10 @@ export default function ProductsPage() {
   const rawInput = {
     name,
     category: category.length > 0 ? category : undefined,
-    minPrice,
-    maxPrice,
-    minRating,
-    maxRating,
+    priceMin,
+    priceMax,
+    ratingMin,
+    ratingMax,
     stock: stock.length > 0 ? stock : undefined,
     sort,
     page,
@@ -77,12 +77,8 @@ export default function ProductsPage() {
 
   // 6. Render the results
   if (data && data.products.length > 0) {
-    // const pageMediaIds = data.pageMedia.map((m) => m.media.id);
-    // const uniquePageMediaIds = [...new Set(pageMediaIds)];
-
     return (
       <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
-        {/* Replaced manual grid div with ProductGrid */}
         <ItemGrid>
           {data.products.map((product) => (
             <ProductCard key={product.id} product={product} />

@@ -1,4 +1,3 @@
-// Path: ~/server/api/routers/product.ts
 import {
   and,
   asc,
@@ -14,17 +13,13 @@ import {
   or,
 } from "drizzle-orm";
 import z from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
   products,
-  productVariants, //
-  categories, //
+  productVariants,
+  categories,
   productsToCategories,
-  orders, //
+  orders,
 } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { getProductsInputSchema } from "~/type";
@@ -42,8 +37,8 @@ export const productRouter = createTRPCRouter({
         pageSize,
         name,
         categories,
-        minPrice,
-        maxPrice,
+        priceMin,
+        priceMax,
         ratingMin,
         ratingMax,
         stock,
@@ -60,20 +55,20 @@ export const productRouter = createTRPCRouter({
         conditions.push(ilike(products.name, `%${name}%`));
       }
 
+      // Price Filter (finds products where their price range overlaps with the filter range)
+      if (priceMin) {
+        conditions.push(gte(products.minPrice, priceMin.toString()));
+      }
+      if (priceMax) {
+        conditions.push(lte(products.minPrice, priceMax.toString()));
+      }
+
       // Rating Filter
       if (ratingMin) {
         conditions.push(gte(products.averageRating, ratingMin.toString()));
       }
       if (ratingMax) {
         conditions.push(lte(products.averageRating, ratingMax.toString()));
-      }
-
-      // Price Filter (finds products where their price range overlaps with the filter range)
-      if (minPrice) {
-        conditions.push(gte(products.minPrice, minPrice.toString()));
-      }
-      if (maxPrice) {
-        conditions.push(lte(products.minPrice, maxPrice.toString()));
       }
 
       // Stock Filter

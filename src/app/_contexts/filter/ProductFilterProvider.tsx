@@ -16,8 +16,8 @@ import { defaultProductSort } from "~/const";
 type Overrides = Partial<{
   name: string;
   categories: string[];
-  minPrice: string;
-  maxPrice: string;
+  priceMin: string;
+  priceMax: string;
   ratingMin: string;
   ratingMax: string;
   stock: string[];
@@ -30,10 +30,10 @@ type ProductFilterContextType = {
   setName: Dispatch<SetStateAction<string>>;
   category: string[];
   setCategory: Dispatch<SetStateAction<string[]>>;
-  minPrice: string;
-  setminPrice: Dispatch<SetStateAction<string>>;
-  maxPrice: string;
-  setmaxPrice: Dispatch<SetStateAction<string>>;
+  priceMin: string;
+  setPriceMin: Dispatch<SetStateAction<string>>;
+  priceMax: string;
+  setPriceMax: Dispatch<SetStateAction<string>>;
   ratingMin: string;
   setRatingMin: Dispatch<SetStateAction<string>>;
   ratingMax: string;
@@ -68,11 +68,11 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
   const [category, setCategory] = useState(() =>
     searchParams.getAll("category"),
   );
-  const [minPrice, setminPrice] = useState(
-    () => searchParams.get("minPrice") ?? "",
+  const [priceMin, setPriceMin] = useState(
+    () => searchParams.get("priceMin") ?? "",
   );
-  const [maxPrice, setmaxPrice] = useState(
-    () => searchParams.get("maxPrice") ?? "",
+  const [priceMax, setPriceMax] = useState(
+    () => searchParams.get("priceMax") ?? "",
   );
   const [ratingMin, setRatingMin] = useState(
     () => searchParams.get("ratingMin") ?? "",
@@ -90,8 +90,8 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setName(searchParams.get("name") ?? "");
     setCategory(searchParams.getAll("category"));
-    setminPrice(searchParams.get("minPrice") ?? "");
-    setmaxPrice(searchParams.get("maxPrice") ?? "");
+    setPriceMin(searchParams.get("priceMin") ?? "");
+    setPriceMax(searchParams.get("priceMax") ?? "");
     setRatingMin(searchParams.get("ratingMin") ?? "");
     setRatingMax(searchParams.get("ratingMax") ?? "");
     setStock(searchParams.getAll("stock"));
@@ -106,8 +106,8 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     // const finalRating = overrides.rating ?? rating;
     const finalName = overrides.name ?? name;
     const finalCategories = overrides.categories ?? category;
-    const finalminPrice = overrides.minPrice ?? minPrice;
-    const finalmaxPrice = overrides.maxPrice ?? maxPrice;
+    const finalPriceMin = overrides.priceMin ?? priceMin;
+    const finalPriceMax = overrides.priceMax ?? priceMax;
     const finalRatingMin = overrides.ratingMin ?? ratingMin;
     const finalRatingMax = overrides.ratingMax ?? ratingMax;
     const finalStock = overrides.stock ?? stock;
@@ -116,8 +116,8 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     // finalRating.forEach((v) => newParams.append("rating", v));
     if (finalName) newParams.set("name", finalName);
     finalCategories.forEach((v) => newParams.append("category", v));
-    if (finalminPrice) newParams.set("minPrice", finalminPrice);
-    if (finalmaxPrice) newParams.set("maxPrice", finalmaxPrice);
+    if (finalPriceMin) newParams.set("priceMin", finalPriceMin);
+    if (finalPriceMax) newParams.set("priceMax", finalPriceMax);
     if (finalRatingMin) newParams.set("ratingMin", finalRatingMin);
     if (finalRatingMax) newParams.set("ratingMax", finalRatingMax);
     finalStock.forEach((v) => newParams.append("stock", v));
@@ -140,10 +140,10 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
     setName,
     category,
     setCategory,
-    minPrice,
-    setminPrice,
-    maxPrice,
-    setmaxPrice,
+    priceMin,
+    setPriceMin,
+    priceMax,
+    setPriceMax,
     ratingMin,
     setRatingMin,
     ratingMax,

@@ -21,16 +21,16 @@ export default function ProductFilters({
   const {
     name,
     category,
-    minPrice,
-    maxPrice,
+    priceMin,
+    priceMax,
     ratingMin,
     ratingMax,
     stock,
     sort,
     setName,
     setCategory,
-    setminPrice,
-    setmaxPrice,
+    setPriceMin,
+    setPriceMax,
     setRatingMin,
     setRatingMax,
     setStock,
@@ -109,23 +109,23 @@ export default function ProductFilters({
           label="Price"
           inputs={[
             {
-              value: minPrice,
+              value: priceMin,
               placeholder: "Min",
               type: "number",
               min: 0,
               onChange: (val) => {
-                setminPrice(val);
-                handleSearch({ minPrice: val });
+                setPriceMin(val);
+                handleSearch({ priceMin: val });
               },
             },
             {
-              value: maxPrice,
+              value: priceMax,
               placeholder: "Max",
               type: "number",
               min: 0,
               onChange: (val) => {
-                setmaxPrice(val);
-                handleSearch({ maxPrice: val });
+                setPriceMax(val);
+                handleSearch({ priceMax: val });
               },
             },
           ]}

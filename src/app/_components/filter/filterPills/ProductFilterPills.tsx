@@ -14,16 +14,16 @@ export default function ProductFilterPills({
   const {
     name,
     category,
-    minPrice,
-    maxPrice,
+    priceMin,
+    priceMax,
     ratingMin,
     ratingMax,
     stock,
-    sort: order,
+    sort,
     setName,
     setCategory,
-    setminPrice,
-    setmaxPrice,
+    setPriceMin,
+    setPriceMax,
     setRatingMin,
     setRatingMax,
     setStock,
@@ -73,25 +73,25 @@ export default function ProductFilterPills({
       });
     });
 
-    if (minPrice) {
+    if (priceMin) {
       configs.push({
-        key: "min-price",
-        label: `Min Price: ${minPrice}`,
+        key: "price-min",
+        label: `Price Min: ${priceMin}`,
         color: 4,
         onRemove: () => {
-          setminPrice("");
-          handleSearch({ minPrice: "" });
+          setPriceMin("");
+          handleSearch({ priceMin: "" });
         },
       });
     }
-    if (maxPrice) {
+    if (priceMax) {
       configs.push({
-        key: "max-price",
-        label: `Max Price: ${maxPrice}`,
+        key: "price-max",
+        label: `Price Max: ${priceMax}`,
         color: 4,
         onRemove: () => {
-          setmaxPrice("");
-          handleSearch({ maxPrice: "" });
+          setPriceMax("");
+          handleSearch({ priceMax: "" });
         },
       });
     }
@@ -120,9 +120,9 @@ export default function ProductFilterPills({
     }
 
     let sortLabel: string | null = null;
-    if (order) {
+    if (sort) {
       for (const group of productSortOptions) {
-        const foundOption = group.options.find((opt) => opt.urlInput === order);
+        const foundOption = group.options.find((opt) => opt.urlInput === sort);
         if (foundOption) {
           sortLabel = `${group.groupLabel}: ${foundOption.label}`;
           break;
@@ -134,17 +134,17 @@ export default function ProductFilterPills({
   }, [
     name,
     category,
-    minPrice,
-    maxPrice,
+    priceMin,
+    priceMax,
     ratingMin,
     ratingMax,
     stock,
-    order,
+    sort,
     categoryOptions,
     setName,
     setCategory,
-    setminPrice,
-    setmaxPrice,
+    setPriceMin,
+    setPriceMax,
     setRatingMin,
     setRatingMax,
     setStock,

@@ -122,8 +122,8 @@ export const getProductsInputSchema = z.object({
 
   name: z.string().optional(),
   categories: z.array(z.string()).optional(),
-  minPrice: z.number().optional(),
-  maxPrice: z.number().optional(),
+  priceMin: z.number().optional(),
+  priceMax: z.number().optional(),
   ratingMin: z.number().min(1).max(5).optional(),
   ratingMax: z.number().min(1).max(5).optional(),
   stock: z.array(StockEnum).optional(),
