@@ -6,11 +6,11 @@ import WriteReview from "./write-form/WriteReview";
 import ReviewFilterPills from "../filter/filterPills/ReviewFilterPills";
 import { ProductProvider } from "~/app/_contexts/ProductProvider";
 import Reviews from "./reviews/Reviews";
+import { ReviewFilterProvider } from "~/app/_contexts/filter/ReviewFilterProvider";
 
-export default function ReviewSection({ productId }: { productId: string }) {
+export default function ReviewSection() {
   return (
-    // 3. Wrap all children in the provider
-    <ProductProvider productId={productId}>
+    <ReviewFilterProvider>
       <section className="flex flex-col gap-5">
         {/* title */}
         <div className="flex flex-col gap-0">
@@ -20,13 +20,12 @@ export default function ReviewSection({ productId }: { productId: string }) {
           </p>
         </div>
 
-        {/* 4. Remove productId prop from all children */}
         <AvgRating />
         <ReviewFilters />
         <ReviewFilterPills />
         <Reviews />
         <WriteReview />
       </section>
-    </ProductProvider>
+    </ReviewFilterProvider>
   );
 }

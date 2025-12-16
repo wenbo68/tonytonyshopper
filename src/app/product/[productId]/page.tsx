@@ -2,8 +2,6 @@
 
 import Image from "next/image";
 import { notFound, useParams } from "next/navigation";
-// import { AddToCartButton } from "~/app/_components/cart/AddToCartButton";
-import ReviewSection from "~/app/_components/review/ReviewSection";
 import { formatCurrency } from "~/server/utils/product";
 import { api } from "~/trpc/react";
 import { useState, useMemo, useEffect } from "react";
@@ -12,14 +10,16 @@ import { Dropdown } from "~/app/_components/Dropdown";
 import clsx from "clsx";
 import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
+import { useProductContext } from "~/app/_contexts/ProductProvider";
 
 export default function ProductDetailPage() {
   // ==== hooks ====
   const { data: session } = useSession();
   const utils = api.useUtils();
   const queryClient = useQueryClient();
-  const params = useParams();
-  const productId = params.productId as string;
+  // const params = useParams();
+  // const productId = params.productId as string;
+  const { productId } = useProductContext();
 
   // ==== states ====
   const [activeImage, setActiveImage] = useState<string>("");
@@ -180,7 +180,7 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <section className="mx-auto flex max-w-2xl flex-col gap-5">
+    <>
       {/* images */}
       {/* Left: Image Gallery */}
       <div className="flex w-full flex-col gap-3 sm:flex-row">
@@ -298,8 +298,6 @@ export default function ProductDetailPage() {
           </button>
         </div>
       </div>
-      {/* </div> */}
-      <ReviewSection productId={productId} />
-    </section>
+    </>
   );
 }

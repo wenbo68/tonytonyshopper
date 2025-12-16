@@ -1,6 +1,7 @@
 import ProductFilters from "~/app/_components/filter/filters/ProductFilters";
 import ProductFilterPills from "~/app/_components/filter/filterPills/ProductFilterPills";
 import { api } from "~/trpc/server";
+import { ProductFilterProvider } from "~/app/_contexts/filter/ProductFilterProvider";
 
 export default async function Layout({
   children,
@@ -15,10 +16,12 @@ export default async function Layout({
   }));
 
   return (
-    <section className="flex flex-col justify-center gap-8 sm:gap-9 md:gap-10 lg:gap-11 xl:gap-12">
-      <ProductFilters categoryOptions={categoryOptions} />
-      <ProductFilterPills categoryOptions={categoryOptions} />
-      {children}
-    </section>
+    <ProductFilterProvider>
+      <section className="flex flex-col justify-center gap-8 sm:gap-9 md:gap-10 lg:gap-11 xl:gap-12">
+        <ProductFilters categoryOptions={categoryOptions} />
+        <ProductFilterPills categoryOptions={categoryOptions} />
+        {children}
+      </section>
+    </ProductFilterProvider>
   );
 }
