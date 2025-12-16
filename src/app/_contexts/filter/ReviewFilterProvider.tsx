@@ -1,30 +1,27 @@
 "use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  type ReactNode,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
-import { useSessionStorageState } from "../../_hooks/useSessionStorage";
+import { useParams } from "next/navigation";
+import { createContext, useContext, type ReactNode } from "react";
+import { useFilterLogic, type FilterState } from "~/app/_hooks/useFilterLogic";
 import { defaultReviewSort } from "~/const";
 
-type Overrides = Partial<{
-  rating: string[];
-  sort: string;
-}>;
+// 1. Define Schema
+const SCHEMA = {
+  rating: "array",
+} as const;
 
-// Define the context type
+// 2. Define Types based on Schema
+type ReviewFilters = FilterState<typeof SCHEMA>;
+
 type ReviewFilterContextType = {
-  rating: string[];
-  setRating: Dispatch<SetStateAction<string[]>>;
+  filters: ReviewFilters;
+  setFilter: <K extends keyof ReviewFilters>(
+    key: K,
+    value: ReviewFilters[K],
+  ) => void;
   sort: string;
-  setSort: Dispatch<SetStateAction<string>>;
-  handleSearch: (overrides?: Overrides) => void;
+  setSort: (val: string) => void;
+  handleSearch: (overrides?: Partial<ReviewFilters & { sort: string }>) => void;
 };
 
 const FilterContext = createContext<ReviewFilterContextType | undefined>(
@@ -33,64 +30,38 @@ const FilterContext = createContext<ReviewFilterContextType | undefined>(
 
 export function useReviewFilterContext() {
   const context = useContext(FilterContext);
-  if (context === undefined) {
-    throw new Error("useFilterContext must be used within a FilterProvider");
-  }
+  if (!context)
+    throw new Error("useReviewFilterContext must be used within Provider");
   return context;
 }
 
 export function ReviewFilterProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const params = useParams(); // 2. Get the route parameters
-
+  const params = useParams();
   const productId = params.productId as string;
 
-  // 1. use states for instant highlight on selected filter options
-  const [rating, setRating] = useState(() => searchParams.getAll("rating"));
-  const [sort, setSort] = useSessionStorageState(
-    "review-sort",
-    searchParams.get("sort") ?? defaultReviewSort,
-  );
-
-  // 2. sync url to states
-  useEffect(() => {
-    setRating(searchParams.getAll("rating"));
-    setSort(searchParams.get("sort") ?? defaultReviewSort);
-  }, [searchParams]);
-
-  // 3. sync state (or arbitrary value) to url
-  const handleSearch = (overrides: Overrides = {}) => {
-    const newParams = new URLSearchParams();
-
-    // Use overrides if provided, otherwise fall back to state
-    const finalRating = overrides.rating ?? rating;
-    const finalSort = overrides.sort ?? sort;
-
-    finalRating.forEach((v) => newParams.append("rating", v));
-    if (finalSort) {
-      newParams.set("sort", finalSort);
-    } else {
-      setSort(defaultReviewSort);
-      newParams.set("sort", defaultReviewSort);
-    }
-
-    // Always reset to page 1 for a new search
-    newParams.set("page", "1");
-
-    const url = `/product/${productId}?${newParams.toString()}#review-filters`;
-    router.push(url);
-  };
-
-  const value = {
-    rating,
-    setRating,
+  const {
+    filters,
+    setFilter,
     sort,
     setSort,
-    handleSearch,
+    handleSearch: baseHandleSearch,
+  } = useFilterLogic({
+    schema: SCHEMA,
+    defaultSort: defaultReviewSort,
+    sortSessionKey: "review-sort",
+  });
+
+  const handleSearch = (
+    overrides?: Partial<ReviewFilters & { sort: string }>,
+  ) => {
+    baseHandleSearch(`/product/${productId}`, overrides, "#review-filters");
   };
 
   return (
-    <FilterContext.Provider value={value}>{children}</FilterContext.Provider>
+    <FilterContext.Provider
+      value={{ filters, setFilter, sort, setSort, handleSearch }}
+    >
+      {children}
+    </FilterContext.Provider>
   );
 }
