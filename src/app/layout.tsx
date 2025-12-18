@@ -58,7 +58,8 @@ export default function RootLayout({
 
 // move addReview function to order history page
 
-// add text filter for (item name, options name) in orders and admin page
+// add item option filter to orders
+// enable entering multiple item names and option pairs
 
 // when it comes to past orders: what if the variant's price has changed?
 

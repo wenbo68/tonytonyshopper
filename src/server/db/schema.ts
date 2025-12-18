@@ -279,6 +279,10 @@ export const comments = createTable(
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
 
+    // productVariantId: d
+    //   .varchar({ length: 255 })
+    //   .references(() => productVariants.id), // Nullable for backward compatibility
+
     parentId: d
       .varchar({ length: 255 })
       .references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
@@ -301,6 +305,10 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
     fields: [comments.productId],
     references: [products.id],
   }),
+  // variant: one(productVariants, {
+  //   fields: [comments.productVariantId],
+  //   references: [productVariants.id],
+  // }),
   // Each reply belongs to one parent comment
   parent: one(comments, {
     fields: [comments.parentId],

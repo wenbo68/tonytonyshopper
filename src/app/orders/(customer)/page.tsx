@@ -49,6 +49,7 @@ export default function OrdersPage() {
     itemsMax: searchParams.get("itemsMax")
       ? Number(searchParams.get("itemsMax"))
       : undefined,
+    itemName: searchParams.get("itemName") ?? undefined,
     priceMin: searchParams.get("priceMin")
       ? Number(searchParams.get("priceMin"))
       : undefined,

@@ -21,23 +21,27 @@ export default function OrderFilterPills() {
       getLabelFromFilterState: (val) => `Items Max: ${val}`,
       color: 3,
     },
+    itemName: {
+      getLabelFromFilterState: (val) => `Item Name: ${val}`,
+      color: 4,
+    },
     priceMin: {
       getLabelFromFilterState: (val) => `Total Min: $${val}`,
-      color: 4,
+      color: 5,
     },
     priceMax: {
       getLabelFromFilterState: (val) => `Total Max: $${val}`,
-      color: 4,
+      color: 5,
     },
     status: {
       getLabelFromFilterState: (val) =>
         `Status: ${val.charAt(0).toUpperCase() + val.slice(1)}`,
-      color: 5,
+      color: 6,
     },
     carrier: { getLabelFromFilterState: (val) => `Carrier: ${val}`, color: 6 },
     trackingNumber: {
       getLabelFromFilterState: (val) => `Tracking: ${val}`,
-      color: 6,
+      color: 7,
     },
   };
 

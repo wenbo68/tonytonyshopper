@@ -61,6 +61,7 @@ export const getAllOrdersInputSchema = z.object({
   customerEmail: z.string().optional(),
   itemsMin: z.number().min(0).optional(),
   itemsMax: z.number().min(0).optional(),
+  itemName: z.string().optional(),
   priceMin: z.number().min(0).optional(),
   priceMax: z.number().min(0).optional(),
   status: z
@@ -97,6 +98,7 @@ export const getUserOrdersInputSchema = z.object({
   dateMax: z.string().optional(),
   itemsMin: z.number().min(0).optional(),
   itemsMax: z.number().min(0).optional(),
+  itemName: z.string().optional(),
   priceMin: z.number().min(0).optional(),
   priceMax: z.number().min(0).optional(),
   carrier: z.string().optional(),

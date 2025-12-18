@@ -200,6 +200,7 @@ export const orderRouter = createTRPCRouter({
         dateMax,
         itemsMin,
         itemsMax,
+        itemName,
         priceMin,
         priceMax,
         carrier,
@@ -251,6 +252,20 @@ export const orderRouter = createTRPCRouter({
 
         // Filter the main orders query to only include IDs returned by the subquery
         conditions.push(inArray(orders.id, subQuery));
+      }
+      if (itemName) {
+        // Find orders that contain an item with a matching product name
+        const itemSubQuery = ctx.db
+          .select({ orderId: orderItems.orderId })
+          .from(orderItems)
+          .innerJoin(
+            productVariants,
+            eq(orderItems.productVariantId, productVariants.id),
+          )
+          .innerJoin(products, eq(productVariants.productId, products.id))
+          .where(ilike(products.name, `%${itemName}%`)); // Case-insensitive match
+
+        conditions.push(inArray(orders.id, itemSubQuery));
       }
       if (priceMin) {
         conditions.push(gte(orders.totalAmount, priceMin.toString()));

@@ -10,6 +10,7 @@ const SCHEMA = {
   dateMax: "string",
   itemsMin: "string",
   itemsMax: "string",
+  itemName: "string",
   priceMin: "string",
   priceMax: "string",
   status: "stringArray",

@@ -62,6 +62,17 @@ export default function OrderFilters() {
     },
     {
       type: "text",
+      label: "Item Name",
+      inputs: [
+        {
+          filterStateName: "itemName",
+          placeholder: "Enter name...",
+          type: "text",
+        },
+      ],
+    },
+    {
+      type: "text",
       label: "Total",
       inputs: [
         {
