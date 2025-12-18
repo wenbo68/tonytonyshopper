@@ -19,23 +19,23 @@ export default function OrderFilters() {
   const fields: FilterConfig<typeof context.filters>[] = [
     {
       type: "text",
-      key: "id",
       label: "Order ID",
-      inputs: [{ key: "id", type: "text", placeholder: "Enter ID..." }],
+      inputs: [
+        { filterStateName: "id", type: "text", placeholder: "Enter ID..." },
+      ],
     },
     {
       type: "text",
-      key: "date",
       label: "Date: yyyy/mm/dd",
       inputs: [
         {
-          key: "dateMin",
+          filterStateName: "dateMin",
           type: "text",
           placeholder: "Start",
           validate: isValidDate,
         },
         {
-          key: "dateMax",
+          filterStateName: "dateMax",
           type: "text",
           placeholder: "End",
           validate: isValidDate,
@@ -44,16 +44,43 @@ export default function OrderFilters() {
     },
     {
       type: "text",
-      key: "total",
+      label: "Num of Items",
+      inputs: [
+        {
+          filterStateName: "itemsMin",
+          placeholder: "Min",
+          type: "number",
+          min: 0,
+        },
+        {
+          filterStateName: "itemsMax",
+          placeholder: "Max",
+          type: "number",
+          min: 0,
+        },
+      ],
+    },
+    {
+      type: "text",
       label: "Total",
       inputs: [
-        { key: "priceMin", placeholder: "Min", type: "number", min: 0 },
-        { key: "priceMax", placeholder: "Max", type: "number", min: 0 },
+        {
+          filterStateName: "priceMin",
+          placeholder: "Min",
+          type: "number",
+          min: 0,
+        },
+        {
+          filterStateName: "priceMax",
+          placeholder: "Max",
+          type: "number",
+          min: 0,
+        },
       ],
     },
     {
       type: "dropdown",
-      key: "status",
+      filterStateName: "status",
       label: "Status",
       options: statusOptions,
       isGroupOptions: false,
@@ -61,11 +88,14 @@ export default function OrderFilters() {
     },
     {
       type: "text",
-      key: "delivery",
       label: "Delivery",
       inputs: [
-        { key: "carrier", type: "text", placeholder: "Carrier" },
-        { key: "trackingNumber", type: "text", placeholder: "Tracking" },
+        { filterStateName: "carrier", type: "text", placeholder: "Carrier" },
+        {
+          filterStateName: "trackingNumber",
+          type: "text",
+          placeholder: "Tracking",
+        },
       ],
     },
   ];
@@ -75,7 +105,7 @@ export default function OrderFilters() {
       id="order-filters"
       context={context}
       filterConfigs={fields}
-      mainFilterKey="id"
+      mainFilterKey="Order ID"
       sortOptions={orderSortOptions}
     />
   );

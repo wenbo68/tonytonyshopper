@@ -19,7 +19,7 @@ export default function ReviewFilters() {
   const fields: FilterConfig<typeof context.filters>[] = [
     {
       type: "dropdown",
-      key: "rating",
+      filterStateName: "rating",
       label: "Rating",
       options: ratingOptions,
       isGroupOptions: false,

@@ -4,6 +4,7 @@ import { useProductFilterContext } from "~/app/_contexts/filter/ProductFilterPro
 import { productSortOptions } from "~/const";
 import type { FilterOption } from "~/type";
 import { GenericFilters, type FilterConfig } from "./GenericFilters";
+// import { isValidDate } from "~/server/utils/generic";
 
 const stockOptions: FilterOption[] = [
   { label: "No options have stock", urlInput: "none" },
@@ -16,18 +17,19 @@ export default function ProductFilters({
 }: {
   categoryOptions: FilterOption[];
 }) {
-  const context = useProductFilterContext();
+  const filterContext = useProductFilterContext();
 
-  const fields: FilterConfig<typeof context.filters>[] = [
+  const filterConfigs: FilterConfig<typeof filterContext.filters>[] = [
     {
       type: "text",
-      key: "name", // Unique ID for React Key
       label: "Product Name",
-      inputs: [{ key: "name", type: "text", placeholder: "Enter Name..." }],
+      inputs: [
+        { filterStateName: "name", type: "text", placeholder: "Enter Name..." },
+      ],
     },
     {
       type: "dropdown",
-      key: "category",
+      filterStateName: "category",
       label: "Category",
       options: categoryOptions,
       isGroupOptions: false,
@@ -35,7 +37,7 @@ export default function ProductFilters({
     },
     {
       type: "dropdown",
-      key: "stock",
+      filterStateName: "stock",
       label: "Stock",
       options: stockOptions,
       isGroupOptions: false,
@@ -43,30 +45,66 @@ export default function ProductFilters({
     },
     {
       type: "text",
-      key: "price",
       label: "Price",
       inputs: [
-        { key: "priceMin", placeholder: "Min", type: "number", min: 0 },
-        { key: "priceMax", placeholder: "Max", type: "number", min: 0 },
+        {
+          filterStateName: "priceMin",
+          placeholder: "Min",
+          type: "number",
+          min: 0,
+        },
+        {
+          filterStateName: "priceMax",
+          placeholder: "Max",
+          type: "number",
+          min: 0,
+        },
       ],
     },
     {
       type: "text",
-      key: "rating",
       label: "Rating",
       inputs: [
-        { key: "ratingMin", placeholder: "Min", type: "number", min: 0 },
-        { key: "ratingMax", placeholder: "Max", type: "number", min: 0 },
+        {
+          filterStateName: "ratingMin",
+          placeholder: "Min",
+          type: "number",
+          min: 0,
+        },
+        {
+          filterStateName: "ratingMax",
+          placeholder: "Max",
+          type: "number",
+          min: 0,
+        },
       ],
     },
+    // {
+    //   type: "text",
+    //   label: "Date: yyyy/mm/dd",
+    //   inputs: [
+    //     {
+    //       filterStateName: "createdMin",
+    //       type: "text",
+    //       placeholder: "Start",
+    //       validate: isValidDate,
+    //     },
+    //     {
+    //       filterStateName: "createdMax",
+    //       type: "text",
+    //       placeholder: "End",
+    //       validate: isValidDate,
+    //     },
+    //   ],
+    // },
   ];
 
   return (
     <GenericFilters
       id="product-filters"
-      context={context}
-      filterConfigs={fields}
-      mainFilterKey="name" // This makes 'name' the visible mobile input
+      context={filterContext}
+      filterConfigs={filterConfigs}
+      mainFilterKey="Product Name" // This makes 'name' the visible mobile input
       sortOptions={productSortOptions}
     />
   );

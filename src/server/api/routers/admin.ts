@@ -1,4 +1,3 @@
-// Path: ~/server/api/routers/admin.ts
 import {
   and,
   asc,
@@ -15,15 +14,15 @@ import {
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import {
+  orderItems,
   orders,
   products,
   productsToCategories,
   productVariants,
   users,
 } from "~/server/db/schema";
-import { updateProductVariantDenorms } from "~/server/utils/product"; // <--- 1. Import this
-// import { Resend } from "resend"; // <--- Import Resend
-import { env } from "~/env";
+import { updateProductVariantDenorms } from "~/server/utils/product";
+// import { Resend } from "resend";
 import { getAllOrdersInputSchema } from "~/type";
 import { TRPCError } from "@trpc/server";
 
@@ -233,6 +232,8 @@ export const adminRouter = createTRPCRouter({
         dateMax,
         customerName,
         customerEmail,
+        itemsMin,
+        itemsMax,
         priceMin,
         priceMax,
         status,
@@ -268,9 +269,29 @@ export const adminRouter = createTRPCRouter({
         );
       }
 
-      if (priceMin !== undefined)
+      if (itemsMin || itemsMax) {
+        // Create a subquery to find order IDs that match the item count criteria
+        const subQuery = ctx.db
+          .select({ orderId: orderItems.orderId })
+          .from(orderItems)
+          .groupBy(orderItems.orderId)
+          .having(
+            and(
+              itemsMin
+                ? gte(sql`sum(${orderItems.quantity})`, itemsMin)
+                : undefined,
+              itemsMax
+                ? lte(sql`sum(${orderItems.quantity})`, itemsMax)
+                : undefined,
+            ),
+          );
+        // Filter the main orders query to only include IDs returned by the subquery
+        conditions.push(inArray(orders.id, subQuery));
+      }
+
+      if (priceMin)
         conditions.push(gte(orders.totalAmount, priceMin.toString()));
-      if (priceMax !== undefined)
+      if (priceMax)
         conditions.push(lte(orders.totalAmount, priceMax.toString()));
 
       if (status && status.length > 0) {

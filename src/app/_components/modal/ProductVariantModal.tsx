@@ -215,7 +215,7 @@ export function ProductVariantModal() {
                 position="bottomLeft"
                 className="static" // Override absolute
               >
-                stock: {displayStock}
+                Stock: {displayStock}
               </OverlayTag>
             </OverlayTagGroup>
           </ItemImage>

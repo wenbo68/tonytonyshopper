@@ -10,9 +10,11 @@ const SCHEMA = {
   customerEmail: "string",
   dateMin: "string",
   dateMax: "string",
+  itemsMin: "string",
+  itemsMax: "string",
   priceMin: "string",
   priceMax: "string",
-  status: "array",
+  status: "stringArray",
   carrier: "string",
   trackingNumber: "string",
 } as const;

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { FaStar, FaStarHalf } from 'react-icons/fa';
+import { FaStar, FaStarHalf } from "react-icons/fa";
 
 export default function StarRating({
   rating,
@@ -18,20 +18,22 @@ export default function StarRating({
 
         if (rating >= starValue) {
           // Full Star
-          icon = <FaStar className="w-4 h-4 text-yellow-500/80" />;
+          icon = (
+            <FaStar className="h-3.5 w-3.5 text-yellow-500/80 sm:h-4 sm:w-4" />
+          );
         } else if (rating >= starValue - 0.99) {
           // Layered Half Star
           icon = (
-            <div className="relative w-4 h-4">
+            <div className="relative h-3.5 w-3.5 sm:h-4 sm:w-4">
               {/* Bottom Layer: Full Gray Star */}
-              <FaStar className="absolute top-0 left-0 w-full h-full text-gray-600" />
+              <FaStar className="absolute top-0 left-0 h-full w-full text-gray-600" />
               {/* Top Layer: Half Yellow Star */}
-              <FaStarHalf className="absolute top-0 left-0 w-full h-full text-yellow-500/80" />
+              <FaStarHalf className="absolute top-0 left-0 h-full w-full text-yellow-500/80" />
             </div>
           );
         } else {
           // Empty Star
-          icon = <FaStar className="w-4 h-4 text-gray-600" />;
+          icon = <FaStar className="h-3.5 w-3.5 text-gray-600 sm:h-4 sm:w-4" />;
         }
 
         return (
@@ -40,7 +42,7 @@ export default function StarRating({
             type="button"
             onClick={() => interactive && setRating?.(starValue)}
             className={`focus:outline-none ${
-              interactive ? 'cursor-pointer' : ''
+              interactive ? "cursor-pointer" : ""
             }`}
             aria-label={`Rate ${starValue} stars`}
             disabled={!interactive}

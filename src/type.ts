@@ -59,8 +59,10 @@ export const getAllOrdersInputSchema = z.object({
   dateMax: z.string().optional(),
   customerName: z.string().optional(),
   customerEmail: z.string().optional(),
-  priceMin: z.number().optional(),
-  priceMax: z.number().optional(),
+  itemsMin: z.number().min(0).optional(),
+  itemsMax: z.number().min(0).optional(),
+  priceMin: z.number().min(0).optional(),
+  priceMax: z.number().min(0).optional(),
   status: z
     .array(z.enum(["pending", "paid", "shipped", "cancelled"]))
     .optional(),
@@ -93,8 +95,10 @@ export const getUserOrdersInputSchema = z.object({
     .optional(),
   dateMin: z.string().optional(),
   dateMax: z.string().optional(),
-  priceMin: z.number().optional(),
-  priceMax: z.number().optional(),
+  itemsMin: z.number().min(0).optional(),
+  itemsMax: z.number().min(0).optional(),
+  priceMin: z.number().min(0).optional(),
+  priceMax: z.number().min(0).optional(),
   carrier: z.string().optional(),
   trackingNumber: z.string().optional(),
 
@@ -126,6 +130,8 @@ export const getProductsInputSchema = z.object({
   priceMax: z.number().optional(),
   ratingMin: z.number().min(1).max(5).optional(),
   ratingMax: z.number().min(1).max(5).optional(),
+  createdMin: z.string().optional(),
+  createdMax: z.string().optional(),
   stock: z.array(StockEnum).optional(),
 
   // Changed from order to sort

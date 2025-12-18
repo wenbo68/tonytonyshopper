@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
-import Image from "next/image";
+// import Image from "next/image";
 import Link from "next/link";
 import { useGuestCartStore } from "../_hooks/useGuestCartStore";
 import {
@@ -14,12 +14,14 @@ import { useProductVariantModalStore } from "../_hooks/useVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
 import type { VariantAndProduct } from "~/type";
 import { FaPen, FaTrash } from "react-icons/fa";
-import { ItemImage } from "../_components/item/ItemImage";
-import { ItemGrid } from "../_components/item/ItemGrid";
+// import { ItemImage } from "../_components/item/ItemImage";
+import { ItemGrid, itemGridClassName } from "../_components/item/ItemGrid";
 import {
   OverlayButton,
   OverlayTag,
 } from "../_components/item/ItemImageOverlays";
+import ItemGridSkeleton from "../_components/item/ItemGridSkeleton";
+import { ItemCard } from "../_components/item/ItemCard";
 
 type CartItem = {
   variant: VariantAndProduct;
@@ -114,9 +116,17 @@ export default function CartPage() {
   }
 
   // ==== conditional rendering ====
+  const skeletonCount = 4;
   if (sessionStatus === "loading" || showLoading) {
     return (
-      <div className="container mx-auto py-8 text-center">Loading cart...</div>
+      <ItemGridSkeleton
+        gridClasses={itemGridClassName}
+        skeletonCount={skeletonCount}
+        classNames={[
+          "w-4/5 text-sm min-h-[calc(1.5em-0.25rem)]",
+          "w-3/5 text-xs min-h-[calc(1.5em-0.25rem)]",
+        ]}
+      />
     );
   }
 
@@ -158,14 +168,7 @@ export default function CartPage() {
   );
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-300">Shopping Cart</h1>
-        <span className="text-sm font-medium text-gray-400">
-          {cartItems.length} {cartItems.length === 1 ? "Item" : "Items"}
-        </span>
-      </div>
-
+    <>
       {/* Grid Layout */}
       <ItemGrid>
         {cartItems.map((item) => {
@@ -176,54 +179,52 @@ export default function CartPage() {
             "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
 
           return (
-            <div key={variant.id} className="flex flex-col gap-2">
-              <ItemImage
-                src={image}
-                alt={variant.product.name}
+            <ItemCard
+              key={variant.id}
+              image={{
+                src: image,
+                alt: variant.product.name,
+                href: `/product/${variant.product.id}`,
+              }}
+              overlays={
+                <>
+                  <OverlayButton
+                    position="topLeft"
+                    onClick={() =>
+                      openVariantModal(variant.product, "edit", {
+                        variantId: variant.id,
+                        quantity,
+                      })
+                    }
+                    title="Edit Item"
+                  >
+                    <FaPen size={12} />
+                  </OverlayButton>
+
+                  <OverlayButton
+                    position="topRight"
+                    onClick={() => handleRemoveCartItem(variant.id)}
+                    title="Remove Item"
+                  >
+                    <FaTrash size={12} />
+                  </OverlayButton>
+
+                  <OverlayTag position="bottomLeft">
+                    {formatCurrency(variant.price)} x{quantity}
+                  </OverlayTag>
+                </>
+              }
+            >
+              <Link
                 href={`/product/${variant.product.id}`}
+                className="line-clamp-1 text-sm leading-normal font-semibold text-gray-300 hover:text-blue-400"
               >
-                {/* Edit Button */}
-                <OverlayButton
-                  position="topLeft"
-                  onClick={() =>
-                    openVariantModal(variant.product, "edit", {
-                      variantId: variant.id,
-                      quantity,
-                    })
-                  }
-                  title="Edit Item"
-                >
-                  <FaPen size={12} />
-                </OverlayButton>
-
-                {/* Delete Button */}
-                <OverlayButton
-                  position="topRight"
-                  onClick={() => handleRemoveCartItem(variant.id)}
-                  title="Remove Item"
-                >
-                  <FaTrash size={12} />
-                </OverlayButton>
-
-                {/* Price Tag */}
-                <OverlayTag position="bottomLeft">
-                  {formatCurrency(variant.price)} x{quantity}
-                </OverlayTag>
-              </ItemImage>
-
-              <div className="flex flex-col gap-0 px-1">
-                {/* ... name and options ... */}
-                <Link
-                  href={`/product/${variant.product.id}`}
-                  className="line-clamp-1 text-sm font-semibold text-gray-300 hover:text-blue-400"
-                >
-                  {variant.product.name}
-                </Link>
-                <p className="line-clamp-1 text-xs text-gray-500 capitalize">
-                  {formatProductOptionsCaption(variant.options)}
-                </p>
-              </div>
-            </div>
+                {variant.product.name}
+              </Link>
+              <p className="line-clamp-1 text-xs leading-normal text-gray-500 capitalize">
+                {formatProductOptionsCaption(variant.options)}
+              </p>
+            </ItemCard>
           );
         })}
       </ItemGrid>
@@ -252,6 +253,6 @@ export default function CartPage() {
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

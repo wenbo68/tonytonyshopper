@@ -6,12 +6,14 @@ import { useFilterLogic, type FilterState } from "~/app/_hooks/useFilterLogic";
 
 const SCHEMA = {
   name: "string",
-  category: "array",
+  category: "stringArray",
   priceMin: "string",
   priceMax: "string",
   ratingMin: "string",
   ratingMax: "string",
-  stock: "array",
+  createdMin: "string",
+  createdMax: "string",
+  stock: "stringArray",
 } as const;
 
 type ProductFilters = FilterState<typeof SCHEMA>;

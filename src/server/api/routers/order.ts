@@ -198,6 +198,8 @@ export const orderRouter = createTRPCRouter({
         status,
         dateMin,
         dateMax,
+        itemsMin,
+        itemsMax,
         priceMin,
         priceMax,
         carrier,
@@ -230,10 +232,30 @@ export const orderRouter = createTRPCRouter({
         d.setHours(23, 59, 59, 999);
         conditions.push(lte(orders.createdAt, d));
       }
-      if (priceMin !== undefined) {
+      if (itemsMin || itemsMax) {
+        // Create a subquery to find order IDs that match the item count criteria
+        const subQuery = ctx.db
+          .select({ orderId: orderItems.orderId })
+          .from(orderItems)
+          .groupBy(orderItems.orderId)
+          .having(
+            and(
+              itemsMin
+                ? gte(sql`sum(${orderItems.quantity})`, itemsMin)
+                : undefined,
+              itemsMax
+                ? lte(sql`sum(${orderItems.quantity})`, itemsMax)
+                : undefined,
+            ),
+          );
+
+        // Filter the main orders query to only include IDs returned by the subquery
+        conditions.push(inArray(orders.id, subQuery));
+      }
+      if (priceMin) {
         conditions.push(gte(orders.totalAmount, priceMin.toString()));
       }
-      if (priceMax !== undefined) {
+      if (priceMax) {
         conditions.push(lte(orders.totalAmount, priceMax.toString()));
       }
       if (carrier) {

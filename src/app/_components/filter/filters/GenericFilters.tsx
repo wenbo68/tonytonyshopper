@@ -10,10 +10,10 @@ import DropdownFilter from "../DropdownFilter";
 
 export type TextFilterConfig<T> = {
   type: "text";
-  key: string;
+  // reactKey: string;
   label: string;
   inputs: {
-    key: keyof T;
+    filterStateName: keyof T;
     placeholder?: string;
     type: "text" | "number";
     min?: string | number;
@@ -26,7 +26,7 @@ export type TextFilterConfig<T> = {
 // This allows TS to know: if isGroupOptions is true, options MUST be FilterGroupOption[]
 export type DropdownFilterConfig<T> = {
   type: "dropdown";
-  key: keyof T;
+  filterStateName: keyof T;
   label: string;
   mode: "single" | "multi";
 } & (
@@ -63,58 +63,66 @@ export function GenericFilters<T extends Record<string, any>>({
   const { filters, setFilter, sort, setSort, handleSearch } = context;
 
   const handleTextUpdate = (
-    key: keyof T,
-    val: any,
+    filterStateName: keyof T,
+    newFilterStateValue: any,
     validate?: (v: string) => boolean,
   ) => {
-    setFilter(key, val);
-    if (validate && !validate(val)) return;
-    handleSearch({ [key]: val });
+    setFilter(filterStateName, newFilterStateValue);
+    if (validate && !validate(newFilterStateValue)) return;
+    handleSearch({ [filterStateName]: newFilterStateValue });
   };
 
-  const renderFilter = (config: FilterConfig<T>, toggleAction?: ReactNode) => {
-    if (config.type === "text") {
+  const renderFilter = (
+    filterConfig: FilterConfig<T>,
+    toggleAction?: ReactNode,
+  ) => {
+    if (filterConfig.type === "text") {
       return (
         <TextFilter
-          key={config.key}
-          label={config.label}
+          key={filterConfig.label} // <--- CHANGED: Use label as key
+          label={filterConfig.label}
           action={toggleAction}
-          inputs={config.inputs.map((input) => ({
-            value: filters[input.key],
+          inputs={filterConfig.inputs.map((input) => ({
+            value: filters[input.filterStateName],
             placeholder: input.placeholder,
             type: input.type,
             min: input.min,
-            onChange: (val) => handleTextUpdate(input.key, val, input.validate),
+            onChange: (val) =>
+              handleTextUpdate(input.filterStateName, val, input.validate),
           }))}
         />
       );
     }
 
-    if (config.type === "dropdown") {
+    if (filterConfig.type === "dropdown") {
       // FIX 2: Explicitly branch logic.
       // TypeScript can now infer correct types inside each block.
-      if (config.isGroupOptions) {
+      if (filterConfig.isGroupOptions) {
         return (
           <DropdownFilter
-            key={String(config.key)}
-            label={config.label}
+            key={String(filterConfig.filterStateName)}
+            label={filterConfig.label}
             isGroupOptions={true}
-            options={config.options} // TS knows this is FilterGroupOption[]
-            value={filters[config.key]}
-            onChange={(val: any) => setFilter(config.key, val)}
-            mode={config.mode as any}
+            options={filterConfig.options} // TS knows this is FilterGroupOption[]
+            value={filters[filterConfig.filterStateName]}
+            onChange={(val: any) =>
+              setFilter(filterConfig.filterStateName, val)
+            }
+            mode={filterConfig.mode as any}
           />
         );
       } else {
         return (
           <DropdownFilter
-            key={String(config.key)}
-            label={config.label}
+            key={String(filterConfig.filterStateName)}
+            label={filterConfig.label}
             isGroupOptions={false}
-            options={config.options} // TS knows this is FilterOption[]
-            value={filters[config.key]}
-            onChange={(val: any) => setFilter(config.key, val)}
-            mode={config.mode as any}
+            options={filterConfig.options} // TS knows this is FilterOption[]
+            value={filters[filterConfig.filterStateName]}
+            onChange={(val: any) =>
+              setFilter(filterConfig.filterStateName, val)
+            }
+            mode={filterConfig.mode as any}
           />
         );
       }
@@ -123,7 +131,9 @@ export function GenericFilters<T extends Record<string, any>>({
   };
 
   const mainFilterConfig = filterConfigs.find(
-    (f) => (f.type === "text" ? f.key : String(f.key)) === mainFilterKey,
+    (f) =>
+      (f.type === "text" ? f.label : String(f.filterStateName)) ===
+      mainFilterKey,
   );
 
   const otherFilterConfigs = filterConfigs.filter(

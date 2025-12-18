@@ -19,23 +19,23 @@ export default function AdminOrderFilters() {
   const fields: FilterConfig<typeof context.filters>[] = [
     {
       type: "text",
-      key: "id",
       label: "Order ID",
-      inputs: [{ key: "id", placeholder: "Enter ID...", type: "text" }],
+      inputs: [
+        { filterStateName: "id", placeholder: "Enter ID...", type: "text" },
+      ],
     },
     {
       type: "text",
-      key: "date",
       label: "Date: yyyy/mm/dd",
       inputs: [
         {
-          key: "dateMin",
+          filterStateName: "dateMin",
           placeholder: "Start",
           type: "text",
           validate: isValidDate,
         },
         {
-          key: "dateMax",
+          filterStateName: "dateMax",
           placeholder: "End",
           type: "text",
           validate: isValidDate,
@@ -44,25 +44,55 @@ export default function AdminOrderFilters() {
     },
     {
       type: "text",
-      key: "customer",
       label: "Customer",
       inputs: [
-        { key: "customerName", placeholder: "Name", type: "text" },
-        { key: "customerEmail", placeholder: "Email", type: "text" },
+        { filterStateName: "customerName", placeholder: "Name", type: "text" },
+        {
+          filterStateName: "customerEmail",
+          placeholder: "Email",
+          type: "text",
+        },
       ],
     },
     {
       type: "text",
-      key: "total",
+      label: "Num of Items",
+      inputs: [
+        {
+          filterStateName: "itemsMin",
+          placeholder: "Min",
+          type: "number",
+          min: 0,
+        },
+        {
+          filterStateName: "itemsMax",
+          placeholder: "Max",
+          type: "number",
+          min: 0,
+        },
+      ],
+    },
+    {
+      type: "text",
       label: "Total",
       inputs: [
-        { key: "priceMin", placeholder: "Min", type: "number", min: 0 },
-        { key: "priceMax", placeholder: "Max", type: "number", min: 0 },
+        {
+          filterStateName: "priceMin",
+          placeholder: "Min",
+          type: "number",
+          min: 0,
+        },
+        {
+          filterStateName: "priceMax",
+          placeholder: "Max",
+          type: "number",
+          min: 0,
+        },
       ],
     },
     {
       type: "dropdown",
-      key: "status",
+      filterStateName: "status",
       label: "Status",
       options: statusOptions,
       isGroupOptions: false,
@@ -70,11 +100,14 @@ export default function AdminOrderFilters() {
     },
     {
       type: "text",
-      key: "delivery",
       label: "Delivery",
       inputs: [
-        { key: "carrier", placeholder: "Carrier", type: "text" },
-        { key: "trackingNumber", placeholder: "Tracking", type: "text" },
+        { filterStateName: "carrier", placeholder: "Carrier", type: "text" },
+        {
+          filterStateName: "trackingNumber",
+          placeholder: "Tracking",
+          type: "text",
+        },
       ],
     },
   ];
@@ -84,7 +117,7 @@ export default function AdminOrderFilters() {
       id="order-filters"
       context={context}
       filterConfigs={fields}
-      mainFilterKey="id"
+      mainFilterKey="Order ID"
       sortOptions={orderSortOptions}
     />
   );

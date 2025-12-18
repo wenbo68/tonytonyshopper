@@ -12,10 +12,10 @@ import PageSelector from "~/app/_components/pagination/Pagination";
 import { useState } from "react";
 import { getAllOrdersInputSchema } from "~/type";
 import OrderDetailsModal from "~/app/_components/modal/OrderModal";
-import { ItemImage } from "~/app/_components/item/ItemImage";
 import { ShipOrderModal } from "~/app/_components/modal/ShipModal";
 import { ItemGrid } from "~/app/_components/item/ItemGrid";
 import { OverlayTag } from "~/app/_components/item/ItemImageOverlays";
+import { ItemCard } from "~/app/_components/item/ItemCard";
 
 type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
@@ -36,6 +36,12 @@ export default function AdminOrdersPage() {
     dateMax: searchParams.get("dateMax") ?? undefined,
     customerName: searchParams.get("customerName") ?? undefined,
     customerEmail: searchParams.get("customerEmail") ?? undefined,
+    itemsMin: searchParams.get("itemsMin")
+      ? Number(searchParams.get("itemsMin"))
+      : undefined,
+    itemsMax: searchParams.get("itemsMax")
+      ? Number(searchParams.get("itemsMax"))
+      : undefined,
     priceMin: searchParams.get("priceMin")
       ? Number(searchParams.get("priceMin"))
       : undefined,
@@ -64,15 +70,13 @@ export default function AdminOrdersPage() {
   );
 
   if (status === "loading" || isLoading) {
-    return <div className="py-10 text-center">Loading sales...</div>;
+    return (
+      <div className="animate-pulse text-center">Loading sales history...</div>
+    );
   }
 
   if (status === "unauthenticated" || session?.user?.role !== "admin") {
-    return (
-      <div className="py-10 text-center text-red-500">
-        Access Denied. Admins only.
-      </div>
-    );
+    return <div className="text-center">Unauthorized.</div>;
   }
 
   const orders = data?.orders ?? [];
@@ -143,7 +147,12 @@ export default function AdminOrdersPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <label className="min-w-14 font-semibold">Items:</label>
-                    <span className="">{order.orderItems.length}</span>
+                    <span className="">
+                      {order.orderItems.reduce(
+                        (acc, item) => acc + item.quantity,
+                        0,
+                      )}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <label className="min-w-14 font-semibold">Total:</label>
@@ -178,33 +187,31 @@ export default function AdminOrdersPage() {
                       "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
 
                     return (
-                      <div key={item.id} className="flex flex-col gap-2">
-                        <ItemImage
-                          src={imageUrl}
-                          alt={product.name ?? "Product image"}
-                          href={`/product/${variant.productId}`}
-                        >
-                          {/* Price Tag */}
+                      <ItemCard
+                        key={item.id}
+                        image={{
+                          src: imageUrl,
+                          alt: product.name ?? "Product image",
+                          href: `/product/${variant.productId}`,
+                        }}
+                        overlays={
                           <OverlayTag position="bottomLeft">
                             {formatCurrency(item.priceAtPurchase)} x
                             {item.quantity}
                           </OverlayTag>
-                        </ItemImage>
-
-                        <div className="flex flex-col gap-0 px-1">
-                          {/* ... Name and Options ... */}
-                          <Link
-                            href={`/product/${variant.productId}`}
-                            className="line-clamp-1 text-sm font-semibold hover:text-blue-400"
-                            onClick={(e) => e.stopPropagation()} // Prevent modal opening
-                          >
-                            {product.name}
-                          </Link>
-                          <p className="line-clamp-1 text-xs text-gray-500 capitalize">
-                            {formatProductOptionsCaption(variant.options)}
-                          </p>
-                        </div>
-                      </div>
+                        }
+                      >
+                        <Link
+                          href={`/product/${variant.productId}`}
+                          className="line-clamp-1 text-sm leading-normal font-semibold hover:text-blue-400"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {product.name}
+                        </Link>
+                        <p className="line-clamp-1 text-xs leading-normal text-gray-500 capitalize">
+                          {formatProductOptionsCaption(variant.options)}
+                        </p>
+                      </ItemCard>
                     );
                   })}
                 </ItemGrid>

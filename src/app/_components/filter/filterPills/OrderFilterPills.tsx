@@ -13,23 +13,31 @@ export default function OrderFilterPills() {
     id: { getLabelFromFilterState: (val) => `ID: ${val}`, color: 1 },
     dateMin: { getLabelFromFilterState: (val) => `Start: ${val}`, color: 2 },
     dateMax: { getLabelFromFilterState: (val) => `End: ${val}`, color: 2 },
+    itemsMin: {
+      getLabelFromFilterState: (val) => `Items Min: ${val}`,
+      color: 3,
+    },
+    itemsMax: {
+      getLabelFromFilterState: (val) => `Items Max: ${val}`,
+      color: 3,
+    },
     priceMin: {
       getLabelFromFilterState: (val) => `Total Min: $${val}`,
-      color: 3,
+      color: 4,
     },
     priceMax: {
       getLabelFromFilterState: (val) => `Total Max: $${val}`,
-      color: 3,
+      color: 4,
     },
     status: {
       getLabelFromFilterState: (val) =>
         `Status: ${val.charAt(0).toUpperCase() + val.slice(1)}`,
-      color: 4,
+      color: 5,
     },
-    carrier: { getLabelFromFilterState: (val) => `Carrier: ${val}`, color: 5 },
+    carrier: { getLabelFromFilterState: (val) => `Carrier: ${val}`, color: 6 },
     trackingNumber: {
       getLabelFromFilterState: (val) => `Tracking: ${val}`,
-      color: 5,
+      color: 6,
     },
   };
 

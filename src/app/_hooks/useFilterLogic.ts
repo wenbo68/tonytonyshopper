@@ -1,17 +1,16 @@
-// src/hooks/useFilterLogic.ts
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { useSessionStorageState } from "./useSessionStorage";
 
-type FilterType = "string" | "array";
+type FilterType = "string" | "stringArray";
 
 export type FilterSchema = Record<string, FilterType>;
 
 // Helper to infer the shape of the state based on the schema
 export type FilterState<T extends FilterSchema> = {
-  [K in keyof T]: T[K] extends "array" ? string[] : string;
+  [K in keyof T]: T[K] extends "stringArray" ? string[] : string;
 };
 
 interface UseFilterLogicProps<T extends FilterSchema> {
@@ -32,7 +31,7 @@ export function useFilterLogic<T extends FilterSchema>({
   const getInitialState = () => {
     const initialState = {} as FilterState<T>;
     for (const key in schema) {
-      if (schema[key] === "array") {
+      if (schema[key] === "stringArray") {
         // @ts-expect-error - dynamic assignment is safe here
         initialState[key] = searchParams.getAll(key);
       } else {

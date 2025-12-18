@@ -1,12 +1,21 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import ItemGridSkeleton from "~/app/_components/item/ItemGridSkeleton";
 import { ItemGrid, itemGridClassName } from "~/app/_components/item/ItemGrid";
-import ProductCard from "~/app/_components/item/product/ProductCard";
-import ProductsSkeleton from "~/app/_components/item/product/ProductsSkeleton";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { api } from "~/trpc/react";
 import { getProductsInputSchema } from "~/type";
+import { ItemCard } from "~/app/_components/item/ItemCard";
+import {
+  circularOverlayClass,
+  overlayPositionClasses,
+  OverlayTag,
+} from "~/app/_components/item/ItemImageOverlays";
+import { FaCartPlus, FaStar } from "react-icons/fa";
+import { formatCurrency, formatNumber } from "~/server/utils/product";
+import { AddToCartButton } from "~/app/_components/button/AddToCartButton";
+import Link from "next/link";
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -24,6 +33,8 @@ export default function ProductsPage() {
   const ratingMax = searchParams.get("ratingMax")
     ? Number(searchParams.get("ratingMax"))
     : undefined;
+  const createdMin = searchParams.get("createdMin") ?? undefined;
+  const createdMax = searchParams.get("createdMax") ?? undefined;
   const stock = searchParams.getAll("stock");
   const sort = searchParams.get("sort") ?? undefined;
   const page = searchParams.get("page")
@@ -37,6 +48,8 @@ export default function ProductsPage() {
     priceMax,
     ratingMin,
     ratingMax,
+    createdMin,
+    createdMax,
     stock: stock.length > 0 ? stock : undefined,
     sort,
     page,
@@ -64,13 +77,17 @@ export default function ProductsPage() {
   }
 
   // 5. Show a skeleton while fetching new data
-  const skeletonCount = 5;
+  const skeletonCount = 4;
 
   if (isFetching) {
     return (
-      <ProductsSkeleton
+      <ItemGridSkeleton
         gridClasses={itemGridClassName}
         skeletonCount={skeletonCount}
+        classNames={[
+          "w-4/5 text-sm min-h-[calc(1.5em-0.25rem)]",
+          "w-3/5 text-sm min-h-[calc(1.5em-0.25rem)]",
+        ]}
       />
     );
   }
@@ -80,9 +97,83 @@ export default function ProductsPage() {
     return (
       <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
         <ItemGrid>
-          {data.products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {data.products.map((product) => {
+            const variant = product.variants.reduce((prev, curr) =>
+              parseFloat(curr.price) < parseFloat(prev.price) ? curr : prev,
+            );
+
+            const image =
+              variant?.images?.[0] ??
+              product.variants[0]?.images?.[0] ??
+              "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
+
+            const numericRating = parseFloat(product.averageRating);
+
+            return (
+              <ItemCard
+                key={product.id}
+                image={{
+                  src: image,
+                  alt: product.name,
+                  href: `/product/${product.id}`,
+                }}
+                overlays={
+                  <>
+                    {/* Edit Button (Admin) */}
+                    {/* {session?.user?.role === "admin" && (
+                      <OverlayLink
+                        href={`/product/edit/${product.id}`}
+                        position="topLeft"
+                        title="Edit Product"
+                      >
+                        <FaPen size={12} />
+                      </OverlayLink>
+                    )} */}
+
+                    {/* Rating Tag */}
+                    <OverlayTag position="topLeft">
+                      <div className="flex items-center gap-0.5">
+                        <FaStar
+                          className="relative bottom-px text-yellow-500/80"
+                          size={12}
+                        />
+                        <div className="flex items-center gap-px">
+                          <span className="">{numericRating.toFixed(1)}</span>
+                          <span className="">
+                            ({formatNumber(product.reviewCount)})
+                          </span>
+                        </div>
+                      </div>
+                    </OverlayTag>
+
+                    {/* Add to Cart Button */}
+                    <AddToCartButton
+                      product={product}
+                      className={`${circularOverlayClass} ${overlayPositionClasses.topRight}`}
+                    >
+                      <FaCartPlus className="" size={14} />
+                    </AddToCartButton>
+
+                    {/* Price Tag */}
+                    <OverlayTag position="bottomLeft">
+                      <span className="font-semibold">
+                        {product.minPrice === product.maxPrice
+                          ? formatCurrency(variant.price)
+                          : `From ${formatCurrency(product.minPrice)}`}
+                      </span>
+                    </OverlayTag>
+                  </>
+                }
+              >
+                <Link
+                  href={`/product/${product.id}`}
+                  className="line-clamp-2 min-h-[3em] text-sm leading-normal font-semibold hover:text-blue-400"
+                >
+                  {product.name}
+                </Link>
+              </ItemCard>
+            );
+          })}
         </ItemGrid>
         <PageSelector
           type="product"

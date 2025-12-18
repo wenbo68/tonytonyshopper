@@ -58,11 +58,8 @@ export default function RootLayout({
 
 // move addReview function to order history page
 
-// add date added filter for products
-// add number of items & item name filter in orders and admin page
+// add text filter for (item name, options name) in orders and admin page
 
-// make all filter labels show sort by default
+// when it comes to past orders: what if the variant's price has changed?
 
-// filter context providers should not be global
-
-// create fallback skeletons for cart & orders page
+// why we can input -1 in filter inputs when min is 0?

@@ -1,7 +1,6 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-// import Image from "next/image";
 import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
 import {
@@ -13,7 +12,6 @@ import { useSearchParams } from "next/navigation";
 import { getUserOrdersInputSchema } from "~/type";
 import { FaCartPlus, FaUndo } from "react-icons/fa";
 import toast from "react-hot-toast";
-import { ItemImage } from "../../_components/item/ItemImage";
 import { useState } from "react";
 import OrderDetailsModal from "../../_components/modal/OrderModal";
 import { ItemGrid } from "~/app/_components/item/ItemGrid";
@@ -21,6 +19,7 @@ import {
   OverlayButton,
   OverlayTag,
 } from "~/app/_components/item/ItemImageOverlays";
+import { ItemCard } from "~/app/_components/item/ItemCard";
 
 // Infer type for better safety
 type Order = RouterOutputs["order"]["getUserOrders"]["orders"][number];
@@ -44,6 +43,12 @@ export default function OrdersPage() {
         : undefined,
     dateMin: searchParams.get("dateMin") ?? undefined,
     dateMax: searchParams.get("dateMax") ?? undefined,
+    itemsMin: searchParams.get("itemsMin")
+      ? Number(searchParams.get("itemsMin"))
+      : undefined,
+    itemsMax: searchParams.get("itemsMax")
+      ? Number(searchParams.get("itemsMax"))
+      : undefined,
     priceMin: searchParams.get("priceMin")
       ? Number(searchParams.get("priceMin"))
       : undefined,
@@ -88,14 +93,14 @@ export default function OrdersPage() {
   };
 
   if (status === "loading" || isLoading) {
-    return <div className="py-10 text-center">Loading order history...</div>;
+    return (
+      <div className="animate-pulse text-center">Loading order history...</div>
+    );
   }
 
   if (status === "unauthenticated") {
     return (
-      <div className="py-10 text-center">
-        Please log in to view your orders.
-      </div>
+      <div className="text-center">Please log in to view your orders.</div>
     );
   }
 
@@ -151,7 +156,12 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <label className="min-w-14 font-semibold">Items:</label>
-                  <span className="">{order.orderItems.length}</span>
+                  <span className="">
+                    {order.orderItems.reduce(
+                      (acc, item) => acc + item.quantity,
+                      0,
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <label className="min-w-14 font-semibold">Total:</label>
@@ -173,52 +183,50 @@ export default function OrdersPage() {
                     "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
 
                   return (
-                    <div key={item.id} className="flex flex-col gap-2">
-                      <ItemImage
-                        src={imageUrl}
-                        alt={product.name ?? "Product image"}
+                    <ItemCard
+                      key={item.id}
+                      image={{
+                        src: imageUrl,
+                        alt: product.name ?? "Product image",
+                        href: `/product/${variant.productId}`,
+                      }}
+                      overlays={
+                        <>
+                          <OverlayButton
+                            position="topLeft"
+                            onClick={handleReturn}
+                            title="Return Item"
+                          >
+                            <FaUndo size={12} />
+                          </OverlayButton>
+
+                          <OverlayButton
+                            position="topRight"
+                            onClick={(e) => handleAddToCart(e, variant.id)}
+                            disabled={addToCartMutation.isPending}
+                            title="Buy Again"
+                          >
+                            <FaCartPlus size={14} />
+                          </OverlayButton>
+
+                          <OverlayTag position="bottomLeft">
+                            {formatCurrency(item.priceAtPurchase)} x
+                            {item.quantity}
+                          </OverlayTag>
+                        </>
+                      }
+                    >
+                      <Link
                         href={`/product/${variant.productId}`}
+                        className="line-clamp-1 text-sm leading-normal font-semibold hover:text-blue-400"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {/* Return Button */}
-                        <OverlayButton
-                          position="topLeft"
-                          onClick={handleReturn}
-                          title="Return Item"
-                        >
-                          <FaUndo size={12} />
-                        </OverlayButton>
-
-                        {/* Buy Again Button */}
-                        <OverlayButton
-                          position="topRight"
-                          onClick={(e) => handleAddToCart(e, variant.id)}
-                          disabled={addToCartMutation.isPending}
-                          title="Buy Again"
-                        >
-                          <FaCartPlus size={14} />
-                        </OverlayButton>
-
-                        {/* Price Tag */}
-                        <OverlayTag position="bottomLeft">
-                          {formatCurrency(item.priceAtPurchase)} x
-                          {item.quantity}
-                        </OverlayTag>
-                      </ItemImage>
-
-                      <div className="flex flex-col gap-0 px-1">
-                        {/* ... Name and Options ... */}
-                        <Link
-                          href={`/product/${variant.productId}`}
-                          className="line-clamp-1 text-sm font-semibold hover:text-blue-400"
-                          onClick={(e) => e.stopPropagation()} // Prevent modal opening
-                        >
-                          {product.name}
-                        </Link>
-                        <p className="line-clamp-1 text-xs text-gray-500 capitalize">
-                          {formatProductOptionsCaption(variant.options)}
-                        </p>
-                      </div>
-                    </div>
+                        {product.name}
+                      </Link>
+                      <p className="line-clamp-1 text-xs leading-normal text-gray-500 capitalize">
+                        {formatProductOptionsCaption(variant.options)}
+                      </p>
+                    </ItemCard>
                   );
                 })}
               </ItemGrid>

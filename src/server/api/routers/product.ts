@@ -41,6 +41,8 @@ export const productRouter = createTRPCRouter({
         priceMax,
         ratingMin,
         ratingMax,
+        createdMin,
+        createdMax,
         stock,
         sort,
       } = input;
@@ -69,6 +71,14 @@ export const productRouter = createTRPCRouter({
       }
       if (ratingMax) {
         conditions.push(lte(products.averageRating, ratingMax.toString()));
+      }
+
+      // Created Date Filter
+      if (createdMin) {
+        conditions.push(gte(products.createdAt, new Date(createdMin)));
+      }
+      if (createdMax) {
+        conditions.push(lte(products.createdAt, new Date(createdMax)));
       }
 
       // Stock Filter

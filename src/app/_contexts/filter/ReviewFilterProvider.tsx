@@ -7,7 +7,7 @@ import { defaultReviewSort } from "~/const";
 
 // 1. Define Schema
 const SCHEMA = {
-  rating: "array",
+  rating: "stringArray",
 } as const;
 
 // 2. Define Types based on Schema
