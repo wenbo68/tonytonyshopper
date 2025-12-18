@@ -279,9 +279,11 @@ export const comments = createTable(
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
 
-    // productVariantId: d
-    //   .varchar({ length: 255 })
-    //   .references(() => productVariants.id), // Nullable for backward compatibility
+    // Links to the specific variant (Enable this)
+    productVariantId: d
+      .varchar({ length: 255 })
+      .notNull() // Make this notNull if all new reviews must have a variant
+      .references(() => productVariants.id),
 
     parentId: d
       .varchar({ length: 255 })
@@ -305,10 +307,10 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
     fields: [comments.productId],
     references: [products.id],
   }),
-  // variant: one(productVariants, {
-  //   fields: [comments.productVariantId],
-  //   references: [productVariants.id],
-  // }),
+  variant: one(productVariants, {
+    fields: [comments.productVariantId],
+    references: [productVariants.id],
+  }),
   // Each reply belongs to one parent comment
   parent: one(comments, {
     fields: [comments.parentId],

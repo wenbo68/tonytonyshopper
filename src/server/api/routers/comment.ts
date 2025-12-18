@@ -216,13 +216,14 @@ export const commentRouter = createTRPCRouter({
     .input(
       z.object({
         productId: z.string(),
+        productVariantId: z.string(),
         parentId: z.string().optional(),
         rating: z.number().min(1).max(5).optional(),
         text: z.string().min(1, "Comment cannot be empty."),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { productId, parentId, rating, text } = input;
+      const { productId, productVariantId, parentId, rating, text } = input;
       const userId = ctx.session.user.id;
 
       // Wrap everything in a transaction
@@ -231,6 +232,7 @@ export const commentRouter = createTRPCRouter({
         await tx.insert(comments).values({
           userId,
           productId,
+          productVariantId,
           parentId,
           rating,
           text,
