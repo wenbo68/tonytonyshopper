@@ -7,14 +7,14 @@ import {
   type SetStateAction,
 } from "react";
 import { useSession } from "next-auth/react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import StarRating from "../rating/StarRating";
 import type { UpdateCommentInput } from "~/type";
 import toast from "react-hot-toast";
-import { useProductContext } from "~/app/_contexts/ProductProvider";
+// import { useProductContext } from "~/app/_contexts/ProductProvider";
 
 interface UpdateReviewFields {
-  id: string;
+  commentId: string;
   rating: number;
   text: string;
   setIsEditing: Dispatch<SetStateAction<boolean>>;
@@ -23,31 +23,44 @@ interface UpdateReviewFields {
 }
 
 type WriteReviewProps = {
-  updateInput?: UpdateReviewFields;
+  productId: string;
+  productVariantId?: string;
+  existingReview?: RouterOutputs["comment"]["getUserReviewForProduct"]; // New prop
+  updateInput?: UpdateReviewFields; // Keep for compatibility with comment section
+  onSuccess?: () => void;
 };
 
-export default function WriteReview({ updateInput }: WriteReviewProps) {
+export default function WriteReview({
+  productId,
+  productVariantId,
+  existingReview,
+  updateInput,
+  onSuccess,
+}: WriteReviewProps) {
   const { data: session } = useSession();
   const utils = api.useUtils();
-  const { productId } = useProductContext();
 
-  // --- NEW: Check eligibility ---
-  // Only run this check if the user is logged in AND not in "edit mode"
-  const { data: canReview, isLoading: isCheckingEligibility } =
-    api.comment.getCanReview.useQuery(
-      { productId },
-      { enabled: !!session && !updateInput },
-    );
-
-  const [rating, setRating] = useState(updateInput ? updateInput.rating : 0);
-  const [text, setText] = useState(updateInput ? updateInput.text : "");
-
+  // Initialize state with existing review data if available
+  const [rating, setRating] = useState(
+    updateInput ? updateInput.rating : (existingReview?.rating ?? 0),
+  );
+  const [text, setText] = useState(
+    updateInput ? updateInput.text : (existingReview?.text ?? ""),
+  );
   const [error, setError] = useState("");
+
+  // Common invalidation logic
+  const invalidateQueries = () => {
+    void utils.comment.getAverageRating.invalidate();
+    void utils.comment.getCommentTree.invalidate();
+    void utils.comment.getUserReviewForProduct.invalidate({ productId });
+  };
 
   const addMutation = api.comment.add.useMutation({
     onError: (err, newReview, context) => {
-      void utils.comment.getAverageRating.invalidate();
-      void utils.comment.getCommentTree.invalidate();
+      // void utils.comment.getAverageRating.invalidate();
+      // void utils.comment.getCommentTree.invalidate();
+      invalidateQueries();
 
       console.error("WriteReview addMutation onError:", err);
       setError("Failed to add review. Please try again.");
@@ -58,38 +71,67 @@ export default function WriteReview({ updateInput }: WriteReviewProps) {
         </div>
       ));
     },
-    onSuccess: () => {
-      void utils.comment.getAverageRating.invalidate();
-      void utils.comment.getCommentTree.invalidate();
-      // Clear the form only on a successful submission.
-      setRating(0);
-      setText("");
+    onSuccess: (data, variables) => {
+      // void utils.comment.getAverageRating.invalidate();
+      // void utils.comment.getCommentTree.invalidate();
+      invalidateQueries();
+
+      // // Clear the form only on a successful submission.
+      // setRating(0);
+      // setText("");
 
       toast.custom((t) => (
         <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
           Submission succeeded.
         </div>
       ));
+      // // Only trigger closure if this specific product's review finished
+      // if (variables.productId === productId) {
+      //   onSuccess?.();
+      // }
     },
   });
 
-  const handleAdd = (e: React.FormEvent) => {
+  const updateMutation = api.comment.update.useMutation({
+    onSuccess: (data, variables) => {
+      invalidateQueries();
+      toast.custom((t) => (
+        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
+          Update succeeded.
+        </div>
+      ));
+      // // Only trigger closure if this specific review ID finished
+      // if (variables.id === existingReview?.id) {
+      //   onSuccess?.();
+      // }
+    },
+    onError: () => setError("Failed to update review."),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) {
-      setError("Please provide a rating.");
-      return;
-    }
-    if (text.trim() === "") {
-      setError("Please provide a valid comment.");
-      return;
-    }
+    if (rating === 0) return setError("Please provide a rating.");
+    if (!text.trim()) return setError("Please provide a comment.");
+
     setError("");
-    addMutation.mutate({
-      productId,
-      rating,
-      text,
-    });
+
+    if (existingReview) {
+      updateMutation.mutate({ id: existingReview.id, rating, text });
+    } else {
+      addMutation.mutate({
+        productId,
+        productVariantId: productVariantId!,
+        rating,
+        text,
+      });
+    }
   };
+
+  // Decouple pending state from other items
+  const isPending =
+    (addMutation.isPending && addMutation.variables?.productId === productId) ||
+    (updateMutation.isPending &&
+      updateMutation.variables?.id === existingReview?.id);
 
   if (!session)
     return (
@@ -102,40 +144,28 @@ export default function WriteReview({ updateInput }: WriteReviewProps) {
       </p>
     );
 
-  // 2. If adding a new review (not editing), check eligibility
-  if (!updateInput) {
-    if (isCheckingEligibility) {
-      return <div className="h-32 animate-pulse rounded bg-gray-900 p-5"></div>;
-    }
-
-    if (!canReview) {
-      return (
-        <div className="rounded bg-gray-900 p-5 text-sm text-gray-400">
-          You can only review products you have purchased and received (Order
-          Status: Shipped).
-        </div>
-      );
-    }
-  }
-
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex w-full flex-col gap-2">
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <form
-        onSubmit={(e: FormEvent<Element>) =>
-          updateInput
-            ? updateInput.handleUpdate({
-                e,
-                id: updateInput.id,
-                type: "review",
-                rating,
-                text,
-              })
-            : handleAdd(e)
-        }
+        onSubmit={(e: FormEvent<Element>) => {
+          if (updateInput) {
+            // Logic for inline editing in comment section
+            updateInput.handleUpdate({
+              e,
+              id: updateInput.commentId,
+              type: "review",
+              rating,
+              text,
+            });
+          } else {
+            // Logic for the ReviewModal (Add/Edit mode)
+            handleSubmit(e); // Added the (e) to actually execute the function
+          }
+        }}
         className={`bg-gray-900 ${
-          updateInput ? `` : `p-5`
+          updateInput ? `` : `p-4`
         } flex flex-col gap-4 rounded text-sm text-gray-400`}
       >
         {/* rating */}
@@ -189,10 +219,10 @@ export default function WriteReview({ updateInput }: WriteReviewProps) {
           <div className="flex items-center justify-end">
             <button
               type="submit"
-              disabled={addMutation.isPending}
+              disabled={isPending}
               className="min-w-36 cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
             >
-              {addMutation.isPending ? "Submitting..." : "Submit Review"}
+              {isPending ? "Saving..." : existingReview ? "Update" : "Submit"}
             </button>
           </div>
         )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { handleOverlayClick } from "~/server/utils/modal";
 import type { RouterOutputs } from "~/trpc/react";
 
 // Define a union type that accepts either User Order or Admin Order
@@ -61,12 +62,12 @@ export default function OrderDetailsModal({
     // Overlay
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm"
-      onClick={onClose}
+      onMouseDown={(e) => handleOverlayClick(e, onClose)}
     >
       {/* Modal Content Box */}
       <div
         className="scrollbar-hide flex max-h-[80vh] w-lg max-w-[90vw] flex-col gap-3 overflow-y-auto rounded bg-gray-900 p-4"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Order</label>

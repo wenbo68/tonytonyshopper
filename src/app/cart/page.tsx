@@ -10,7 +10,7 @@ import {
   formatProductOptionsCaption,
 } from "~/server/utils/product";
 import { useState } from "react";
-import { useProductVariantModalStore } from "../_hooks/useVariantModalStore";
+import { useProductVariantModalStore } from "../_hooks/useProductVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
 import type { VariantAndProduct } from "~/type";
 import { FaPen, FaTrash } from "react-icons/fa";

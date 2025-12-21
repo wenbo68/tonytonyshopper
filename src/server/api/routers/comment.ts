@@ -214,15 +214,21 @@ export const commentRouter = createTRPCRouter({
    */
   add: protectedProcedure
     .input(
-      z.object({
-        productId: z.string(),
-        parentId: z.string().optional(),
-        rating: z.number().min(1).max(5).optional(),
-        text: z.string().min(1, "Comment cannot be empty."),
-      }),
+      z
+        .object({
+          productId: z.string(),
+          productVariantId: z.string().optional(), //null for replies
+          parentId: z.string().optional(), //null for reviews
+          rating: z.number().min(1).max(5).optional(),
+          text: z.string().min(1, "Comment cannot be empty."),
+        })
+        .refine((data) => data.productVariantId || data.parentId, {
+          message: "Either productVariantId or parentId must be provided",
+          path: ["productVariantId"],
+        }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { productId, parentId, rating, text } = input;
+      const { productId, productVariantId, parentId, rating, text } = input;
       const userId = ctx.session.user.id;
 
       // Wrap everything in a transaction
@@ -231,6 +237,7 @@ export const commentRouter = createTRPCRouter({
         await tx.insert(comments).values({
           userId,
           productId,
+          productVariantId,
           parentId,
           rating,
           text,
@@ -350,5 +357,26 @@ export const commentRouter = createTRPCRouter({
       });
 
       return { success: true };
+    }),
+
+  /**
+   * Fetches the current user's top-level review for a product.
+   */
+  getUserReviewForProduct: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { productId } = input;
+      const userId = ctx.session.user.id;
+
+      const review = await ctx.db.query.comments.findFirst({
+        where: and(
+          eq(comments.productId, productId),
+          eq(comments.userId, userId),
+          isNull(comments.parentId), // Ensure it's the main review, not a reply
+        ),
+      });
+
+      // FIX: Return null instead of undefined to satisfy React Query
+      return review ?? null;
     }),
 });

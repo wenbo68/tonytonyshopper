@@ -24,7 +24,7 @@ export default function ReviewSection() {
         <ReviewFilters />
         <ReviewFilterPills />
         <Reviews />
-        <WriteReview />
+        {/* <WriteReview /> */}
       </section>
     </ReviewFilterProvider>
   );

@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   index,
   pgEnum,
   pgTableCreator,
@@ -279,9 +280,10 @@ export const comments = createTable(
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
 
-    // productVariantId: d
-    //   .varchar({ length: 255 })
-    //   .references(() => productVariants.id), // Nullable for backward compatibility
+    productVariantId: d //null for replies (shouldn't be null for reviews)
+      .varchar({ length: 255 })
+      // .notNull()
+      .references(() => productVariants.id),
 
     parentId: d
       .varchar({ length: 255 })
@@ -295,6 +297,12 @@ export const comments = createTable(
     // Index for faster lookups of a product's reviews
     index("comment_product_id_idx").on(t.productId),
     index("comment_parent_id_idx").on(t.parentId),
+
+    // --- ADD THIS CHECK CONSTRAINT ---
+    check(
+      "productVariantId_or_parentId_check",
+      sql`${t.productVariantId} IS NOT NULL OR ${t.parentId} IS NOT NULL`,
+    ),
   ],
 );
 
@@ -305,10 +313,10 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
     fields: [comments.productId],
     references: [products.id],
   }),
-  // variant: one(productVariants, {
-  //   fields: [comments.productVariantId],
-  //   references: [productVariants.id],
-  // }),
+  variant: one(productVariants, {
+    fields: [comments.productVariantId],
+    references: [productVariants.id],
+  }),
   // Each reply belongs to one parent comment
   parent: one(comments, {
     fields: [comments.parentId],

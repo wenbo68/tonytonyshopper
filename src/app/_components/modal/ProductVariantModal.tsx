@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { useProductVariantModalStore } from "~/app/_hooks/useVariantModalStore";
+import { useProductVariantModalStore } from "~/app/_hooks/useProductVariantModalStore";
 import { formatCurrency, formatNumber } from "~/server/utils/product";
 import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
@@ -16,14 +16,22 @@ import {
   OverlayTag,
   OverlayTagGroup,
 } from "../item/ItemImageOverlays";
+import toast from "react-hot-toast";
+import { handleOverlayClick } from "~/server/utils/modal";
 
 export function ProductVariantModal() {
   const { data: session } = useSession();
   const utils = api.useUtils();
 
   // === 1. Global Modal State ===
-  const { isOpen, closeModal, mode, editedItem, product } =
-    useProductVariantModalStore();
+  const {
+    isOpen,
+    closeModal,
+    mode,
+    variantAndQuantity,
+    product: productProps,
+    productId,
+  } = useProductVariantModalStore();
 
   // === 2. Internal Component State ===
   const [selectedOptions, setSelectedOptions] = useState<
@@ -31,36 +39,87 @@ export function ProductVariantModal() {
   >({});
   const [quantity, setQuantity] = useState(1);
 
+  // === 3. Query ===
+  // Fetch product if we only have an ID
+  const { data: fetchedProduct, isFetching: isFetchingProduct } =
+    api.product.getById.useQuery(
+      { id: productId ?? "" },
+      { enabled: !!productId && isOpen },
+    );
+  const product = productProps ?? fetchedProduct;
+
   // === 4. Guest Cart Mutations ===
   const addGuestItem = useGuestCartStore((state) => state.addItem);
   const updateGuestItem = useGuestCartStore((state) => state.updateQuantity);
   const removeGuestItem = useGuestCartStore((state) => state.removeItem);
 
   // === 5. Logged-in (tRPC) Mutations ===
-  const { mutate: addItem, isPending: isAdding } = api.cart.add.useMutation({
-    onSuccess: () => {
+  // Destructure 'variables' to track which item is being processed
+  const {
+    mutate: addItem,
+    isPending: isAdding,
+    variables: addVars,
+  } = api.cart.add.useMutation({
+    onSuccess: (data, vars) => {
       utils.cart.get.invalidate();
-      closeModal();
+      // // Only close if the finished mutation belongs to the current product
+      // if (product?.variants.some((v) => v.id === vars.productVariantId)) {
+      //   closeModal();
+      // }
+      toast.custom((t) => (
+        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
+          Added to cart.
+        </div>
+      ));
     },
   });
 
-  const { mutate: updateItem, isPending: isUpdating } =
-    api.cart.updateItem.useMutation({
-      onSuccess: async () => {
-        await utils.cart.get.invalidate();
-        closeModal();
-      },
-    });
+  const {
+    mutate: updateItem,
+    isPending: isUpdating,
+    variables: updateVars,
+  } = api.cart.updateItem.useMutation({
+    onSuccess: async (data, vars) => {
+      await utils.cart.get.invalidate();
+      // if (product?.variants.some((v) => v.id === vars.newProductVariantId)) {
+      //   closeModal();
+      // }
+      toast.custom((t) => (
+        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
+          Cart updated.
+        </div>
+      ));
+    },
+  });
 
-  const { mutate: updateQuantity, isPending: isUpdatingQty } =
-    api.cart.updateQuantity.useMutation({
-      onSuccess: async () => {
-        await utils.cart.get.invalidate();
-        closeModal();
-      },
-    });
+  const {
+    mutate: updateQuantity,
+    isPending: isUpdatingQty,
+    variables: updateQtyVars,
+  } = api.cart.updateQuantity.useMutation({
+    onSuccess: async (data, vars) => {
+      await utils.cart.get.invalidate();
+      // if (product?.variants.some((v) => v.id === vars.productVariantId)) {
+      //   closeModal();
+      // }
+      toast.custom((t) => (
+        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
+          Cart updated.
+        </div>
+      ));
+    },
+  });
 
-  const isPending = isAdding || isUpdating || isUpdatingQty;
+  // Determine pending state based on the active product
+  const isPending =
+    (isAdding &&
+      product?.variants.some((v) => v.id === addVars?.productVariantId)) ||
+    (isUpdating &&
+      product?.variants.some(
+        (v) => v.id === updateVars?.newProductVariantId,
+      )) ||
+    (isUpdatingQty &&
+      product?.variants.some((v) => v.id === updateQtyVars?.productVariantId));
 
   // === 6. Effects to sync state when modal opens ===
   // This effect derives all available options (like on product page)
@@ -97,18 +156,20 @@ export function ProductVariantModal() {
   // This effect pre-fills the state when the modal opens
   useEffect(() => {
     if (isOpen && product) {
-      if (mode === "edit" && editedItem) {
+      // Updated: Check for editedItem in both 'edit' and 'add' modes to allow pre-selection
+      if (variantAndQuantity) {
         const itemVariant = product.variants.find(
-          (v) => v.id === editedItem.variantId,
+          (v) => v.id === variantAndQuantity.variantId,
         );
         setSelectedOptions(itemVariant?.options ?? {});
-        setQuantity(editedItem.quantity);
+        setQuantity(variantAndQuantity.quantity);
       } else if (mode === "add") {
+        // Fallback for generic "add" clicks (e.g., from product list)
         setSelectedOptions(product.variants[0]?.options ?? {});
         setQuantity(1);
       }
     }
-  }, [isOpen, product, mode, editedItem]);
+  }, [isOpen, product, mode, variantAndQuantity]);
 
   // === 7. Event Handlers ===
   const handleOptionChange = (optionName: string, value: string) => {
@@ -128,13 +189,14 @@ export function ProductVariantModal() {
         addGuestItem({ productVariantId: selectedVariant.id, quantity });
         closeModal();
       }
-    } else if (mode === "edit" && editedItem) {
-      const variantChanged = editedItem.variantId !== selectedVariant.id;
+    } else if (mode === "edit" && variantAndQuantity) {
+      const variantChanged =
+        variantAndQuantity.variantId !== selectedVariant.id;
 
       if (session?.user) {
         if (variantChanged) {
           updateItem({
-            oldProductVariantId: editedItem.variantId,
+            oldProductVariantId: variantAndQuantity.variantId,
             newProductVariantId: selectedVariant.id,
             newQuantity: quantity,
           });
@@ -148,7 +210,7 @@ export function ProductVariantModal() {
         // Guest cart logic
         if (variantChanged) {
           // Remove old, add new
-          removeGuestItem(editedItem.variantId);
+          removeGuestItem(variantAndQuantity.variantId);
           addGuestItem({ productVariantId: selectedVariant.id, quantity });
         } else {
           updateGuestItem(selectedVariant.id, quantity);
@@ -159,7 +221,7 @@ export function ProductVariantModal() {
   };
 
   // === 8. Render Logic ===
-  if (!isOpen || !product) return null;
+  if (!isOpen) return null;
 
   const displayImage =
     selectedVariant?.images?.[0] ??
@@ -172,141 +234,157 @@ export function ProductVariantModal() {
 
   const displayStock = selectedVariant?.stock ?? 0;
 
-  const numericRating = parseFloat(product.averageRating);
+  const numericRating = parseFloat(product?.averageRating ?? "");
 
   return (
     // Modal Overlay
     <div
       className="bg-opacity-60 fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm"
-      onClick={closeModal}
+      onMouseDown={(e) => handleOverlayClick(e, closeModal)}
     >
       {/* Modal Content */}
       <div
         className="scrollbar-hide flex max-h-[90vh] w-full max-w-[90vw] flex-col gap-5 overflow-y-auto rounded bg-gray-900 p-4 sm:max-w-sm"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col gap-3">
-          <ItemImage
-            src={displayImage}
-            alt={product.name ?? "Product image"}
-            href={`/product/${product.id}`}
-            className="group" // to keep hover scale effect on image
-          >
-            {/* Edit Button */}
-            {session?.user?.role === "admin" && (
-              <OverlayLink
-                href={`/product/edit/${product.id}`}
-                position="topLeft"
-                title="Edit Product"
-              >
-                <FaPen size={12} />
-              </OverlayLink>
-            )}
-
-            {/* Tags Group */}
-            <OverlayTagGroup position="bottomLeft">
-              <OverlayTag
-                position="bottomLeft"
-                className="static" // Override absolute to allow flex flow
-              >
-                {displayPrice}
-              </OverlayTag>
-              <OverlayTag
-                position="bottomLeft"
-                className="static" // Override absolute
-              >
-                Stock: {displayStock}
-              </OverlayTag>
-            </OverlayTagGroup>
-          </ItemImage>
-
-          <div className="flex flex-col items-center gap-0">
-            {/* product name */}
-            <Link
-              href={`/product/${product.id}`}
-              className="line-clamp-2 text-xl font-semibold text-gray-300 hover:text-blue-400"
-            >
-              {product.name}
-            </Link>
-            {/* avg rating */}
-            <Link
-              href={`/product/${product.id}#review-filters`}
-              className="flex cursor-pointer items-center gap-1"
-            >
-              <span className="text-sm text-gray-500">
-                {numericRating.toFixed(1)}
-              </span>
-              <span className="text-sm text-gray-500">
-                ({formatNumber(product.reviewCount)})
-              </span>
-              <StarRating rating={numericRating} interactive={false} />
-            </Link>
+        {isFetchingProduct ? (
+          <div className="rounded bg-gray-900 p-4 text-center text-gray-500">
+            <p className="animate-pulse">Loading product...</p>
           </div>
-        </div>
+        ) : !product ? (
+          <div className="rounded bg-gray-900 p-4 text-center">
+            <p className="">Loading review...</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-3">
+              <ItemImage
+                src={displayImage}
+                alt={product.name ?? "Product image"}
+                href={`/product/${product.id}`}
+                className="group" // to keep hover scale effect on image
+              >
+                {/* Edit Button */}
+                {session?.user?.role === "admin" && (
+                  <OverlayLink
+                    href={`/product/edit/${product.id}`}
+                    position="topLeft"
+                    title="Edit Product"
+                  >
+                    <FaPen size={12} />
+                  </OverlayLink>
+                )}
 
-        {/* Options */}
-        <div className="flex flex-col gap-3">
-          {Object.entries(options).map(([name, values]) => (
-            <div key={name} className="flex items-center gap-2">
-              <label className="min-w-16 text-sm text-gray-400 capitalize">
-                {name}:
-              </label>
-              <Dropdown
-                options={values.map((v) => ({ label: v, value: v }))}
-                value={selectedOptions[name] ?? ""}
-                onChange={(newValue) => handleOptionChange(name, newValue)}
-                buttonColor="bg-gray-800"
-                dropdownColor="bg-gray-700"
-                dropdownHighlightColor="hover:bg-gray-800"
-              />
+                {/* Tags Group */}
+                <OverlayTagGroup position="bottomLeft">
+                  <OverlayTag
+                    position="bottomLeft"
+                    className="static" // Override absolute to allow flex flow
+                  >
+                    {displayPrice}
+                  </OverlayTag>
+                  <OverlayTag
+                    position="bottomLeft"
+                    className="static" // Override absolute
+                  >
+                    Stock: {displayStock}
+                  </OverlayTag>
+                </OverlayTagGroup>
+              </ItemImage>
+
+              <div className="flex flex-col items-center gap-0">
+                {/* product name */}
+                <Link
+                  href={`/product/${product.id}`}
+                  className="line-clamp-2 text-xl font-semibold text-gray-300 hover:text-blue-400"
+                >
+                  {product.name}
+                </Link>
+                {/* avg rating */}
+                <Link
+                  href={`/product/${product.id}#review-filters`}
+                  className="flex cursor-pointer items-center gap-1"
+                >
+                  <span className="text-sm text-gray-500">
+                    {numericRating.toFixed(1)}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    ({formatNumber(product.reviewCount)})
+                  </span>
+                  <StarRating rating={numericRating} interactive={false} />
+                </Link>
+              </div>
             </div>
-          ))}
-          {/* Quantity */}
-          <div className="flex items-center gap-2">
-            <label
-              htmlFor="quantity"
-              className="min-w-16 text-sm text-gray-400"
-            >
-              Quantity:
-            </label>
-            <input
-              type="number"
-              id="quantity"
-              min="1"
-              max={displayStock}
-              value={quantity}
-              onChange={(e) => setQuantity(Math.max(0, Number(e.target.value)))}
-              className="w-full rounded bg-gray-800 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-row gap-3">
-          <button
-            onClick={closeModal}
-            disabled={isPending}
-            className="w-full cursor-pointer rounded bg-gray-700/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-600/50 disabled:cursor-default disabled:bg-gray-700/50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isPending || !selectedVariant || displayStock <= 0}
-            className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
-          >
-            {isPending
-              ? "Saving..."
-              : mode === "add"
-                ? "Add to Cart"
-                : "Save Changes"}
-          </button>
-          {!selectedVariant && (
-            <p className="grow text-sm text-red-500">
-              This option is unavailable.
-            </p>
-          )}
-        </div>
+            {/* Options */}
+            <div className="flex flex-col gap-3">
+              {Object.entries(options).map(([name, values]) => (
+                <div key={name} className="flex items-center gap-2">
+                  <label className="min-w-16 text-sm text-gray-400 capitalize">
+                    {name}:
+                  </label>
+                  <Dropdown
+                    options={values.map((v) => ({ label: v, value: v }))}
+                    value={selectedOptions[name] ?? ""}
+                    onChange={(newValue) => handleOptionChange(name, newValue)}
+                    buttonColor="bg-gray-800"
+                    dropdownColor="bg-gray-700"
+                    dropdownHighlightColor="hover:bg-gray-800"
+                  />
+                </div>
+              ))}
+              {/* Quantity */}
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="quantity"
+                  className="min-w-16 text-sm text-gray-400"
+                >
+                  Quantity:
+                </label>
+                <input
+                  type="number"
+                  id="quantity"
+                  min="1"
+                  max={displayStock}
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(Math.max(0, Number(e.target.value)))
+                  }
+                  className="w-full rounded bg-gray-800 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-row gap-3">
+              <button
+                onClick={closeModal}
+                disabled={isPending}
+                className="w-full cursor-pointer rounded bg-gray-700/50 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-600/50 disabled:cursor-default disabled:bg-gray-700/50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isPending || !selectedVariant || displayStock <= 0}
+                className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
+              >
+                {mode === "add"
+                  ? isPending
+                    ? "Adding..."
+                    : "Add to Cart"
+                  : isPending
+                    ? "Saving..."
+                    : "Save"}
+              </button>
+              {!selectedVariant && (
+                <p className="grow text-sm text-red-500">
+                  This option is unavailable.
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

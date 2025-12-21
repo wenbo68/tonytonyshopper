@@ -64,3 +64,5 @@ export default function RootLayout({
 // when it comes to past orders: what if the variant's price has changed?
 
 // why we can input -1 in filter inputs when min is 0?
+
+// add delete review button to review modal
