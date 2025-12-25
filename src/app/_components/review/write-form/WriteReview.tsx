@@ -1,8 +1,14 @@
-// src/app/_components/review/write-form/WriteReview.tsx
 "use client";
 
-import { type Dispatch, type SetStateAction } from "react";
-import ReviewForm from "./ReviewForm";
+import {
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from "react";
+import { useSession } from "next-auth/react";
+import { api } from "~/trpc/react";
+import StarRating from "../rating/StarRating";
 import type { UpdateCommentInput } from "~/type";
 // import toast from "react-hot-toast";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
@@ -17,18 +23,9 @@ interface UpdateReviewFields {
   isUpdatePending: boolean;
 }
 
-// // Now purely an Edit Wrapper
-// export default function WriteReview({
-//   updateInput,
-// }: {
-//   updateInput: UpdateReviewFields;
-// }) {
-//   // We adapter the ReviewForm's simple onSubmit to the complex handleUpdate used by the parent
-//   const handleEditSubmit = (data: { rating: number; text: string }) => {
-//     // Construct a fake event if your handleUpdate strictly needs it,
-//     // or refactor handleUpdate to not need 'e'.
-//     // Assuming handleUpdate needs an event for preventDefault():
-//     const fakeEvent = { preventDefault: () => {} } as any;
+type WriteReviewProps = {
+  updateInput?: UpdateReviewFields;
+};
 
 export default function WriteReview({ updateInput }: WriteReviewProps) {
   const { data: session } = useSession();
@@ -87,6 +84,33 @@ export default function WriteReview({ updateInput }: WriteReviewProps) {
       text,
     });
   };
+
+  if (!session)
+    return (
+      <p
+        className={`bg-gray-900 ${
+          updateInput ? `` : `p-5`
+        } flex flex-col gap-4 rounded text-sm text-gray-400`}
+      >
+        Please login first to submit a review.
+      </p>
+    );
+
+  // 2. If adding a new review (not editing), check eligibility
+  if (!updateInput) {
+    if (isCheckingEligibility) {
+      return <div className="h-32 animate-pulse rounded bg-gray-900 p-5"></div>;
+    }
+
+    if (!canReview) {
+      return (
+        <div className="rounded bg-gray-900 p-5 text-sm text-gray-400">
+          You can only review products you have purchased and received (Order
+          Status: Shipped).
+        </div>
+      );
+    }
+  }
 
   return (
     <div className="flex flex-col gap-2">
