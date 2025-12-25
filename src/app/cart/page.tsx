@@ -20,7 +20,7 @@ import {
   OverlayButton,
   OverlayTag,
 } from "../_components/item/ItemImageOverlays";
-import ItemGridSkeleton from "../_components/item/ItemGridSkeleton";
+// import ItemGridSkeleton from "../_components/item/ItemGridSkeleton";
 import { ItemCard } from "../_components/item/ItemCard";
 
 type CartItem = {
@@ -116,30 +116,26 @@ export default function CartPage() {
   }
 
   // ==== conditional rendering ====
-  const skeletonCount = 4;
+  // const skeletonCount = 4;
   if (sessionStatus === "loading" || showLoading) {
-    return (
-      <ItemGridSkeleton
-        gridClasses={itemGridClassName}
-        skeletonCount={skeletonCount}
-        classNames={[
-          "w-4/5 text-sm min-h-[calc(1.5em-0.25rem)]",
-          "w-3/5 text-xs min-h-[calc(1.5em-0.25rem)]",
-        ]}
-      />
-    );
+    // return (
+    //   <ItemGridSkeleton
+    //     gridClasses={itemGridClassName}
+    //     skeletonCount={skeletonCount}
+    //     classNames={[
+    //       "w-4/5 text-sm min-h-[calc(1.5em-0.25rem)]",
+    //       "w-3/5 text-xs min-h-[calc(1.5em-0.25rem)]",
+    //     ]}
+    //   />
+    // );
+    return <div className="animate-pulse text-center">Loading cart...</div>;
   }
 
   if (cartItems.length === 0) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-200">Your Cart is Empty</h1>
-        <Link
-          href="/product/all"
-          className="mt-4 inline-block text-indigo-400 hover:underline"
-        >
-          Start Shopping
-        </Link>
+      <div className="flex flex-col gap-0">
+        <h2 className="text-center font-bold">No items found!</h2>
+        {/* <p className="text-center text-sm">Try different filters.</p> */}
       </div>
     );
   }

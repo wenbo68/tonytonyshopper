@@ -7,6 +7,7 @@ interface ItemImageProps {
   src: string;
   alt: string;
   href?: string;
+  onClick?: () => void;
   children?: ReactNode; // For overlays (buttons, tags)
   className?: string;
   imageClassName?: string;
@@ -16,6 +17,7 @@ export function ItemImage({
   src,
   alt,
   href,
+  onClick,
   children,
   className,
   imageClassName,
@@ -35,7 +37,13 @@ export function ItemImage({
 
   return (
     <div className={clsx("relative overflow-hidden rounded", className)}>
-      {href ? <Link href={href}>{imageContent}</Link> : imageContent}
+      {href ? (
+        <Link onClick={onClick} href={href}>
+          {imageContent}
+        </Link>
+      ) : (
+        imageContent
+      )}
       {children}
     </div>
   );

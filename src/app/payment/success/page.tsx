@@ -71,7 +71,7 @@ function SuccessContent() {
         <p className="">
           Your payment was received and your order is being processed.
         </p>
-        <Link href="/payment/history" className="text-blue-400 hover:underline">
+        <Link href="/orders" className="text-blue-400 hover:underline">
           View Your Order History
         </Link>
       </>
@@ -85,7 +85,7 @@ function SuccessContent() {
       <p className="">
         If you're not redirected, please check your order history.
       </p>
-      <Link href="/payment/history" className="text-blue-400 hover:underline">
+      <Link href="/orders" className="text-blue-400 hover:underline">
         View Your Order History
       </Link>
     </>

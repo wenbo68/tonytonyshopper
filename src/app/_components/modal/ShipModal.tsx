@@ -24,6 +24,18 @@ export function ShipOrderModal({
   const [carrier, setCarrier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
 
+  // prevent scrolling main page when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   // update state when the 'order' prop changes
   useEffect(() => {
     if (order) {

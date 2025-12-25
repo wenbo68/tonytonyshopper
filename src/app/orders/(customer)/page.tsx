@@ -72,7 +72,7 @@ export default function OrdersPage() {
   // Safely parse with Zod
   const parsedInput = getUserOrdersInputSchema.safeParse(rawInput);
 
-  const { data, isLoading } = api.order.getUserOrders.useQuery(
+  const { data, isFetching } = api.order.getUserOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
     {
       enabled: status === "authenticated" && parsedInput.success,
@@ -97,7 +97,7 @@ export default function OrdersPage() {
     });
   };
 
-  if (status === "loading" || isLoading) {
+  if (status === "loading" || isFetching) {
     return (
       <div className="animate-pulse text-center">Loading order history...</div>
     );
@@ -113,9 +113,9 @@ export default function OrdersPage() {
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-bold">No Orders Found</h2>
-        <p className="">Try adjusting your search filters.</p>
+      <div className="flex flex-col gap-0">
+        <h2 className="text-center font-bold">No orders found!</h2>
+        {/* <p className="text-center text-sm">Try different filters.</p> */}
       </div>
     );
   }

@@ -16,8 +16,8 @@ import {
   OverlayTag,
   OverlayTagGroup,
 } from "../item/ItemImageOverlays";
-import toast from "react-hot-toast";
 import { handleOverlayClick } from "~/server/utils/modal";
+import { customToast } from "~/server/utils/toast";
 
 export function ProductVariantModal() {
   const { data: session } = useSession();
@@ -37,7 +37,7 @@ export function ProductVariantModal() {
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >({});
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number | "">(1);
 
   // === 3. Query ===
   // Fetch product if we only have an ID
@@ -54,72 +54,68 @@ export function ProductVariantModal() {
   const removeGuestItem = useGuestCartStore((state) => state.removeItem);
 
   // === 5. Logged-in (tRPC) Mutations ===
-  // Destructure 'variables' to track which item is being processed
-  const {
-    mutate: addItem,
-    isPending: isAdding,
-    variables: addVars,
-  } = api.cart.add.useMutation({
-    onSuccess: (data, vars) => {
-      utils.cart.get.invalidate();
-      // // Only close if the finished mutation belongs to the current product
-      // if (product?.variants.some((v) => v.id === vars.productVariantId)) {
-      //   closeModal();
-      // }
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Added to cart.
-        </div>
-      ));
+  const addMutation = api.cart.add.useMutation({
+    onMutate: () => {
+      const toastId = customToast.loading("Adding...");
+      return { toastId };
+    },
+    onSuccess: (data, vars, context) => {
+      void utils.cart.get.invalidate();
+      customToast.success("Add succeeded.", context?.toastId);
+    },
+    onError: (err, input, context) => {
+      void utils.cart.get.invalidate();
+      customToast.error("Add failed. Please try again.", context?.toastId);
+      console.error("ProductVariantModal addMutation onError:", err);
     },
   });
 
-  const {
-    mutate: updateItem,
-    isPending: isUpdating,
-    variables: updateVars,
-  } = api.cart.updateItem.useMutation({
-    onSuccess: async (data, vars) => {
-      await utils.cart.get.invalidate();
-      // if (product?.variants.some((v) => v.id === vars.newProductVariantId)) {
-      //   closeModal();
-      // }
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Cart updated.
-        </div>
-      ));
+  const updateItemMutation = api.cart.updateItem.useMutation({
+    onMutate: () => {
+      const toastId = customToast.loading("Updating...");
+      return { toastId };
+    },
+    onSuccess: (data, vars, context) => {
+      void utils.cart.get.invalidate();
+      customToast.success("Update succeeded.", context?.toastId);
+    },
+    onError: (err, input, context) => {
+      void utils.cart.get.invalidate();
+      customToast.error("Update failed. Please try again.", context?.toastId);
+      console.error("ProductVariantModal updateItemMutation onError:", err);
     },
   });
 
-  const {
-    mutate: updateQuantity,
-    isPending: isUpdatingQty,
-    variables: updateQtyVars,
-  } = api.cart.updateQuantity.useMutation({
-    onSuccess: async (data, vars) => {
-      await utils.cart.get.invalidate();
-      // if (product?.variants.some((v) => v.id === vars.productVariantId)) {
-      //   closeModal();
-      // }
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Cart updated.
-        </div>
-      ));
+  const updateQuantityMutation = api.cart.updateQuantity.useMutation({
+    onMutate: () => {
+      const toastId = customToast.loading("Updating...");
+      return { toastId };
+    },
+    onSuccess: (data, vars, context) => {
+      void utils.cart.get.invalidate();
+      customToast.success("Update succeeded.", context?.toastId);
+    },
+    onError: (err, input, context) => {
+      void utils.cart.get.invalidate();
+      customToast.error("Update failed. Please try again.", context?.toastId);
+      console.error("ProductVariantModal updateQuantityMutation onError:", err);
     },
   });
 
   // Determine pending state based on the active product
   const isPending =
-    (isAdding &&
-      product?.variants.some((v) => v.id === addVars?.productVariantId)) ||
-    (isUpdating &&
+    (addMutation.isPending &&
       product?.variants.some(
-        (v) => v.id === updateVars?.newProductVariantId,
+        (v) => v.id === addMutation.variables?.productVariantId,
       )) ||
-    (isUpdatingQty &&
-      product?.variants.some((v) => v.id === updateQtyVars?.productVariantId));
+    (updateItemMutation.isPending &&
+      product?.variants.some(
+        (v) => v.id === updateItemMutation.variables?.newProductVariantId,
+      )) ||
+    (updateQuantityMutation.isPending &&
+      product?.variants.some(
+        (v) => v.id === updateQuantityMutation.variables?.productVariantId,
+      ));
 
   // === 6. Effects to sync state when modal opens ===
   // This effect derives all available options (like on product page)
@@ -153,6 +149,18 @@ export function ProductVariantModal() {
     });
   }, [selectedOptions, product?.variants]);
 
+  // prevent scrolling main page when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   // This effect pre-fills the state when the modal opens
   useEffect(() => {
     if (isOpen && product) {
@@ -182,12 +190,22 @@ export function ProductVariantModal() {
   const handleSave = () => {
     if (!selectedVariant) return;
 
+    // Convert to number here, defaulting to 0 if empty/invalid
+    const finalQuantity = quantity === "" ? 0 : quantity;
+    setQuantity(finalQuantity);
+
     if (mode === "add") {
       if (session?.user) {
-        addItem({ productVariantId: selectedVariant.id, quantity });
+        addMutation.mutate({
+          productVariantId: selectedVariant.id,
+          quantity: finalQuantity,
+        });
       } else {
-        addGuestItem({ productVariantId: selectedVariant.id, quantity });
-        closeModal();
+        addGuestItem({
+          productVariantId: selectedVariant.id,
+          quantity: finalQuantity,
+        });
+        // closeModal();
       }
     } else if (mode === "edit" && variantAndQuantity) {
       const variantChanged =
@@ -195,15 +213,15 @@ export function ProductVariantModal() {
 
       if (session?.user) {
         if (variantChanged) {
-          updateItem({
+          updateItemMutation.mutate({
             oldProductVariantId: variantAndQuantity.variantId,
             newProductVariantId: selectedVariant.id,
-            newQuantity: quantity,
+            newQuantity: finalQuantity,
           });
         } else {
-          updateQuantity({
+          updateQuantityMutation.mutate({
             productVariantId: selectedVariant.id,
-            quantity,
+            quantity: finalQuantity,
           });
         }
       } else {
@@ -211,11 +229,14 @@ export function ProductVariantModal() {
         if (variantChanged) {
           // Remove old, add new
           removeGuestItem(variantAndQuantity.variantId);
-          addGuestItem({ productVariantId: selectedVariant.id, quantity });
+          addGuestItem({
+            productVariantId: selectedVariant.id,
+            quantity: finalQuantity,
+          });
         } else {
-          updateGuestItem(selectedVariant.id, quantity);
+          updateGuestItem(selectedVariant.id, finalQuantity);
         }
-        closeModal();
+        // closeModal();
       }
     }
   };
@@ -244,24 +265,25 @@ export function ProductVariantModal() {
     >
       {/* Modal Content */}
       <div
-        className="scrollbar-hide flex max-h-[90vh] w-full max-w-[90vw] flex-col gap-5 overflow-y-auto rounded bg-gray-900 p-4 sm:max-w-sm"
+        className="max-h-[90vh] w-full max-w-[90vw] sm:max-w-sm"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {isFetchingProduct ? (
-          <div className="rounded bg-gray-900 p-4 text-center text-gray-500">
+          <div className="rounded bg-gray-900 p-6 text-center text-gray-500">
             <p className="animate-pulse">Loading product...</p>
           </div>
         ) : !product ? (
-          <div className="rounded bg-gray-900 p-4 text-center">
-            <p className="">Loading review...</p>
+          <div className="rounded bg-gray-900 p-6 text-center">
+            <p className="">Product not found.</p>
           </div>
         ) : (
-          <>
+          <div className="scrollbar-hide flex w-full flex-col gap-5 overflow-y-auto rounded bg-gray-900 p-4">
             <div className="flex flex-col gap-3">
               <ItemImage
                 src={displayImage}
                 alt={product.name ?? "Product image"}
                 href={`/product/${product.id}`}
+                onClick={closeModal}
                 className="group" // to keep hover scale effect on image
               >
                 {/* Edit Button */}
@@ -297,6 +319,7 @@ export function ProductVariantModal() {
                 <Link
                   href={`/product/${product.id}`}
                   className="line-clamp-2 text-xl font-semibold text-gray-300 hover:text-blue-400"
+                  onClick={closeModal}
                 >
                   {product.name}
                 </Link>
@@ -344,12 +367,19 @@ export function ProductVariantModal() {
                 <input
                   type="number"
                   id="quantity"
-                  min="1"
+                  min="0"
                   max={displayStock}
                   value={quantity}
-                  onChange={(e) =>
-                    setQuantity(Math.max(0, Number(e.target.value)))
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // If empty string, allow it so user can type a new number
+                    if (val === "") {
+                      setQuantity("");
+                    } else {
+                      // Otherwise, parse as number and ensure it's not negative
+                      setQuantity(Math.max(0, Number(val)));
+                    }
+                  }}
                   className="w-full rounded bg-gray-800 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
               </div>
@@ -383,7 +413,7 @@ export function ProductVariantModal() {
                 </p>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

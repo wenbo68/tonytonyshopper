@@ -42,11 +42,13 @@ export const orderRouter = createTRPCRouter({
       try {
         // 1. Get the Stripe session
         session = await stripe.checkout.sessions.retrieve(input.sessionId, {
-          // We MUST expand shipping_details and payment_intent
-          expand: ["payment_intent"],
-        }); // --- NO EXPAND OPTION IS NEEDED ---
+          expand: [
+            "payment_intent.payment_method",
+            "total_details",
+            "shipping_cost.shipping_rate",
+          ],
+        });
       } catch (error) {
-        // --- END: REPLACEMENT ---
         console.error("Failed to retrieve Stripe session:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -125,21 +127,49 @@ export const orderRouter = createTRPCRouter({
           );
 
           // 5. Update the order status to 'paid'
+          const taxAmount = (session.total_details?.amount_tax ?? 0) / 100;
+          const shippingAmount =
+            (session.total_details?.amount_shipping ?? 0) / 100;
+          const grandTotal = (session.amount_total ?? 0) / 100;
+
+          const paymentIntent = session.payment_intent as Stripe.PaymentIntent;
+          const paymentMethod =
+            paymentIntent.payment_method as Stripe.PaymentMethod;
+          const card = paymentMethod?.card; // This contains brand and last4
+
+          // console.log("paymentMethod: ", paymentIntent);
+
+          const shippingRate = session.shipping_cost
+            ?.shipping_rate as Stripe.ShippingRate;
+          const shippingDetails =
+            session.collected_information?.shipping_details;
+          const billingDetails = paymentMethod.billing_details;
+
           const [finalOrder] = await tx
             .update(orders)
             .set({
               status: "paid",
-              paymentIntentId: (session.payment_intent as Stripe.PaymentIntent)
-                .id,
-              shippingAddress: session.collected_information?.shipping_details
-                ?.address
-                ? JSON.stringify(
-                    session.collected_information.shipping_details.address,
-                  ) // This is the shipping address
+              tax: taxAmount.toFixed(2),
+              shippingFee: shippingAmount.toFixed(2),
+              totalAmount: grandTotal.toFixed(2),
+
+              paymentIntentId: paymentIntent.id,
+              cardBrand: card?.brand ?? null, // Save brand (e.g., "visa")
+              cardLast4: card?.last4 ?? null, // Save last 4 digits
+
+              shippingMethod: shippingRate?.display_name ?? undefined,
+              shippingTime: shippingRate?.delivery_estimate
+                ? JSON.stringify(shippingRate?.delivery_estimate)
                 : undefined,
-              billingAddress: session.customer_details?.address
-                ? JSON.stringify(session.customer_details.address) // This contains billing info
+
+              shippingAddress: shippingDetails?.address
+                ? JSON.stringify(shippingDetails.address)
                 : undefined,
+              shippingName: shippingDetails?.name ?? undefined,
+              billingAddress: billingDetails?.address
+                ? JSON.stringify(billingDetails.address)
+                : undefined,
+              billingName: billingDetails?.name ?? undefined,
             })
             .where(eq(orders.id, orderId))
             .returning();
@@ -268,10 +298,10 @@ export const orderRouter = createTRPCRouter({
         conditions.push(inArray(orders.id, itemSubQuery));
       }
       if (priceMin) {
-        conditions.push(gte(orders.totalAmount, priceMin.toString()));
+        conditions.push(gte(orders.subtotal, priceMin.toString()));
       }
       if (priceMax) {
-        conditions.push(lte(orders.totalAmount, priceMax.toString()));
+        conditions.push(lte(orders.subtotal, priceMax.toString()));
       }
       if (carrier) {
         conditions.push(ilike(orders.carrier, `%${carrier}%`));
@@ -289,10 +319,10 @@ export const orderRouter = createTRPCRouter({
           orderByClause = asc(orders.createdAt);
           break;
         case "price-desc":
-          orderByClause = desc(orders.totalAmount);
+          orderByClause = desc(orders.subtotal);
           break;
         case "price-asc":
-          orderByClause = asc(orders.totalAmount);
+          orderByClause = asc(orders.subtotal);
           break;
         case "date-desc":
         default:

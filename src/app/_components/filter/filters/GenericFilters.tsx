@@ -48,6 +48,7 @@ interface GenericFiltersProps<T> {
   };
   filterConfigs: FilterConfig<T>[];
   sortOptions: FilterGroupOption[]; // Update to match proper Group Type
+  gridClassName: string;
   mainFilterKey?: string; // none means no main filter for mobile
   alwaysExpanded?: boolean;
 }
@@ -57,6 +58,7 @@ export function GenericFilters<T extends Record<string, any>>({
   context,
   filterConfigs,
   sortOptions,
+  gridClassName,
   mainFilterKey,
   alwaysExpanded = false,
 }: GenericFiltersProps<T>) {
@@ -144,6 +146,7 @@ export function GenericFilters<T extends Record<string, any>>({
     <FiltersGrid
       id={id}
       onSubmit={() => handleSearch({})}
+      gridClassName={gridClassName}
       alwaysExpanded={alwaysExpanded}
       mainFilter={({ toggleAction }) =>
         mainFilterConfig ? renderFilter(mainFilterConfig, toggleAction) : null

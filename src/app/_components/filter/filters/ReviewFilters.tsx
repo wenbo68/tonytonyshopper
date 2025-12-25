@@ -32,6 +32,7 @@ export default function ReviewFilters() {
       id="review-filters"
       context={context}
       filterConfigs={fields}
+      gridClassName={`grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3`}
       // Review filters are always expanded, so we don't strictly need a 'mainFilterKey'
       // but passing one allows the grid to organize it correctly if we turn off alwaysExpanded.
       mainFilterKey="rating"

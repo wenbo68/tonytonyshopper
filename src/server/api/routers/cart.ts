@@ -156,28 +156,30 @@ export const cartRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
       const { productVariantId, quantity } = input;
 
-      if (quantity <= 0) {
-        // Remove item
-        await ctx.db.delete(cartItems).where(
+      // if (quantity <= 0) {
+      //   // Remove item
+      //   await ctx.db.delete(cartItems).where(
+      //     and(
+      //       eq(cartItems.userId, userId),
+      //       // CHANGED: from productId to productVariantId
+      //       eq(cartItems.productVariantId, productVariantId), //
+      //     ),
+      //   );
+      // } else {
+
+      // Update quantity
+      await ctx.db
+        .update(cartItems)
+        .set({ quantity: quantity })
+        .where(
           and(
             eq(cartItems.userId, userId),
             // CHANGED: from productId to productVariantId
             eq(cartItems.productVariantId, productVariantId), //
           ),
         );
-      } else {
-        // Update quantity
-        await ctx.db
-          .update(cartItems)
-          .set({ quantity: quantity })
-          .where(
-            and(
-              eq(cartItems.userId, userId),
-              // CHANGED: from productId to productVariantId
-              eq(cartItems.productVariantId, productVariantId), //
-            ),
-          );
-      }
+
+      // }
       return { success: true };
     }),
 

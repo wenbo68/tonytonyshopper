@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
 import {
   useState,
   type Dispatch,
   type FormEvent,
   type SetStateAction,
-} from 'react';
-import toast from 'react-hot-toast';
-import { useProductContext } from '~/app/_contexts/ProductProvider';
-import { api } from '~/trpc/react';
-import type { UpdateCommentInput } from '~/type';
+} from "react";
+// import toast from "react-hot-toast";
+import { useProductContext } from "~/app/_contexts/ProductProvider";
+import { customToast } from "~/server/utils/toast";
+import { api } from "~/trpc/react";
+import type { UpdateCommentInput } from "~/type";
 
 interface AddReplyFields {
   parentId: string;
@@ -45,71 +46,69 @@ export default function WriteReply({
   const utils = api.useUtils();
   const { productId } = useProductContext();
 
-  const [text, setText] = useState(updateInput?.text ?? '');
+  const [text, setText] = useState(updateInput?.text ?? "");
+  const [error, setError] = useState("");
 
-  const [error, setError] = useState('');
+  const invalidateQueries = async (productId: string) => {
+    await utils.comment.getCommentTree.invalidate();
+    // await utils.comment.getAverageRating.invalidate({ productId });
+    // await utils.comment.getUserReviewForProduct.invalidate({ productId });
+  };
 
   const addMutation = api.comment.add.useMutation({
-    onError: (err, newReply, context) => {
-      void utils.comment.getCommentTree.invalidate();
-
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Submission failed. Please try again.
-        </div>
-      ));
+    onMutate: () => {
+      const toastId = customToast.loading("Adding...");
+      return { toastId };
     },
-
-    onSuccess: () => {
-      void utils.comment.getCommentTree.invalidate();
-
-      // This can now be safely called after setting data
-      addInput?.setIsWritingReply(false);
-      setText('');
-
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Submission succeeded.
-        </div>
-      ));
+    onSuccess: (data, input, context) => {
+      void invalidateQueries(productId);
+      customToast.success("Add succeeded.", context?.toastId);
     },
-
-    onSettled: () => {
-      // void utils.comment.getCommentTree.invalidate();
+    onError: (err, input, context) => {
+      void invalidateQueries(productId);
+      // setError("Failed to delete review. Please try again.");
+      customToast.error("Add failed. Please try again.", context?.toastId);
+      console.error("WriteReply AddMutation onError:", err);
     },
   });
 
   const handleAdd = (e: React.FormEvent) => {
-    if (!addInput) return;
     e.preventDefault();
-    if (text.trim() === '') return;
+    if (!addInput) {
+      setError("Something went wrong. Please cancel and try again.");
+      return;
+    }
+    if (text.trim() === "") {
+      setError("Please provide a valid comment.");
+      return;
+    }
     addMutation.mutate({ productId, parentId: addInput.parentId, text });
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <form
+      onSubmit={(e: FormEvent<Element>) =>
+        updateInput
+          ? updateInput.handleUpdate({
+              e,
+              id: updateInput.id,
+              type: "reply",
+              rating: undefined,
+              text,
+            })
+          : handleAdd(e)
+      }
+      className={`flex flex-col gap-2 bg-gray-900 ${
+        updateInput ? "" : "pt-5 pl-10"
+      } rounded text-sm text-gray-500`}
+    >
       {error && <p className="text-sm text-red-400">{error}</p>}
-      <form
-        onSubmit={(e: FormEvent<Element>) =>
-          updateInput
-            ? updateInput.handleUpdate({
-                e,
-                id: updateInput.id,
-                type: 'reply',
-                rating: undefined,
-                text,
-              })
-            : handleAdd(e)
-        }
-        className={`flex flex-col gap-3 bg-gray-900 ${
-          updateInput ? '' : 'pl-10 pt-5 '
-        }rounded text-sm text-gray-500`}
-      >
+      <div className="flex flex-col gap-3">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Write a reply..."
-          className="w-full bg-gray-800 text-gray-400 rounded p-2 outline-none scrollbar-hide"
+          className="scrollbar-hide w-full rounded bg-gray-800 p-2 text-gray-400 outline-none"
           rows={2}
         ></textarea>
 
@@ -122,10 +121,10 @@ export default function WriteReply({
               } else {
                 updateInput?.setIsEditing(false);
               }
-              setError('');
+              setError("");
             }}
             disabled={updateInput?.isUpdatePending || addMutation.isPending}
-            className="hover:text-gray-400 cursor-pointer disabled:hover:text-gray-500 disabled:cursor-default"
+            className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
           >
             Cancel
           </button>
@@ -133,21 +132,21 @@ export default function WriteReply({
             <button
               type="submit"
               disabled={updateInput?.isUpdatePending}
-              className="hover:text-gray-400 cursor-pointer disabled:hover:text-gray-500 disabled:cursor-default"
+              className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
             >
-              {updateInput.isUpdatePending ? 'Saving' : 'Save'}
+              {updateInput.isUpdatePending ? "Saving" : "Save"}
             </button>
           ) : (
             <button
               type="submit"
               disabled={addMutation.isPending}
-              className="hover:text-gray-400 cursor-pointer disabled:hover:text-gray-500 disabled:cursor-default"
+              className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
             >
-              {addMutation.isPending ? 'Submitting' : 'Submit'}
+              {addMutation.isPending ? "Submitting" : "Submit"}
             </button>
           )}
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }

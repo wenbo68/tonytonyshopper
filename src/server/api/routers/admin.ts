@@ -305,10 +305,8 @@ export const adminRouter = createTRPCRouter({
         conditions.push(inArray(orders.id, itemSubQuery));
       }
 
-      if (priceMin)
-        conditions.push(gte(orders.totalAmount, priceMin.toString()));
-      if (priceMax)
-        conditions.push(lte(orders.totalAmount, priceMax.toString()));
+      if (priceMin) conditions.push(gte(orders.subtotal, priceMin.toString()));
+      if (priceMax) conditions.push(lte(orders.subtotal, priceMax.toString()));
 
       if (status && status.length > 0) {
         conditions.push(inArray(orders.status, status as any[]));
@@ -327,10 +325,10 @@ export const adminRouter = createTRPCRouter({
           orderByClause = asc(orders.createdAt);
           break;
         case "price-desc":
-          orderByClause = desc(orders.totalAmount);
+          orderByClause = desc(orders.subtotal);
           break;
         case "price-asc":
-          orderByClause = asc(orders.totalAmount);
+          orderByClause = asc(orders.subtotal);
           break;
         case "name-desc":
           orderByClause = desc(users.name);

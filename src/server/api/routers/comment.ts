@@ -222,10 +222,21 @@ export const commentRouter = createTRPCRouter({
           rating: z.number().min(1).max(5).optional(),
           text: z.string().min(1, "Comment cannot be empty."),
         })
-        .refine((data) => data.productVariantId || data.parentId, {
-          message: "Either productVariantId or parentId must be provided",
-          path: ["productVariantId"],
-        }),
+        .refine(
+          (data) => {
+            // Logic 1: If it's a review (no parentId), rating and variant MUST exist
+            if (!data.parentId) {
+              return !!data.rating && !!data.productVariantId;
+            }
+            // Logic 2: If it's a reply (parentId exists), rating and variant MUST be null/undefined
+            return !data.rating && !data.productVariantId;
+          },
+          {
+            message:
+              "Reviews must have a rating and product variant id; replies cannot have them.",
+            path: ["rating"], // This points the error to the 'rating' field in your UI
+          },
+        ),
     )
     .mutation(async ({ ctx, input }) => {
       const { productId, productVariantId, parentId, rating, text } = input;

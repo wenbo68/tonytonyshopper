@@ -1,0 +1,2 @@
+ALTER TABLE "tonytonyshopper_order" ADD COLUMN "taxAmount" numeric(10, 2) DEFAULT '0';--> statement-breakpoint
+ALTER TABLE "tonytonyshopper_order" ADD COLUMN "shippingAmount" numeric(10, 2) DEFAULT '0';

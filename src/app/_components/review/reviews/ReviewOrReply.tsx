@@ -7,12 +7,13 @@ import type { CommentTree, UpdateCommentInput } from "~/type";
 import StarRating from "../rating/StarRating";
 import { api } from "~/trpc/react";
 import WriteReply from "../write-form/WriteReply";
-import WriteReview from "../write-form/WriteReview";
 import { TbDotsVertical } from "react-icons/tb";
 import { useMutationState } from "@tanstack/react-query";
 import { dequal } from "dequal";
-import toast from "react-hot-toast";
+// import toast from "react-hot-toast";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
+import WriteReview from "../write-form/WriteReview";
+import { customToast } from "~/server/utils/toast";
 
 export default function ReviewOrReply({
   comment,
@@ -52,29 +53,28 @@ export default function ReviewOrReply({
     };
   }, []);
 
+  const invalidateQueries = async (productId: string) => {
+    await utils.comment.getCommentTree.invalidate();
+    await utils.comment.getAverageRating.invalidate({ productId });
+    // await utils.comment.getUserReviewForProduct.invalidate({ productId });
+  };
+
   const deleteMutation = api.comment.delete.useMutation({
-    onError: (err, variables, context) => {
-      void utils.comment.getAverageRating.invalidate();
-      void utils.comment.getCommentTree.invalidate();
-      void utils.comment.getUserReviewForProduct.invalidate({ productId });
-
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Deletion failed. Please try again.
-        </div>
-      ));
+    onMutate: () => {
+      const toastId = customToast.loading("Deleting...");
+      return { toastId };
     },
-    onSuccess: () => {
-      void utils.comment.getAverageRating.invalidate();
-      void utils.comment.getCommentTree.invalidate();
-      void utils.comment.getUserReviewForProduct.invalidate({ productId });
-
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Deletion succeeded.
-        </div>
-      ));
+    onSuccess: (data, input, context) => {
+      void invalidateQueries(productId);
+      customToast.success("Delete succeeded.", context?.toastId);
     },
+    onError: (err, input, context) => {
+      void invalidateQueries(productId);
+      // setError("Failed to delete review. Please try again.");
+      customToast.error("Delete failed. Please try again.", context?.toastId);
+      console.error("ReviewOrReply deleteMutation onError:", err);
+    },
+    // onSettled: () => invalidateQueries(productId),
   });
 
   const handleDelete = () => {
@@ -82,30 +82,21 @@ export default function ReviewOrReply({
   };
 
   const updateMutation = api.comment.update.useMutation({
-    onError: (err, variables, context) => {
-      void utils.comment.getAverageRating.invalidate();
-      void utils.comment.getCommentTree.invalidate();
-      void utils.comment.getUserReviewForProduct.invalidate({ productId });
-
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Update failed. Please try again.
-        </div>
-      ));
+    onMutate: () => {
+      const toastId = customToast.loading("Updating...");
+      return { toastId };
     },
-    onSuccess: () => {
-      void utils.comment.getAverageRating.invalidate();
-      void utils.comment.getCommentTree.invalidate();
-      void utils.comment.getUserReviewForProduct.invalidate({ productId });
-
-      setIsEditing(false);
-
-      toast.custom((t) => (
-        <div className={`rounded bg-gray-700 px-4 py-2 text-sm text-gray-300`}>
-          Update succeeded.
-        </div>
-      ));
+    onSuccess: (data, input, context) => {
+      void invalidateQueries(productId);
+      customToast.success("Update succeeded.", context?.toastId);
     },
+    onError: (err, input, context) => {
+      void invalidateQueries(productId);
+      // setError("Failed to delete review. Please try again.");
+      customToast.error("Update failed. Please try again.", context?.toastId);
+      console.error("ReviewOrReply updateMutation onError:", err);
+    },
+    // onSettled: () => invalidateQueries(productId),
   });
 
   const handleUpdate = ({ e, id, type, rating, text }: UpdateCommentInput) => {
@@ -216,7 +207,7 @@ export default function ReviewOrReply({
               <p className="text-sm text-red-400">{updateError}</p>
             )}
             <WriteReview
-              productId={productId}
+              // productId={productId}
               updateInput={{
                 commentId: comment.id,
                 rating: comment.rating ?? 0,
