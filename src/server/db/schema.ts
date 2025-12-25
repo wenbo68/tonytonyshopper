@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   index,
   pgEnum,
   pgTableCreator,
@@ -22,8 +23,14 @@ export const orderStatusEnum = pgEnum("order_status", [
   "cancelled",
   "paid",
   "shipped",
-  // "returned",
+  "returned",
+  "refunded",
 ]);
+// export const orderItemStatusEnum = pgEnum("order_item_status", [
+//   "fulfilled",
+//   "returning",
+//   "refunded",
+// ]);
 
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
 
@@ -264,7 +271,7 @@ export const comments = createTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    rating: d.integer("rating"), // e.g., 1-5 stars
+    rating: d.integer("rating"), // null for replies
     text: d.text().notNull(),
 
     // Links to the user who wrote it
@@ -279,13 +286,12 @@ export const comments = createTable(
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
 
-    // Links to the specific variant (Enable this)
-    productVariantId: d
+    productVariantId: d //null for replies (shouldn't be null for reviews)
       .varchar({ length: 255 })
-      .notNull() // Make this notNull if all new reviews must have a variant
+      // .notNull()
       .references(() => productVariants.id),
 
-    parentId: d
+    parentId: d // null for reviews
       .varchar({ length: 255 })
       .references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
 
@@ -297,6 +303,22 @@ export const comments = createTable(
     // Index for faster lookups of a product's reviews
     index("comment_product_id_idx").on(t.productId),
     index("comment_parent_id_idx").on(t.parentId),
+
+    // --- ADD THE CHECK CONSTRAINTS HERE ---
+
+    // 1. Ensure rating and productVariantId are either BOTH null or BOTH present
+    check(
+      "rating_variant_sync",
+      sql`(${t.rating} IS NULL AND ${t.productVariantId} IS NULL) OR (${t.rating} IS NOT NULL AND ${t.productVariantId} IS NOT NULL)`,
+    ),
+
+    // 2. Ensure the "Review vs Reply" logic
+    // If parentId is NULL, rating MUST NOT be NULL (it's a review)
+    // If parentId is NOT NULL, rating MUST be NULL (it's a reply)
+    check(
+      "review_reply_logic",
+      sql`(${t.parentId} IS NULL AND ${t.rating} IS NOT NULL) OR (${t.parentId} IS NOT NULL AND ${t.rating} IS NULL)`,
+    ),
   ],
 );
 
@@ -379,19 +401,34 @@ export const orders = createTable("order", (d) => ({
   guestEmail: d.varchar({ length: 255 }),
 
   status: orderStatusEnum("status").notNull(),
-  totalAmount: d.numeric({ precision: 10, scale: 2 }).notNull(),
 
-  // Store shipping/billing address as JSON for simplicity
-  // This is safer, as the address is "frozen in time" for this order
-  shippingAddress: d.json("shipping_address"),
-  billingAddress: d.json("billing_address"),
+  subtotal: d.numeric({ precision: 10, scale: 2 }).notNull(),
+  // the following 3 fields are empty when checkout session is 1st created
+  // and are filled when checkout is completed
+  tax: d.numeric({ precision: 10, scale: 2 }).notNull().default("0"),
+  shippingFee: d.numeric({ precision: 10, scale: 2 }).notNull().default("0"),
+  totalAmount: d.numeric({ precision: 10, scale: 2 }).notNull().default("0"),
+
+  shippingMethod: d.varchar({ length: 255 }),
+  shippingTime: d.json(),
+  shippingName: d.varchar({ length: 255 }),
+  shippingAddress: d.json(),
+  billingName: d.varchar({ length: 255 }),
+  billingAddress: d.json(),
 
   // Store the Stripe Payment Intent ID for reconciliation
   paymentIntentId: d.varchar({ length: 255 }).unique(),
 
+  cardBrand: d.varchar({ length: 50 }), // e.g., "visa", "mastercard"
+  cardLast4: d.varchar({ length: 4 }), // e.g., "4242"
+
   // Shipping info
-  carrier: d.varchar("carrier", { length: 50 }), // e.g., "USPS", "FedEx"
-  trackingNumber: d.varchar("tracking_number", { length: 255 }),
+  carrier: d.varchar({ length: 50 }), // e.g., "USPS", "FedEx"
+  trackingNumber: d.varchar({ length: 255 }),
+
+  returnCarrier: d.varchar({ length: 50 }),
+  returnTrackingNumber: d.varchar({ length: 255 }),
+  refundId: d.varchar({ length: 255 }), // Stripe Refund ID for reference
 
   createdAt: d
     .timestamp({ withTimezone: true })

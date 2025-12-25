@@ -63,6 +63,6 @@
 
 #### query flags
 
-- isLoading: 1st fetch running
+- isLoading (isPending in newest version): 1st fetch running
 - isRefetching: refetch (any fetch after 1st fetch) running
 - isFetching: any fetch (1st fetch or fetch) running

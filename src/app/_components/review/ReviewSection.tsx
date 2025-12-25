@@ -2,9 +2,7 @@
 
 import ReviewFilters from "../filter/filters/ReviewFilters";
 import AvgRating from "./rating/AvgRating";
-import WriteReview from "./write-form/WriteReview";
 import ReviewFilterPills from "../filter/filterPills/ReviewFilterPills";
-import { ProductProvider } from "~/app/_contexts/ProductProvider";
 import Reviews from "./reviews/Reviews";
 import { ReviewFilterProvider } from "~/app/_contexts/filter/ReviewFilterProvider";
 
@@ -15,16 +13,16 @@ export default function ReviewSection() {
         {/* title */}
         <div className="flex flex-col gap-0">
           <h2 className="text-lg font-semibold text-gray-300">Reviews</h2>
-          <p className="text-sm text-gray-500">
+          {/* <p className="text-sm text-gray-500">
             See what others are saying... or say something yourself!
-          </p>
+          </p> */}
         </div>
 
         <AvgRating />
         <ReviewFilters />
         <ReviewFilterPills />
         <Reviews />
-        <WriteReview />
+        {/* <WriteReview /> */}
       </section>
     </ReviewFilterProvider>
   );

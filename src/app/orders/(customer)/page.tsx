@@ -10,7 +10,7 @@ import {
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useSearchParams } from "next/navigation";
 import { getUserOrdersInputSchema } from "~/type";
-import { FaCartPlus, FaUndo } from "react-icons/fa";
+import { FaCartPlus, FaPen, FaUndo } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { useState } from "react";
 import OrderDetailsModal from "../../_components/modal/OrderModal";
@@ -20,6 +20,8 @@ import {
   OverlayTag,
 } from "~/app/_components/item/ItemImageOverlays";
 import { ItemCard } from "~/app/_components/item/ItemCard";
+import ReviewModal from "~/app/_components/modal/ReviewModal";
+import { useProductVariantModalStore } from "~/app/_hooks/useProductVariantModalStore";
 
 // Infer type for better safety
 type Order = RouterOutputs["order"]["getUserOrders"]["orders"][number];
@@ -28,9 +30,16 @@ export default function OrdersPage() {
   const { status } = useSession();
   const searchParams = useSearchParams();
   const utils = api.useUtils();
+  const openVariantModal = useProductVariantModalStore(
+    (state) => state.openModal,
+  );
 
   // states
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [reviewItemIds, setReviewItemIds] = useState<{
+    productId: string;
+    productVariantId: string;
+  } | null>(null);
 
   // Parse URL params to match input schema
   const rawInput = {
@@ -63,27 +72,22 @@ export default function OrdersPage() {
   // Safely parse with Zod
   const parsedInput = getUserOrdersInputSchema.safeParse(rawInput);
 
-  const { data, isLoading } = api.order.getUserOrders.useQuery(
+  const { data, isFetching } = api.order.getUserOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
     {
       enabled: status === "authenticated" && parsedInput.success,
     },
   );
 
-  // Mutation to add item to cart
-  const addToCartMutation = api.cart.add.useMutation({
-    onSuccess: () => {
-      toast.success("Added to cart");
-      utils.cart.get.invalidate();
-    },
-    onError: (e) => {
-      toast.error(e.message);
-    },
-  });
-
-  const handleAddToCart = (e: React.MouseEvent, variantId: string) => {
-    e.stopPropagation(); // Stop click from opening the modal
-    addToCartMutation.mutate({ productVariantId: variantId, quantity: 1 });
+  const handleBuyAgain = (
+    e: React.MouseEvent,
+    productId: string,
+    variantId: string,
+    quantity: number,
+  ) => {
+    e.stopPropagation();
+    // Simply open the modal with the ID; fetching happens inside
+    openVariantModal(productId, "add", { variantId, quantity });
   };
 
   const handleReturn = (e: React.MouseEvent) => {
@@ -93,7 +97,7 @@ export default function OrdersPage() {
     });
   };
 
-  if (status === "loading" || isLoading) {
+  if (status === "loading" || isFetching) {
     return (
       <div className="animate-pulse text-center">Loading order history...</div>
     );
@@ -109,9 +113,9 @@ export default function OrdersPage() {
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-bold">No Orders Found</h2>
-        <p className="">Try adjusting your search filters.</p>
+      <div className="flex flex-col gap-0">
+        <h2 className="text-center font-bold">No orders found!</h2>
+        {/* <p className="text-center text-sm">Try different filters.</p> */}
       </div>
     );
   }
@@ -123,6 +127,13 @@ export default function OrdersPage() {
         order={selectedOrder}
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
+      />
+
+      {/* Review Modal */}
+      <ReviewModal
+        itemIds={reviewItemIds}
+        isOpen={!!reviewItemIds}
+        onClose={() => setReviewItemIds(null)}
       />
 
       {/* orders */}
@@ -203,8 +214,19 @@ export default function OrdersPage() {
 
                           <OverlayButton
                             position="topRight"
-                            onClick={(e) => handleAddToCart(e, variant.id)}
-                            disabled={addToCartMutation.isPending}
+                            onClick={(e) =>
+                              handleBuyAgain(
+                                e,
+                                variant.productId,
+                                variant.id,
+                                item.quantity,
+                              )
+                            }
+                            onMouseEnter={() =>
+                              utils.product.getById.prefetch({
+                                id: variant.productId,
+                              })
+                            }
                             title="Buy Again"
                           >
                             <FaCartPlus size={14} />
@@ -214,6 +236,22 @@ export default function OrdersPage() {
                             {formatCurrency(item.priceAtPurchase)} x
                             {item.quantity}
                           </OverlayTag>
+
+                          {/* Only show "Write Review" button if the order is shipped */}
+                          {order.status === "shipped" && (
+                            <OverlayButton
+                              position="bottomRight"
+                              onClick={() => {
+                                setReviewItemIds({
+                                  productId: item.productVariant.productId,
+                                  productVariantId: item.productVariantId,
+                                });
+                              }}
+                              title="Write Review"
+                            >
+                              <FaPen size={12} />
+                            </OverlayButton>
+                          )}
                         </>
                       }
                     >

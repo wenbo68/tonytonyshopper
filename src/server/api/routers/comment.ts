@@ -214,13 +214,29 @@ export const commentRouter = createTRPCRouter({
    */
   add: protectedProcedure
     .input(
-      z.object({
-        productId: z.string(),
-        productVariantId: z.string(),
-        parentId: z.string().optional(),
-        rating: z.number().min(1).max(5).optional(),
-        text: z.string().min(1, "Comment cannot be empty."),
-      }),
+      z
+        .object({
+          productId: z.string(),
+          productVariantId: z.string().optional(), //null for replies
+          parentId: z.string().optional(), //null for reviews
+          rating: z.number().min(1).max(5).optional(),
+          text: z.string().min(1, "Comment cannot be empty."),
+        })
+        .refine(
+          (data) => {
+            // Logic 1: If it's a review (no parentId), rating and variant MUST exist
+            if (!data.parentId) {
+              return !!data.rating && !!data.productVariantId;
+            }
+            // Logic 2: If it's a reply (parentId exists), rating and variant MUST be null/undefined
+            return !data.rating && !data.productVariantId;
+          },
+          {
+            message:
+              "Reviews must have a rating and product variant id; replies cannot have them.",
+            path: ["rating"], // This points the error to the 'rating' field in your UI
+          },
+        ),
     )
     .mutation(async ({ ctx, input }) => {
       const { productId, productVariantId, parentId, rating, text } = input;
@@ -352,5 +368,26 @@ export const commentRouter = createTRPCRouter({
       });
 
       return { success: true };
+    }),
+
+  /**
+   * Fetches the current user's top-level review for a product.
+   */
+  getUserReviewForProduct: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { productId } = input;
+      const userId = ctx.session.user.id;
+
+      const review = await ctx.db.query.comments.findFirst({
+        where: and(
+          eq(comments.productId, productId),
+          eq(comments.userId, userId),
+          isNull(comments.parentId), // Ensure it's the main review, not a reply
+        ),
+      });
+
+      // FIX: Return null instead of undefined to satisfy React Query
+      return review ?? null;
     }),
 });

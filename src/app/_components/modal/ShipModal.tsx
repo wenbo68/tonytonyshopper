@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import toast from "react-hot-toast";
+import { handleOverlayClick } from "~/server/utils/modal";
 
 type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
@@ -22,6 +23,18 @@ export function ShipOrderModal({
   // Initialize with empty strings
   const [carrier, setCarrier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
+
+  // prevent scrolling main page when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   // update state when the 'order' prop changes
   useEffect(() => {
@@ -86,10 +99,10 @@ export function ShipOrderModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm"
-      onClick={onClose}
+      onMouseDown={(e) => handleOverlayClick(e, onClose)}
     >
       <form
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
         className="flex max-h-[80vh] w-sm max-w-[90vw] flex-col gap-4 rounded bg-gray-900 p-4"
       >

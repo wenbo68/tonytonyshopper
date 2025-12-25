@@ -11,7 +11,7 @@ interface FiltersGridProps {
   mainFilter: (props: { toggleAction: ReactNode }) => ReactNode;
   /** The remaining filters hidden on mobile by default */
   expandableFilters: ReactNode;
-  gridClasses?: string;
+  gridClassName?: string;
   /** Optional: If true, renders without the mobile toggle logic (like ReviewFilters) */
   alwaysExpanded?: boolean;
 }
@@ -21,13 +21,13 @@ export function FiltersGrid({
   onSubmit,
   mainFilter,
   expandableFilters,
-  gridClasses,
+  gridClassName,
   alwaysExpanded = false,
 }: FiltersGridProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Common Grid Classes
-  const defaultGridClasses =
+  const defaultGridClassName =
     "grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-5 xl:gap-6";
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,7 +54,7 @@ export function FiltersGrid({
     <form
       id={id}
       onSubmit={handleSubmit}
-      className={gridClasses ?? defaultGridClasses}
+      className={gridClassName ?? defaultGridClassName}
     >
       {/* 1. Main Filter (Always Visible) */}
       <div className={alwaysExpanded ? "contents" : "col-span-2 sm:col-span-1"}>

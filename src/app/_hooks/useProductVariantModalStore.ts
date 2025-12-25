@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { ProductAndVariants } from "~/type";
 
-type EditedItem = {
+type variantAndQuantity = {
   variantId: string;
   quantity: number;
 };
@@ -10,11 +10,12 @@ type ProductVariantModalState = {
   isOpen: boolean;
   mode: "add" | "edit" | null;
   product: ProductAndVariants | null;
-  editedItem: EditedItem | null;
+  productId: string | null;
+  variantAndQuantity: variantAndQuantity | null;
   openModal: (
-    product: ProductAndVariants,
+    product: ProductAndVariants | string, // Can now accept a string ID
     mode: "add" | "edit",
-    item?: EditedItem,
+    item?: variantAndQuantity,
   ) => void;
   closeModal: () => void;
 };
@@ -24,20 +25,25 @@ export const useProductVariantModalStore = create<ProductVariantModalState>(
     isOpen: false,
     mode: null,
     product: null,
-    editedItem: null,
-    openModal: (product, mode, editedItem = undefined) =>
+    productId: null,
+    variantAndQuantity: null,
+    openModal: (productOrId, mode, variantAndQuantity = undefined) => {
+      const isId = typeof productOrId === "string";
       set({
         isOpen: true,
-        product,
+        productId: isId ? productOrId : null,
+        product: isId ? null : productOrId,
         mode,
-        editedItem,
-      }),
+        variantAndQuantity,
+      });
+    },
     closeModal: () =>
       set({
         isOpen: false,
+        productId: null,
         product: null,
         mode: null,
-        editedItem: null,
+        variantAndQuantity: null,
       }),
   }),
 );

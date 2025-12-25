@@ -1,0 +1,3 @@
+ALTER TABLE "tonytonyshopper_comment" ALTER COLUMN "productVariantId" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "tonytonyshopper_comment" ADD CONSTRAINT "rating_variant_sync" CHECK (("tonytonyshopper_comment"."rating" IS NULL AND "tonytonyshopper_comment"."productVariantId" IS NULL) OR ("tonytonyshopper_comment"."rating" IS NOT NULL AND "tonytonyshopper_comment"."productVariantId" IS NOT NULL));--> statement-breakpoint
+ALTER TABLE "tonytonyshopper_comment" ADD CONSTRAINT "review_reply_logic" CHECK (("tonytonyshopper_comment"."parentId" IS NULL AND "tonytonyshopper_comment"."rating" IS NOT NULL) OR ("tonytonyshopper_comment"."parentId" IS NOT NULL AND "tonytonyshopper_comment"."rating" IS NULL));

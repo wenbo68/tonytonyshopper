@@ -187,7 +187,12 @@ export default function ProductDetailPage() {
         {/* Main Image */}
         <div className="relative aspect-square w-full grow overflow-hidden rounded border border-gray-800 bg-gray-900">
           <Image
-            src={activeImage}
+            src={
+              activeImage === ""
+                ? (activeImageList[0] ??
+                  "https://placehold.co/600x600/e0e0e0/333.png?text=No-Images")
+                : activeImage
+            }
             alt={product.name ?? "Product image"}
             fill
             className="object-cover"

@@ -35,7 +35,17 @@ export default function RootLayout({
           <main className="mx-auto w-full max-w-7xl grow px-2 pt-4 pb-10 sm:pt-5 sm:pb-11 md:pt-6 md:pb-12 lg:pt-7 lg:pb-13 xl:pt-8 xl:pb-14">
             {children}
           </main>
-          <Toaster position="bottom-center" />
+          <Toaster
+            position="bottom-center"
+            // toastOptions={{
+            //   style: {
+            //     // background: "#111827", // gray-900
+            //     background: "#1e2939", // gray-800
+            //     // color: "#f9fafb", // gray-50
+            //     color: "#99a1af", // gray-400
+            //   },
+            // }}
+          />
           {/* <BotNav /> */}
         </ContextProviders>
         {/* </Suspense> */}
@@ -53,14 +63,14 @@ export default function RootLayout({
 // in review, add rating distribution under star rating. put this on the left side, then add list of images/videos on the right side
 // in review, wait for invalidate. Also check flags (isloading vs isfetching, etc.)
 
-// figure out how to handle shipping fee and taxes
-// store card brand and last4 in db for each order
-
-// move addReview function to order history page
-
 // add item option filter to orders
 // enable entering multiple item names and option pairs
 
-// when it comes to past orders: what if the variant's price has changed?
-
 // why we can input -1 in filter inputs when min is 0?
+
+// how to handle discounts, subscriptions?
+
+// implement return
+
+// just get rid of guest purchase (they have to provide name and email at checkout anyway)
+// reasoning: hard to handle pending orders in db from guests

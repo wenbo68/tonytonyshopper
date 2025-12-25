@@ -1,6 +1,6 @@
 "use client";
 
-import { useProductVariantModalStore } from "~/app/_hooks/useVariantModalStore";
+import { useProductVariantModalStore } from "~/app/_hooks/useProductVariantModalStore";
 import type { ReactNode } from "react";
 import type { ProductAndVariants } from "~/type";
 

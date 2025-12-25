@@ -5,7 +5,7 @@ import { api } from "~/trpc/react";
 import { GetCommentTreeInputSchema } from "~/type";
 import ReviewOrReply from "./ReviewOrReply";
 import Pagination from "../../pagination/Pagination";
-import ReviewsFallback from "./ReviewsFallback";
+// import ReviewsFallback from "./ReviewsFallback";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
 
 export default function Reviews() {
@@ -49,24 +49,35 @@ export default function Reviews() {
   );
 
   // 5. Show a skeleton while fetching new data
-  if (isFetching) {
-    return <ReviewsFallback />;
-  }
+  if (isFetching)
+    // return <ReviewsFallback />;
+    return <div className="animate-pulse text-center">Loading reviews...</div>;
 
   // 6. Render the results
-  if (!commentData) return null;
+  if (!commentData)
+    return <div className="text-center">Failed to load reviews.</div>;
+
   const { commentTree, totalPages } = commentData;
+
+  if (commentTree.length <= 0) {
+    return (
+      <div className="flex flex-col gap-0">
+        <h2 className="text-center font-bold">No reviews found!</h2>
+        <p className="text-center text-sm">
+          Purchase the product to write a review.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
       {/* reviews */}
-      {commentTree.length > 0 ? (
-        <div className="flex flex-col gap-2 lg:gap-4">
-          {commentTree.map((comment) => (
-            <ReviewOrReply key={comment.id} comment={comment} className="p-5" />
-          ))}
-        </div>
-      ) : null}
+      <div className="flex flex-col gap-2 lg:gap-4">
+        {commentTree.map((comment) => (
+          <ReviewOrReply key={comment.id} comment={comment} className="p-5" />
+        ))}
+      </div>
 
       {/* pagination */}
       <Pagination

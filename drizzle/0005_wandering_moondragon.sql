@@ -1,0 +1,3 @@
+ALTER TABLE "tonytonyshopper_order" ALTER COLUMN "createdAt" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "tonytonyshopper_comment" ADD COLUMN "productVariantId" varchar(255) NOT NULL;--> statement-breakpoint
+ALTER TABLE "tonytonyshopper_comment" ADD CONSTRAINT "tonytonyshopper_comment_productVariantId_tonytonyshopper_product_variant_id_fk" FOREIGN KEY ("productVariantId") REFERENCES "public"."tonytonyshopper_product_variant"("id") ON DELETE no action ON UPDATE no action;

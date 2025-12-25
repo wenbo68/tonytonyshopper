@@ -114,7 +114,7 @@ export const stripeRouter = createTRPCRouter({
             id: `${v4()}`,
             userId: ctx.session?.user?.id,
             guestEmail: ctx.session?.user?.email,
-            totalAmount: (totalAmount / 100).toFixed(2),
+            subtotal: (totalAmount / 100).toFixed(2),
             status: "pending",
           })
           .returning({ id: orders.id });
@@ -154,6 +154,13 @@ export const stripeRouter = createTRPCRouter({
           mode: "payment",
           line_items: lineItems,
           customer_email: ctx.session?.user?.email ?? undefined,
+          // 1. Enable Automatic Tax
+          automatic_tax: { enabled: true },
+          // 2. Add Shipping Options (IDs from your Stripe Dashboard)
+          shipping_options: [
+            { shipping_rate: "shr_1ShS9nK2sO6ATVfVKbsWCKK9" }, // Example: Standard Shipping
+            { shipping_rate: "shr_1ShSAIK2sO6ATVfV320VDOdm" }, // Example: Express Shipping
+          ],
           shipping_address_collection: {
             allowed_countries: ["US", "CA", "GB"],
           },
