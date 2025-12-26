@@ -1,11 +1,11 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  protectedProcedure,
+  // protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
 import {
-  cartItems,
+  // cartItems,
   orderItems,
   orders,
   productVariants,
@@ -42,15 +42,12 @@ export const stripeRouter = createTRPCRouter({
 
       const stripe = new Stripe(env.STRIPE_SECRET_KEY);
       const baseUrl = getBaseUrl();
-      const variantIds = input.map((item) => item.productVariantId);
 
-      // --- NEW: Clean up old 'pending' orders for this user ---
-      // This ensures we don't reuse stale orders or leave a mess of pending orders
-      // visible to the user/admin if they abandon checkout repeatedly.
+      // 1. mark all prev pending orders of this user as abandoned voluntarily
       if (ctx.session?.user) {
         await ctx.db
           .update(orders)
-          .set({ status: "cancelled" })
+          .set({ status: "abandoned", statusReason: "abandoned_voluntary" })
           .where(
             and(
               eq(orders.userId, ctx.session.user.id),
@@ -58,11 +55,13 @@ export const stripeRouter = createTRPCRouter({
             ),
           );
       }
-      // --------------------------------------------------------
 
-      // 1. SECURELY fetch product details from your DB
-      const dbVariants = await ctx.db.query.productVariants.findMany({
-        where: inArray(productVariants.id, variantIds),
+      // 2. get item info for all cart items
+      const cartItemsInfo = await ctx.db.query.productVariants.findMany({
+        where: inArray(
+          productVariants.id,
+          input.map((item) => item.productVariantId),
+        ),
         with: {
           product: {
             columns: { name: true },
@@ -70,42 +69,43 @@ export const stripeRouter = createTRPCRouter({
         },
       });
 
-      // 2. Create the line_items array AND calculate total
-      let totalAmount = 0;
-      const lineItems = input.map((cartItem) => {
-        const dbVariant = dbVariants.find(
-          (v) => v.id === cartItem.productVariantId,
+      // 3. create line items obj -> needed for stripe session
+      let totalCost = 0;
+      const lineItems = input.map((variantIdAndQty) => {
+        const cartItemInfo = cartItemsInfo.find(
+          (v) => v.id === variantIdAndQty.productVariantId,
         );
 
-        if (!dbVariant) {
+        if (!cartItemInfo) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: `Product variant with ID ${cartItem.productVariantId} not found.`,
+            message: `Product variant with ID ${variantIdAndQty.productVariantId} not found.`,
           });
         }
-        if (dbVariant.stock < cartItem.quantity) {
+        if (cartItemInfo.stock < variantIdAndQty.quantity) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Not enough stock for ${dbVariant.product.name} - ${dbVariant.name}. Only ${dbVariant.stock} left.`,
+            message: `Not enough stock for ${cartItemInfo.product.name} - ${cartItemInfo.name}. Only ${cartItemInfo.stock} left.`,
           });
         }
 
-        const unitAmount = Math.round(parseFloat(dbVariant.price) * 100);
-        totalAmount += unitAmount * cartItem.quantity;
+        const itemPrice = Math.round(parseFloat(cartItemInfo.price) * 100);
+        totalCost += itemPrice * variantIdAndQty.quantity;
 
+        // Might not want to change the format here (stripe session might require specific namings)
         return {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `${dbVariant.product.name} - ${dbVariant.name ?? ""}`.trim(),
+              name: `${cartItemInfo.product.name} - ${cartItemInfo.name ?? ""}`.trim(),
             },
-            unit_amount: unitAmount,
+            unit_amount: itemPrice,
           },
-          quantity: cartItem.quantity,
+          quantity: variantIdAndQty.quantity,
         };
       });
 
-      // 3. --- Create a 'pending' order in our database ---
+      // 4. insert the pending order and its order items
       let newOrderId: string | null = null;
       try {
         const [newOrder] = await ctx.db
@@ -113,8 +113,8 @@ export const stripeRouter = createTRPCRouter({
           .values({
             id: `${v4()}`,
             userId: ctx.session?.user?.id,
-            guestEmail: ctx.session?.user?.email,
-            subtotal: (totalAmount / 100).toFixed(2),
+            // guestEmail: ctx.session?.user?.email,
+            subtotal: (totalCost / 100).toFixed(2),
             status: "pending",
           })
           .returning({ id: orders.id });
@@ -124,10 +124,9 @@ export const stripeRouter = createTRPCRouter({
         }
         newOrderId = newOrder.id;
 
-        // 3b. Create the associated order items
         await ctx.db.insert(orderItems).values(
           input.map((cartItem) => {
-            const dbVariant = dbVariants.find(
+            const dbVariant = cartItemsInfo.find(
               (v) => v.id === cartItem.productVariantId,
             )!;
             return {
@@ -147,19 +146,17 @@ export const stripeRouter = createTRPCRouter({
         });
       }
 
-      // 4. Create the Stripe session
+      // 5. create/return the stripe session
       try {
         const session = await stripe.checkout.sessions.create({
           payment_method_types: ["card"],
           mode: "payment",
           line_items: lineItems,
           customer_email: ctx.session?.user?.email ?? undefined,
-          // 1. Enable Automatic Tax
           automatic_tax: { enabled: true },
-          // 2. Add Shipping Options (IDs from your Stripe Dashboard)
           shipping_options: [
-            { shipping_rate: "shr_1ShS9nK2sO6ATVfVKbsWCKK9" }, // Example: Standard Shipping
-            { shipping_rate: "shr_1ShSAIK2sO6ATVfV320VDOdm" }, // Example: Express Shipping
+            { shipping_rate: "shr_1ShS9nK2sO6ATVfVKbsWCKK9" }, // Standard Shipping
+            { shipping_rate: "shr_1ShSAIK2sO6ATVfV320VDOdm" }, // Express Shipping
           ],
           shipping_address_collection: {
             allowed_countries: ["US", "CA", "GB"],
@@ -177,7 +174,7 @@ export const stripeRouter = createTRPCRouter({
         console.error("Failed to create Stripe session:", error);
         await ctx.db
           .update(orders)
-          .set({ status: "cancelled" })
+          .set({ status: "abandoned", statusReason: "abandoned_stripe_error" })
           .where(eq(orders.id, newOrderId));
 
         throw new TRPCError({

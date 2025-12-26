@@ -20,17 +20,26 @@ export const createTable = pgTableCreator((name) => `tonytonyshopper_${name}`);
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 export const orderStatusEnum = pgEnum("order_status", [
   "pending",
-  "cancelled",
+  "abandoned",
   "paid",
+  // "cancelled",
+  // "shipped",
+  // "returned",
+  // "refunded",
+]);
+export const orderStatusReasonEnum = pgEnum("order_status_reason", [
+  "abandoned_voluntary",
+  "abandoned_stripe_error",
+  "abandoned_out_of_stock",
+  "abandoned_code_error",
+]);
+export const orderItemStatusEnum = pgEnum("order_item_status", [
+  "paid",
+  "cancelled",
   "shipped",
   "returned",
   "refunded",
 ]);
-// export const orderItemStatusEnum = pgEnum("order_item_status", [
-//   "fulfilled",
-//   "returning",
-//   "refunded",
-// ]);
 
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
 
@@ -401,6 +410,7 @@ export const orders = createTable("order", (d) => ({
   guestEmail: d.varchar({ length: 255 }),
 
   status: orderStatusEnum("status").notNull(),
+  statusReason: orderStatusReasonEnum("status_reason"),
 
   subtotal: d.numeric({ precision: 10, scale: 2 }).notNull(),
   // the following 3 fields are empty when checkout session is 1st created
@@ -426,9 +436,9 @@ export const orders = createTable("order", (d) => ({
   carrier: d.varchar({ length: 50 }), // e.g., "USPS", "FedEx"
   trackingNumber: d.varchar({ length: 255 }),
 
-  returnCarrier: d.varchar({ length: 50 }),
-  returnTrackingNumber: d.varchar({ length: 255 }),
-  refundId: d.varchar({ length: 255 }), // Stripe Refund ID for reference
+  // returnCarrier: d.varchar({ length: 50 }),
+  // returnTrackingNumber: d.varchar({ length: 255 }),
+  // refundId: d.varchar({ length: 255 }), // Stripe Refund ID for reference
 
   createdAt: d
     .timestamp({ withTimezone: true })

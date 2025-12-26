@@ -195,7 +195,7 @@ export const orderRouter = createTRPCRouter({
         // and ideally refund the payment.
         await ctx.db
           .update(orders)
-          .set({ status: "cancelled" })
+          .set({ status: "abandoned", statusReason: "abandoned_out_of_stock" })
           .where(eq(orders.id, orderId));
 
         // TODO: Handle refund with Stripe here if payment was captured but stock failed
@@ -244,7 +244,7 @@ export const orderRouter = createTRPCRouter({
         // Note: If you want to restrict to only "paid/shipped", keep this:
         // inArray(orders.status, ["paid", "shipped"])
         // Or, if using filters, rely on the user's filter or allow all non-pending:
-        inArray(orders.status, ["paid", "shipped"]),
+        inArray(orders.status, ["paid"]),
       ];
 
       if (id) {

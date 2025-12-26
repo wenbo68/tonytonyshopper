@@ -74,3 +74,6 @@ export default function RootLayout({
 
 // just get rid of guest purchase (they have to provide name and email at checkout anyway)
 // reasoning: hard to handle pending orders in db from guests
+
+// for now make paid/shipped order items work in orders page
+// items with different status should be grouped and shown together (in this order: paid, cancelled, shipped, returned, refunded)
