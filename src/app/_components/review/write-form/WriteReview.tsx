@@ -12,7 +12,7 @@ import StarRating from "../rating/StarRating";
 import type { UpdateCommentInput } from "~/type";
 // import toast from "react-hot-toast";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
-import { customToast } from "~/server/utils/toast";
+import { customToast } from "~/app/_components/toast";
 
 interface UpdateReviewFields {
   commentId: string;

@@ -8,6 +8,11 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
+import {
+  orderItemStatusConst,
+  orderStatusConst,
+  orderStatusReasonConst,
+} from "~/const";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -18,28 +23,15 @@ import { type AdapterAccount } from "next-auth/adapters";
 export const createTable = pgTableCreator((name) => `tonytonyshopper_${name}`);
 
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
-export const orderStatusEnum = pgEnum("order_status", [
-  "pending",
-  "abandoned",
-  "paid",
-  // "cancelled",
-  // "shipped",
-  // "returned",
-  // "refunded",
-]);
-export const orderStatusReasonEnum = pgEnum("order_status_reason", [
-  "abandoned_voluntary",
-  "abandoned_stripe_error",
-  "abandoned_out_of_stock",
-  "abandoned_code_error",
-]);
-export const orderItemStatusEnum = pgEnum("order_item_status", [
-  "paid",
-  "cancelled",
-  "shipped",
-  "returned",
-  "refunded",
-]);
+export const orderStatusEnum = pgEnum("order_status", orderStatusConst);
+export const orderStatusReasonEnum = pgEnum(
+  "order_status_reason",
+  orderStatusReasonConst,
+);
+export const orderItemStatusEnum = pgEnum(
+  "order_item_status",
+  orderItemStatusConst,
+);
 
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
 
@@ -476,6 +468,7 @@ export const orderItems = createTable(
       .references(() => productVariants.id), // Don't cascade
     // ---
 
+    status: orderItemStatusEnum("status").notNull().default("paid"),
     quantity: d.integer("quantity").notNull(),
     priceAtPurchase: d.numeric({ precision: 10, scale: 2 }).notNull(),
   }),

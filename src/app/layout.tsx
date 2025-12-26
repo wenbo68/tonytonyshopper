@@ -9,6 +9,7 @@ import { TopNav } from "./_components/nav/TopNav";
 import { Toaster } from "react-hot-toast";
 import { ProductVariantModal } from "./_components/modal/ProductVariantModal";
 import { CartMergeHandler } from "./_components/CartMergeHandler";
+import { CheckoutListener } from "./_components/CheckoutListener";
 
 export const metadata: Metadata = {
   title: "TonyTonyShopper",
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body className="flex flex-col bg-gray-950 text-gray-400">
         {/* <Suspense fallback={null}> */}
         <ContextProviders>
+          <CheckoutListener />
           <CartMergeHandler />
           {/* we don't use zustand for order modal bc its only used directly in the orders & orders/admin page */}
           <ProductVariantModal />

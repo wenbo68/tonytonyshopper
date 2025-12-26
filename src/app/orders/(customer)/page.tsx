@@ -238,7 +238,7 @@ export default function OrdersPage() {
                           </OverlayTag>
 
                           {/* Only show "Write Review" button if the order is shipped */}
-                          {order.status === "shipped" && (
+                          {item.status === "shipped" && (
                             <OverlayButton
                               position="bottomRight"
                               onClick={() => {

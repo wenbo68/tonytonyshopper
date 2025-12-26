@@ -13,7 +13,7 @@ import { dequal } from "dequal";
 // import toast from "react-hot-toast";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
 import WriteReview from "../write-form/WriteReview";
-import { customToast } from "~/server/utils/toast";
+import { customToast } from "~/app/_components/toast";
 
 export default function ReviewOrReply({
   comment,

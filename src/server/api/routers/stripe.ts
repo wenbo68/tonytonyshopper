@@ -10,11 +10,12 @@ import {
   orders,
   productVariants,
 } from "~/server/db/schema";
-import { eq, and, inArray } from "drizzle-orm"; //
+import { eq, and, inArray } from "drizzle-orm";
 import { Stripe } from "stripe";
 import { env } from "~/env.js";
 import { TRPCError } from "@trpc/server";
 import { v4 } from "uuid";
+import { formatProductOptionsCaption } from "~/server/utils/product";
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return window.location.origin;
@@ -56,7 +57,7 @@ export const stripeRouter = createTRPCRouter({
           );
       }
 
-      // 2. get item info for all cart items
+      // 2. one db query: fetch item info for all cart items
       const cartItemsInfo = await ctx.db.query.productVariants.findMany({
         where: inArray(
           productVariants.id,
@@ -79,13 +80,13 @@ export const stripeRouter = createTRPCRouter({
         if (!cartItemInfo) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: `Product variant with ID ${variantIdAndQty.productVariantId} not found.`,
+            message: `Variant id (${variantIdAndQty.productVariantId}) does not exist.`,
           });
         }
         if (cartItemInfo.stock < variantIdAndQty.quantity) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Not enough stock for ${cartItemInfo.product.name} - ${cartItemInfo.name}. Only ${cartItemInfo.stock} left.`,
+            message: `${cartItemInfo.product.name} (${formatProductOptionsCaption(cartItemInfo.options)}) only has ${cartItemInfo.stock} left.`,
           });
         }
 
@@ -105,44 +106,37 @@ export const stripeRouter = createTRPCRouter({
         };
       });
 
-      // 4. insert the pending order and its order items
-      let newOrderId: string | null = null;
+      // 4. two db writes: insert pending order + insert order items
+      let newOrderId: string;
       try {
-        const [newOrder] = await ctx.db
-          .insert(orders)
-          .values({
-            id: `${v4()}`,
-            userId: ctx.session?.user?.id,
-            // guestEmail: ctx.session?.user?.email,
-            subtotal: (totalCost / 100).toFixed(2),
-            status: "pending",
-          })
-          .returning({ id: orders.id });
-
-        if (!newOrder?.id) {
-          throw new Error("Failed to create order.");
-        }
-        newOrderId = newOrder.id;
+        const orderId = v4();
+        await ctx.db.insert(orders).values({
+          id: orderId,
+          userId: ctx.session?.user?.id ?? null,
+          subtotal: (totalCost / 100).toFixed(2),
+          status: "pending",
+        });
 
         await ctx.db.insert(orderItems).values(
-          input.map((cartItem) => {
-            const dbVariant = cartItemsInfo.find(
-              (v) => v.id === cartItem.productVariantId,
+          input.map((item) => {
+            const variant = cartItemsInfo.find(
+              (v) => v.id === item.productVariantId,
             )!;
             return {
-              id: `${v4()}`,
-              orderId: newOrderId!,
-              productVariantId: cartItem.productVariantId,
-              quantity: cartItem.quantity,
-              priceAtPurchase: dbVariant.price,
+              id: v4(),
+              orderId: orderId,
+              productVariantId: item.productVariantId,
+              quantity: item.quantity,
+              priceAtPurchase: variant.price,
             };
           }),
         );
-      } catch (error) {
-        console.error("Failed to create pending order:", error);
+        newOrderId = orderId;
+      } catch (err) {
+        console.error("Order creation failed:", err);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create order.",
+          message: "Failed to initialize order.",
         });
       }
 
@@ -162,24 +156,27 @@ export const stripeRouter = createTRPCRouter({
             allowed_countries: ["US", "CA", "GB"],
           },
           billing_address_collection: "required",
-          success_url: `${baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${baseUrl}/payment/cancel`,
+          // Pass metadata so the webhook knows which DB rows to update!
           metadata: {
             userId: ctx.session?.user?.id ?? "guest",
             orderId: newOrderId,
           },
+          // success_url: `${baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+          // cancel_url: `${baseUrl}/payment/cancel`,
+          success_url: `${baseUrl}/product/all?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${baseUrl}/cart?canceled=true`,
         });
         return { url: session.url };
       } catch (error) {
-        console.error("Failed to create Stripe session:", error);
+        // If Stripe fails, we mark the DB order as failed due to gateway error
         await ctx.db
           .update(orders)
-          .set({ status: "abandoned", statusReason: "abandoned_stripe_error" })
+          .set({ status: "abandoned", statusReason: "abandoned_code_error" })
           .where(eq(orders.id, newOrderId));
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create payment session.",
+          message: "Stripe session creation failed.",
         });
       }
     }),

@@ -17,7 +17,7 @@ import {
   OverlayTagGroup,
 } from "../item/ItemImageOverlays";
 import { handleOverlayClick } from "~/server/utils/modal";
-import { customToast } from "~/server/utils/toast";
+import { customToast } from "~/app/_components/toast";
 
 export function ProductVariantModal() {
   const { data: session } = useSession();

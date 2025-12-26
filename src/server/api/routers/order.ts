@@ -214,6 +214,27 @@ export const orderRouter = createTRPCRouter({
     }),
   // ... rest of the file (getMyOrders)
 
+  checkOrderStatusByStripeSession: publicProcedure
+    .input(z.object({ sessionId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Find the order that has this sessionId (via Stripe or your internal metadata)
+      // Since your metadata has orderId, we can retrieve the session from Stripe first
+      const session = await stripe.checkout.sessions.retrieve(input.sessionId);
+      const orderId = session.metadata?.orderId;
+
+      if (!orderId) return { status: "not_found" };
+
+      const order = await ctx.db.query.orders.findFirst({
+        where: eq(orders.id, orderId),
+        columns: { status: true, statusReason: true },
+      });
+
+      return {
+        status: order?.status,
+        reason: order?.statusReason ?? null,
+      };
+    }),
+
   /**
    * Get filtered orders for the currently logged-in user.
    */

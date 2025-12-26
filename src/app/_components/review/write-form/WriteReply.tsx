@@ -8,7 +8,7 @@ import {
 } from "react";
 // import toast from "react-hot-toast";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
-import { customToast } from "~/server/utils/toast";
+import { customToast } from "~/app/_components/toast";
 import { api } from "~/trpc/react";
 import type { UpdateCommentInput } from "~/type";
 

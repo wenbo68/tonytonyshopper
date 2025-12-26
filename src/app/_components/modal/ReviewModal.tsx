@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 import { handleOverlayClick } from "~/server/utils/modal";
 import StarRating from "../review/rating/StarRating";
-import { customToast } from "~/server/utils/toast";
+import { customToast } from "~/app/_components/toast";
 
 type ReviewModalProps = {
   itemIds: { productId: string; productVariantId: string } | null;

@@ -17,30 +17,28 @@ function CustomToast({
 
 export const customToast = {
   loading(message: string) {
-    return toast.custom(() => (
-      <CustomToast
-        message={message}
-        className={`animate-pulse ${colorClassMap[2]}`}
-      />
-    ));
-  },
-
-  success(message: string, id?: string) {
-    return toast.custom(
-      () => <CustomToast message={message} className={`${colorClassMap[3]}`} />,
-      { id },
-    );
-  },
-
-  error(message: string, id?: string) {
     return toast.custom(
       () => (
         <CustomToast
           message={message}
-          className={`animate-pulse ${colorClassMap[1]}`}
+          className={`animate-pulse ${colorClassMap[2]}`}
         />
       ),
-      { id },
+      { duration: Infinity },
+    );
+  },
+
+  success(message: string, id?: string, duration?: number) {
+    return toast.custom(
+      () => <CustomToast message={message} className={`${colorClassMap[3]}`} />,
+      { id, duration: duration ?? 2000 },
+    );
+  },
+
+  error(message: string, id?: string, duration?: number) {
+    return toast.custom(
+      () => <CustomToast message={message} className={`${colorClassMap[1]}`} />,
+      { id, duration: duration ?? 3000 },
     );
   },
 };

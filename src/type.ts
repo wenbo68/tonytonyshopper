@@ -2,11 +2,17 @@ import z from "zod";
 import {
   orderItems,
   orders,
+  orderStatusReasonEnum,
   products,
   productVariants,
   type comments,
 } from "./server/db/schema";
-import type { colorClassMap } from "./const";
+import type {
+  colorClassMap,
+  orderItemStatusConst,
+  orderStatusConst,
+  orderStatusReasonConst,
+} from "./const";
 
 // ==================================
 // Backend Types
@@ -41,6 +47,10 @@ export const StockEnum = z.enum(["all", "some", "none"]);
 export type StockEnum = z.infer<typeof StockEnum>;
 
 // ==== orders ====
+export type OrderStatus = (typeof orderStatusConst)[number];
+export type OrderStatusReason = (typeof orderStatusReasonConst)[number];
+export type OrderItemStatus = (typeof orderItemStatusConst)[number];
+
 export type OrderItemAndVariantAndProduct = typeof orderItems.$inferSelect & {
   variant: VariantAndProduct;
 };

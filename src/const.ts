@@ -1,5 +1,9 @@
 import type { FilterGroupOption } from "./type";
 
+// ==========================
+// ==== Frontend consts =====
+// ==========================
+
 export const reviewSortOptions: FilterGroupOption[] = [
   {
     groupLabel: "Date Posted",
@@ -95,3 +99,23 @@ export const colorClassMap = {
   8: "bg-violet-500/20 text-violet-300 ring-violet-500/30",
   gray: "bg-gray-500/20 text-gray-300 ring-gray-500/30",
 };
+
+// ==========================
+// ==== Backend consts =====
+// ==========================
+
+export const orderStatusConst = ["pending", "abandoned", "paid"] as const;
+export const orderStatusReasonConst = [
+  "abandoned_voluntary",
+  "abandoned_stripe_expired",
+  "abandoned_payment_failed",
+  "abandoned_out_of_stock",
+  "abandoned_code_error",
+] as const;
+export const orderItemStatusConst = [
+  "paid",
+  "cancelled",
+  "shipped",
+  "returned",
+  "refunded",
+] as const;
