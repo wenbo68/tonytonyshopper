@@ -425,8 +425,8 @@ export const orders = createTable("order", (d) => ({
   cardLast4: d.varchar({ length: 4 }), // e.g., "4242"
 
   // Shipping info
-  carrier: d.varchar({ length: 50 }), // e.g., "USPS", "FedEx"
-  trackingNumber: d.varchar({ length: 255 }),
+  // carrier: d.varchar({ length: 50 }), // e.g., "USPS", "FedEx"
+  // trackingNumber: d.varchar({ length: 255 }),
 
   // returnCarrier: d.varchar({ length: 50 }),
   // returnTrackingNumber: d.varchar({ length: 255 }),
@@ -446,7 +446,6 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   orderItems: many(orderItems),
 }));
 
-// ======== ORDER ITEMS (Line Items) ========
 export const orderItems = createTable(
   "order_item",
   (d) => ({
@@ -459,18 +458,20 @@ export const orderItems = createTable(
       .varchar({ length: 255 })
       .notNull()
       .references(() => orders.id, { onDelete: "cascade" }),
-
-    // --- UPDATED ---
-    // Now references a specific variant
     productVariantId: d
       .varchar({ length: 255 })
       .notNull()
-      .references(() => productVariants.id), // Don't cascade
-    // ---
+      .references(() => productVariants.id),
 
-    status: orderItemStatusEnum("status").notNull().default("paid"),
-    quantity: d.integer("quantity").notNull(),
+    status: orderItemStatusEnum("status"), // status is null if order is pending/abandoned
+    quantity: d.integer().notNull(),
     priceAtPurchase: d.numeric({ precision: 10, scale: 2 }).notNull(),
+
+    carrier: d.varchar({ length: 50 }), // e.g., "UPS", "FedEx"
+    trackingNumber: d.varchar({ length: 255 }),
+
+    returnCarrier: d.varchar({ length: 50 }), // e.g., "UPS", "FedEx"
+    returnTrackingNumber: d.varchar({ length: 255 }),
   }),
   (t) => [index("order_item_order_id_idx").on(t.orderId)],
 );
@@ -481,7 +482,6 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     references: [orders.id],
   }),
 
-  // --- UPDATED ---
   productVariant: one(productVariants, {
     fields: [orderItems.productVariantId],
     references: [productVariants.id],

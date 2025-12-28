@@ -25,6 +25,7 @@ import { updateProductVariantDenorms } from "~/server/utils/product";
 // import { Resend } from "resend";
 import { getAllOrdersInputSchema } from "~/type";
 import { TRPCError } from "@trpc/server";
+import { getOrderItemStatusPriority } from "~/server/utils/order";
 
 // Zod schema for a single variant
 const variantSchema = z.object({
@@ -46,7 +47,7 @@ export const adminRouter = createTRPCRouter({
   /**
    * Add a new product (Admin Only)
    */
-  add: adminProcedure
+  addProduct: adminProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -111,7 +112,7 @@ export const adminRouter = createTRPCRouter({
   /**
    * Update an existing product (Admin Only)
    */
-  update: adminProcedure
+  updateProduct: adminProcedure
     .input(
       z.object({
         productId: z.string(), // ID of the product to update
@@ -220,9 +221,10 @@ export const adminRouter = createTRPCRouter({
 
   /**
    * Get all orders in the system (Admin Only) with Filters & Sorting
+   * This procedure needs inArray and in memory sorting b/c it needs more than 1 table (orders + users)
    */
   getAllOrders: adminProcedure
-    .input(getAllOrdersInputSchema) // Use new schema
+    .input(getAllOrdersInputSchema)
     .query(async ({ ctx, input }) => {
       const {
         page,
@@ -312,9 +314,9 @@ export const adminRouter = createTRPCRouter({
         conditions.push(inArray(orders.status, status as any[]));
       }
 
-      if (carrier) conditions.push(ilike(orders.carrier, `%${carrier}%`));
-      if (trackingNumber)
-        conditions.push(ilike(orders.trackingNumber, `%${trackingNumber}%`));
+      // if (carrier) conditions.push(ilike(orders.carrier, `%${carrier}%`));
+      // if (trackingNumber)
+      //   conditions.push(ilike(orders.trackingNumber, `%${trackingNumber}%`));
 
       const whereClause = and(...conditions);
 
@@ -325,10 +327,10 @@ export const adminRouter = createTRPCRouter({
           orderByClause = asc(orders.createdAt);
           break;
         case "price-desc":
-          orderByClause = desc(orders.subtotal);
+          orderByClause = desc(orders.totalAmount);
           break;
         case "price-asc":
-          orderByClause = asc(orders.subtotal);
+          orderByClause = asc(orders.totalAmount);
           break;
         case "name-desc":
           orderByClause = desc(users.name);
@@ -385,7 +387,7 @@ export const adminRouter = createTRPCRouter({
 
       // 5. Fetch full object data for these IDs using relational query
       // Note: This second query might return items in a different order, so we re-sort in JS.
-      const orderHistory = await ctx.db.query.orders.findMany({
+      const allOrders = await ctx.db.query.orders.findMany({
         where: inArray(orders.id, orderIds),
         with: {
           user: {
@@ -405,10 +407,33 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
-      // 6. Re-sort in memory to match the requested sort order (since 'inArray' doesn't guarantee order)
+      // 6. Re-sort in memory to match the given sort order (since 'inArray' doesn't guarantee order)
       // We can map the orderIds to the result.
-      const orderMap = new Map(orderHistory.map((o) => [o.id, o]));
+      const orderMap = new Map(allOrders.map((o) => [o.id, o]));
       const sortedOrders = orderIds.map((id) => orderMap.get(id)!);
+
+      // 7. sort order items in each order
+      sortedOrders.forEach((order) => {
+        order.orderItems.sort((a, b) => {
+          // A. Primary Sort: Product Name
+          const prodNameA = a.productVariant.product.name.toLowerCase();
+          const prodNameB = b.productVariant.product.name.toLowerCase();
+          if (prodNameA < prodNameB) return -1;
+          if (prodNameA > prodNameB) return 1;
+
+          // B. Secondary Sort: Variant Name (Options)
+          const variantNameA = a.productVariant.name?.toLowerCase() ?? "";
+          const variantNameB = b.productVariant.name?.toLowerCase() ?? "";
+          if (variantNameA < variantNameB) return -1;
+          if (variantNameA > variantNameB) return 1;
+
+          // C. Tertiary Sort: Status (Custom Order)
+          const priorityA = getOrderItemStatusPriority(a.status);
+          const priorityB = getOrderItemStatusPriority(b.status);
+
+          return priorityA - priorityB;
+        });
+      });
 
       return {
         orders: sortedOrders,
@@ -417,110 +442,257 @@ export const adminRouter = createTRPCRouter({
       };
     }),
 
-  updateShipping: adminProcedure
+  // updateShipping: adminProcedure
+  //   .input(
+  //     z.object({
+  //       orderId: z.string(),
+  //       trackingNumber: z.string(),
+  //       carrier: z.string(),
+  //     }),
+  //   )
+  //   .mutation(async ({ ctx, input }) => {
+  //     // 1. Fetch the order first to get the user's email
+  //     const order = await ctx.db.query.orders.findFirst({
+  //       where: eq(orders.id, input.orderId),
+  //       with: {
+  //         user: true, // Fetch relation to get user email if logged in
+  //       },
+  //     });
+
+  //     if (!order) {
+  //       throw new Error("Order not found");
+  //     }
+
+  //     // Determine the email to send to
+  //     const email = order.user?.email ?? order.guestEmail;
+
+  //     if (!email) {
+  //       throw new Error("No email found for this order");
+  //     }
+
+  //     // 2. Update the database
+  //     await ctx.db
+  //       .update(orders)
+  //       .set({
+  //         status: "shipped",
+  //         trackingNumber: input.trackingNumber,
+  //         carrier: input.carrier,
+  //       })
+  //       .where(eq(orders.id, input.orderId));
+
+  //     // // 3. Send the email using Resend
+  //     // // NOTE: If you haven't verified a domain on Resend, 'from' must be 'onboarding@resend.dev'
+  //     // // and 'to' must be your own email (for testing).
+  //     // try {
+  //     //   await resend.emails.send({
+  //     //     from: "TonyTonyShopper <onboarding@resend.dev>",
+  //     //     to: [email],
+  //     //     subject: `Your order #${order.id.slice(0, 8)} has shipped!`,
+  //     //     html: `
+  //     //       <div style="font-family: sans-serif; color: #333;">
+  //     //         <h1>Your order is on the way!</h1>
+  //     //         <p>Great news! Your order has been handed over to the carrier.</p>
+
+  //     //         <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+  //     //           <p><strong>Carrier:</strong> ${input.carrier}</p>
+  //     //           <p><strong>Tracking Number:</strong> ${input.trackingNumber}</p>
+  //     //         </div>
+
+  //     //         <p>You can track your package using the number above.</p>
+  //     //         <p>Thank you for shopping with us!</p>
+  //     //       </div>
+  //     //     `,
+  //     //   });
+  //     // } catch (error) {
+  //     //   // Don't block the UI if email fails, just log it
+  //     //   console.error("Failed to send shipping email:", error);
+  //     // }
+
+  //     return { success: true };
+  //   }),
+
+  // cancelShipping: adminProcedure
+  //   .input(z.object({ orderId: z.string() }))
+  //   .mutation(async ({ ctx, input }) => {
+  //     await ctx.db.transaction(async (tx) => {
+  //       // 1️⃣ Fetch current status
+  //       const order = await tx.query.orders.findFirst({
+  //         where: eq(orders.id, input.orderId),
+  //         columns: { status: true },
+  //       });
+
+  //       if (!order) {
+  //         throw new TRPCError({
+  //           code: "NOT_FOUND",
+  //           message: "Order not found",
+  //         });
+  //       }
+
+  //       if (order.status !== "shipped") {
+  //         throw new TRPCError({
+  //           code: "BAD_REQUEST",
+  //           message: "Only shipped orders can be reverted to paid",
+  //         });
+  //       }
+
+  //       // 2️⃣ Update only if status was shipped
+  //       await tx
+  //         .update(orders)
+  //         .set({
+  //           status: "paid",
+  //           carrier: null,
+  //           trackingNumber: null,
+  //         })
+  //         .where(eq(orders.id, input.orderId));
+  //     });
+
+  //     return { success: true };
+  //   }),
+
+  updateOrderItemShipment: adminProcedure
     .input(
       z.object({
-        orderId: z.string(),
-        trackingNumber: z.string(),
-        carrier: z.string(),
+        orderItemId: z.string(),
+        quantity: z.number().min(1, "Invalid quantity."),
+        carrier: z.string().min(1, "Invalid carrier."),
+        trackingNumber: z.string().min(1, "Invalid tracking number."),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // 1. Fetch the order first to get the user's email
-      const order = await ctx.db.query.orders.findFirst({
-        where: eq(orders.id, input.orderId),
-        with: {
-          user: true, // Fetch relation to get user email if logged in
-        },
-      });
-
-      if (!order) {
-        throw new Error("Order not found");
-      }
-
-      // Determine the email to send to
-      const email = order.user?.email ?? order.guestEmail;
-
-      if (!email) {
-        throw new Error("No email found for this order");
-      }
-
-      // 2. Update the database
-      await ctx.db
-        .update(orders)
-        .set({
-          status: "shipped",
-          trackingNumber: input.trackingNumber,
-          carrier: input.carrier,
-        })
-        .where(eq(orders.id, input.orderId));
-
-      // // 3. Send the email using Resend
-      // // NOTE: If you haven't verified a domain on Resend, 'from' must be 'onboarding@resend.dev'
-      // // and 'to' must be your own email (for testing).
-      // try {
-      //   await resend.emails.send({
-      //     from: "TonyTonyShopper <onboarding@resend.dev>",
-      //     to: [email],
-      //     subject: `Your order #${order.id.slice(0, 8)} has shipped!`,
-      //     html: `
-      //       <div style="font-family: sans-serif; color: #333;">
-      //         <h1>Your order is on the way!</h1>
-      //         <p>Great news! Your order has been handed over to the carrier.</p>
-
-      //         <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-      //           <p><strong>Carrier:</strong> ${input.carrier}</p>
-      //           <p><strong>Tracking Number:</strong> ${input.trackingNumber}</p>
-      //         </div>
-
-      //         <p>You can track your package using the number above.</p>
-      //         <p>Thank you for shopping with us!</p>
-      //       </div>
-      //     `,
-      //   });
-      // } catch (error) {
-      //   // Don't block the UI if email fails, just log it
-      //   console.error("Failed to send shipping email:", error);
-      // }
-
-      return { success: true };
-    }),
-
-  cancelShipping: adminProcedure
-    .input(z.object({ orderId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      await ctx.db.transaction(async (tx) => {
-        // 1️⃣ Fetch current status
-        const order = await tx.query.orders.findFirst({
-          where: eq(orders.id, input.orderId),
-          columns: { status: true },
+      const { orderItemId, quantity, carrier, trackingNumber } = input;
+      return await ctx.db.transaction(async (tx) => {
+        // 1. Find the item
+        const item = await tx.query.orderItems.findFirst({
+          where: eq(orderItems.id, orderItemId),
         });
 
-        if (!order) {
+        if (!item) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Order not found",
+            message: "Order item not found",
           });
         }
 
-        if (order.status !== "shipped") {
+        // Ensure we only ship 'paid' items
+        if (item.status !== "paid") {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Only shipped orders can be reverted to paid",
+            message: `Cannot ship item with status: ${item.status}`,
           });
         }
 
-        // 2️⃣ Update only if status was shipped
-        await tx
-          .update(orders)
-          .set({
+        if (quantity > item.quantity) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot ship more items than purchased.",
+          });
+        }
+
+        // 2. Partial vs Full Shipment Logic
+        if (quantity === item.quantity) {
+          // Full shipment of this line item
+          await tx
+            .update(orderItems)
+            .set({
+              status: "shipped",
+              carrier,
+              trackingNumber,
+            })
+            .where(eq(orderItems.id, orderItemId));
+        } else {
+          // Partial shipment: Split the row
+          // A. Reduce quantity of the original 'paid' row
+          await tx
+            .update(orderItems)
+            .set({
+              quantity: item.quantity - quantity,
+            })
+            .where(eq(orderItems.id, orderItemId));
+
+          // B. Create new 'shipped' row
+          await tx.insert(orderItems).values({
+            orderId: item.orderId,
+            productVariantId: item.productVariantId,
+            quantity: quantity,
+            priceAtPurchase: item.priceAtPurchase,
+            status: "shipped",
+            carrier,
+            trackingNumber,
+          });
+        }
+        return { success: true };
+      });
+    }),
+
+  cancelOrderItemShipment: adminProcedure
+    .input(
+      z.object({
+        orderItemId: z.string(),
+        quantity: z.number().min(1, "Invalid quantity."),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { orderItemId, quantity } = input;
+      return await ctx.db.transaction(async (tx) => {
+        // 1. Find the item
+        const item = await tx.query.orderItems.findFirst({
+          where: eq(orderItems.id, orderItemId),
+        });
+
+        if (!item) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Item not found",
+          });
+        }
+
+        if (item.status !== "shipped") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot cancel shipment of item with status: ${item.status}`,
+          });
+        }
+
+        if (quantity > item.quantity) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot cancel more than shipped.",
+          });
+        }
+
+        // 2. Partial vs Full cancel shipp Logic
+        if (quantity === item.quantity) {
+          // Full shipment of this line item
+          await tx
+            .update(orderItems)
+            .set({
+              status: "paid",
+              carrier: null,
+              trackingNumber: null,
+            })
+            .where(eq(orderItems.id, orderItemId));
+        } else {
+          // Partial shipment: Split the row
+          // A. Reduce quantity of the original 'shipped' row
+          await tx
+            .update(orderItems)
+            .set({
+              quantity: item.quantity - quantity,
+            })
+            .where(eq(orderItems.id, orderItemId));
+
+          // B. Create new 'paid' row
+          await tx.insert(orderItems).values({
+            orderId: item.orderId,
+            productVariantId: item.productVariantId,
+            quantity: quantity,
+            priceAtPurchase: item.priceAtPurchase,
             status: "paid",
             carrier: null,
             trackingNumber: null,
-          })
-          .where(eq(orders.id, input.orderId));
+          });
+        }
+        return { success: true };
       });
-
-      return { success: true };
     }),
 });

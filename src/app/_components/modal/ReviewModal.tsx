@@ -213,7 +213,7 @@ export default function ReviewModal({
                         deleteMutation.mutate({ id: existingReview.id });
                       }
                     }}
-                    className="w-full cursor-pointer rounded bg-red-600/20 px-4 py-2 font-semibold text-red-400 transition-all hover:bg-red-600/30 disabled:cursor-default disabled:bg-red-600/20 sm:min-w-30"
+                    className="w-full cursor-pointer rounded bg-red-600/30 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-red-600/40 disabled:cursor-default disabled:bg-red-600/20 sm:min-w-30"
                   >
                     {isDeleting ? "Deleting..." : "Delete"}
                   </button>

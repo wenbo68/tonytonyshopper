@@ -185,7 +185,7 @@ export default function CartPage() {
               overlays={
                 <>
                   <OverlayButton
-                    position="topLeft"
+                    position="topRight"
                     onClick={() =>
                       openVariantModal(variant.product, "edit", {
                         variantId: variant.id,
@@ -198,7 +198,7 @@ export default function CartPage() {
                   </OverlayButton>
 
                   <OverlayButton
-                    position="topRight"
+                    position="topLeft"
                     onClick={() => handleRemoveCartItem(variant.id)}
                     title="Remove Item"
                   >

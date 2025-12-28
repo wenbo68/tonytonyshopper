@@ -350,9 +350,10 @@ export function ProductVariantModal() {
                     options={values.map((v) => ({ label: v, value: v }))}
                     value={selectedOptions[name] ?? ""}
                     onChange={(newValue) => handleOptionChange(name, newValue)}
-                    buttonColor="bg-gray-800"
-                    dropdownColor="bg-gray-700"
-                    dropdownHighlightColor="hover:bg-gray-800"
+                    triggerColor="bg-gray-800"
+                    menuColor="bg-gray-700"
+                    // menuRingColor="bg-gray-600"
+                    menuHighlightColor="hover:bg-gray-800"
                   />
                 </div>
               ))}

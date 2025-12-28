@@ -48,7 +48,7 @@ interface GenericFiltersProps<T> {
   };
   filterConfigs: FilterConfig<T>[];
   sortOptions: FilterGroupOption[]; // Update to match proper Group Type
-  gridClassName: string;
+  gridClassName?: string;
   mainFilterKey?: string; // none means no main filter for mobile
   alwaysExpanded?: boolean;
 }

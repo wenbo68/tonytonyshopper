@@ -10,12 +10,21 @@ import {
 import { useSearchParams } from "next/navigation";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useState } from "react";
-import { getAllOrdersInputSchema } from "~/type";
-import OrderDetailsModal from "~/app/_components/modal/OrderModal";
-import { ShipOrderModal } from "~/app/_components/modal/ShipModal";
+import { getAllOrdersInputSchema, type OrderItem } from "~/type";
+import OrderModal from "~/app/_components/modal/OrderModal";
+import { ShipModal } from "~/app/_components/modal/ShipModal";
 import { ItemGrid } from "~/app/_components/item/ItemGrid";
-import { OverlayTag } from "~/app/_components/item/ItemImageOverlays";
+import {
+  OverlayButton,
+  OverlayTag,
+  OverlayTagButton,
+} from "~/app/_components/item/ItemImageOverlays";
 import { ItemCard } from "~/app/_components/item/ItemCard";
+import { MdLocalShipping } from "react-icons/md";
+import { RiRefundFill } from "react-icons/ri";
+import { FaPen } from "react-icons/fa";
+import { customToast } from "~/app/_components/toast";
+import ShipInfoModal from "~/app/_components/modal/ShipInfoModal";
 
 type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
@@ -24,8 +33,12 @@ export default function AdminOrdersPage() {
   const searchParams = useSearchParams();
 
   // --- Modal State ---
-  const [shippingOrder, setShippingOrder] = useState<AdminOrder | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [shipModalProps, setShipModalProps] = useState<OrderItem | null>(null);
+  const [orderModalProps, setOrderModalProps] = useState<AdminOrder | null>(
+    null,
+  );
+  const [shipInfoModalProps, setShipInfoModalProps] =
+    useState<OrderItem | null>(null);
 
   // Parse params
   const rawInput = {
@@ -59,7 +72,7 @@ export default function AdminOrdersPage() {
 
   const parsedInput = getAllOrdersInputSchema.safeParse(rawInput);
 
-  const { data, isLoading, refetch } = api.admin.getAllOrders.useQuery(
+  const { data, isFetching, refetch } = api.admin.getAllOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
     {
       enabled:
@@ -69,7 +82,7 @@ export default function AdminOrdersPage() {
     },
   );
 
-  if (status === "loading" || isLoading) {
+  if (status === "loading" || isFetching) {
     return (
       <div className="animate-pulse text-center">Loading sales history...</div>
     );
@@ -83,27 +96,31 @@ export default function AdminOrdersPage() {
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
-        <p className="font-semibold text-gray-300">No results found.</p>
-        <p className="text-sm font-semibold">Please check back later!</p>
+      <div className="flex flex-col gap-0">
+        <h2 className="text-center font-bold">No orders found!</h2>
+        {/* <p className="text-center text-sm">Try different filters.</p> */}
       </div>
     );
   }
 
   return (
     <>
-      {/* --- Modals --- */}
-      <ShipOrderModal
-        isOpen={!!shippingOrder}
-        order={shippingOrder}
-        onClose={() => setShippingOrder(null)}
-        onSuccess={() => refetch()}
+      <OrderModal
+        isOpen={!!orderModalProps}
+        onClose={() => setOrderModalProps(null)}
+        order={orderModalProps}
       />
 
-      <OrderDetailsModal
-        order={selectedOrder}
-        isOpen={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)}
+      <ShipModal
+        isOpen={!!shipModalProps}
+        onClose={() => setShipModalProps(null)}
+        orderItem={shipModalProps}
+      />
+
+      <ShipInfoModal
+        isOpen={!!shipInfoModalProps}
+        onClose={() => setShipInfoModalProps(null)}
+        orderItem={shipInfoModalProps}
       />
 
       <div className="flex flex-col gap-7 sm:gap-8 md:gap-9 lg:gap-10 xl:gap-11">
@@ -132,7 +149,7 @@ export default function AdminOrdersPage() {
                     </div>
                     <button
                       className="hover: cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-400"
-                      onClick={() => setSelectedOrder(order)}
+                      onClick={() => setOrderModalProps(order)}
                     >
                       More Info
                     </button>
@@ -165,7 +182,7 @@ export default function AdminOrdersPage() {
                       <label className="min-w-14 font-semibold">Status:</label>
                       <span className="capitalize">{order.status}</span>
                     </div>
-                    {(order.status === "paid" ||
+                    {/* {(order.status === "paid" ||
                       order.status === "shipped") && (
                       <button
                         className="hover: cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-400"
@@ -173,7 +190,7 @@ export default function AdminOrdersPage() {
                       >
                         Ship
                       </button>
-                    )}
+                    )} */}
                   </div>
                 </div>
 
@@ -195,10 +212,87 @@ export default function AdminOrdersPage() {
                           href: `/product/${variant.productId}`,
                         }}
                         overlays={
-                          <OverlayTag position="bottomLeft">
-                            {formatCurrency(item.priceAtPurchase)} x
-                            {item.quantity}
-                          </OverlayTag>
+                          <>
+                            {/* Status Tag */}
+                            {item.status === "shipped" ||
+                            item.status === "returned" ? (
+                              <OverlayTagButton
+                                position="topLeft"
+                                className="capitalize"
+                                onClick={() => {
+                                  if (!item.carrier || !item.trackingNumber) {
+                                    customToast.error(
+                                      "Delivery info missing. Please contact support.",
+                                    );
+                                    return;
+                                  }
+                                  setShipInfoModalProps(item);
+                                }}
+                              >
+                                {item.status}
+                              </OverlayTagButton>
+                            ) : (
+                              item.status && (
+                                <OverlayTag
+                                  position="topLeft"
+                                  className="capitalize"
+                                >
+                                  {item.status}
+                                </OverlayTag>
+                              )
+                            )}
+
+                            {/* Price Tag */}
+                            <OverlayTag position="bottomLeft">
+                              {formatCurrency(item.priceAtPurchase)} x
+                              {item.quantity}
+                            </OverlayTag>
+
+                            {/* Ship */}
+                            {item.status === "paid" && (
+                              <OverlayButton
+                                position="topRight"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShipModalProps(item);
+                                }}
+                                title="Ship Item"
+                                className="font-semibold"
+                              >
+                                <MdLocalShipping />
+                              </OverlayButton>
+                            )}
+
+                            {/* Edit Shipment */}
+                            {item.status === "shipped" && (
+                              <OverlayButton
+                                position="topRight"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShipModalProps(item);
+                                }}
+                                title="Edit Shipment"
+                                className="font-semibold"
+                              >
+                                <FaPen size={12} />
+                              </OverlayButton>
+                            )}
+
+                            {/* Refund */}
+                            {item.status === "returned" && (
+                              <OverlayButton
+                                position="topRight"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  console.log("Refund item", item.id);
+                                }}
+                                title="Refund Item"
+                                className="font-semibold"
+                              >
+                                <RiRefundFill />
+                              </OverlayButton>
+                            )}
+                          </>
                         }
                       >
                         <Link

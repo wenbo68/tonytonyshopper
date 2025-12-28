@@ -38,7 +38,7 @@ export const customToast = {
   error(message: string, id?: string, duration?: number) {
     return toast.custom(
       () => <CustomToast message={message} className={`${colorClassMap[1]}`} />,
-      { id, duration: duration ?? 3000 },
+      { id, duration: duration ?? 4000 },
     );
   },
 };

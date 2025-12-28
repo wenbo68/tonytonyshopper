@@ -253,9 +253,10 @@ export default function ProductDetailPage() {
                 options={values.map((v) => ({ label: v, value: v }))}
                 value={selectedOptions[name] ?? ""}
                 onChange={(newValue) => handleOptionChange(name, newValue)}
-                buttonColor="bg-gray-900"
-                dropdownColor="bg-gray-800"
-                dropdownHighlightColor="hover:bg-gray-900"
+                triggerColor="bg-gray-900"
+                menuColor="bg-gray-800"
+                // menuRingColor="bg-gray-700"
+                menuHighlightColor="hover:bg-gray-900"
               />
             </div>
           ))}

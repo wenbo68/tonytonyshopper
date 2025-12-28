@@ -86,7 +86,7 @@ export async function POST(req: Request) {
         ],
       });
 
-      // three db writes: deduct stock, update order, clear cart
+      // four db writes: deduct stock, update order, update order items, clear cart
       await db.transaction(async (tx) => {
         // 2. Deduct stock (Atomic)
         const itemsInOrder = await tx.query.orderItems.findMany({
@@ -151,7 +151,13 @@ export async function POST(req: Request) {
           })
           .where(eq(orders.id, orderId));
 
-        // 4. Clear user cart if applicable
+        // 4. update all order items of the order to be status "paid"
+        await tx
+          .update(orderItems)
+          .set({ status: "paid" })
+          .where(eq(orderItems.orderId, orderId));
+
+        // 5. Clear user cart if applicable
         if (userId && userId !== "guest") {
           await tx.delete(cartItems).where(eq(cartItems.userId, userId));
         }

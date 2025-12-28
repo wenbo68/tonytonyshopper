@@ -27,6 +27,7 @@ import { TRPCError } from "@trpc/server";
 import { Stripe } from "stripe";
 import { env } from "~/env.js";
 import { getUserOrdersInputSchema } from "~/type";
+import { getOrderItemStatusPriority } from "~/server/utils/order";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
@@ -212,7 +213,6 @@ export const orderRouter = createTRPCRouter({
         });
       }
     }),
-  // ... rest of the file (getMyOrders)
 
   checkOrderStatusByStripeSession: publicProcedure
     .input(z.object({ sessionId: z.string() }))
@@ -239,7 +239,7 @@ export const orderRouter = createTRPCRouter({
    * Get filtered orders for the currently logged-in user.
    */
   getUserOrders: protectedProcedure
-    .input(getUserOrdersInputSchema) // Use the new schema
+    .input(getUserOrdersInputSchema)
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
       const {
@@ -324,30 +324,29 @@ export const orderRouter = createTRPCRouter({
       if (priceMax) {
         conditions.push(lte(orders.subtotal, priceMax.toString()));
       }
-      if (carrier) {
-        conditions.push(ilike(orders.carrier, `%${carrier}%`));
-      }
-      if (trackingNumber) {
-        conditions.push(ilike(orders.trackingNumber, `%${trackingNumber}%`));
-      }
+      // if (carrier) {
+      //   conditions.push(ilike(orders.carrier, `%${carrier}%`));
+      // }
+      // if (trackingNumber) {
+      //   conditions.push(ilike(orders.trackingNumber, `%${trackingNumber}%`));
+      // }
 
       const whereClause = and(...conditions);
 
       // 2. Build Sort Clause
       let orderByClause;
       switch (sort) {
+        case "date-desc":
+          orderByClause = desc(orders.createdAt);
+          break;
         case "date-asc":
           orderByClause = asc(orders.createdAt);
           break;
         case "price-desc":
-          orderByClause = desc(orders.subtotal);
+          orderByClause = desc(orders.totalAmount);
           break;
         case "price-asc":
-          orderByClause = asc(orders.subtotal);
-          break;
-        case "date-desc":
-        default:
-          orderByClause = desc(orders.createdAt);
+          orderByClause = asc(orders.totalAmount);
           break;
       }
 
@@ -362,7 +361,7 @@ export const orderRouter = createTRPCRouter({
       // 3. Fetch Data
       const userOrders = await ctx.db.query.orders.findMany({
         where: whereClause,
-        orderBy: [desc(orders.createdAt)],
+        orderBy: [orderByClause],
         limit: pageSize,
         offset: (page - 1) * pageSize,
         with: {
@@ -383,10 +382,288 @@ export const orderRouter = createTRPCRouter({
         },
       });
 
+      // 4. Sort Order Items In-Memory
+      userOrders.forEach((order) => {
+        order.orderItems.sort((a, b) => {
+          // A. Primary Sort: Product Name
+          const prodNameA = a.productVariant.product.name.toLowerCase();
+          const prodNameB = b.productVariant.product.name.toLowerCase();
+          if (prodNameA < prodNameB) return -1;
+          if (prodNameA > prodNameB) return 1;
+
+          // B. Secondary Sort: Variant Name (Options)
+          const variantNameA = a.productVariant.name?.toLowerCase() ?? "";
+          const variantNameB = b.productVariant.name?.toLowerCase() ?? "";
+          if (variantNameA < variantNameB) return -1;
+          if (variantNameA > variantNameB) return 1;
+
+          // C. Tertiary Sort: Status (Custom Order)
+          const priorityA = getOrderItemStatusPriority(a.status);
+          const priorityB = getOrderItemStatusPriority(b.status);
+
+          return priorityA - priorityB;
+        });
+      });
+
       return {
         orders: userOrders,
         totalPages,
         currentPage: page,
       };
+    }),
+
+  cancelOrderItem: protectedProcedure
+    .input(
+      z.object({
+        orderItemId: z.string(),
+        quantity: z.number().min(1), // Add quantity input
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { orderItemId, quantity } = input;
+      // if (quantity === 0) return;
+
+      return await ctx.db.transaction(async (tx) => {
+        // 1. Find the item to verify ownership, status, and quantity
+        const item = await tx.query.orderItems.findFirst({
+          where: and(
+            eq(orderItems.id, orderItemId),
+            // eq(orderItems.status, "paid"), // Check status
+          ),
+          with: {
+            order: true,
+          },
+        });
+
+        if (!item) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Item not found.",
+          });
+        }
+
+        if (item.status !== "paid") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot cancel item with status: ${item.status}`,
+          });
+        }
+
+        if (item.order.userId !== ctx.session.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not authorized to cancel this item.",
+          });
+        }
+
+        if (quantity > item.quantity) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot cancel more items than purchased.",
+          });
+        }
+
+        // 2. Logic Branch: Full Cancellation vs. Partial Splitting
+        if (quantity === item.quantity) {
+          // CASE A: Full Cancellation (Behavior stays the same)
+          await tx
+            .update(orderItems)
+            .set({ status: "cancelled" })
+            .where(eq(orderItems.id, orderItemId));
+        } else {
+          // CASE B: Partial Cancellation (Row Splitting)
+
+          // B1. Update original row to reduce quantity
+          await tx
+            .update(orderItems)
+            .set({ quantity: item.quantity - quantity })
+            .where(eq(orderItems.id, orderItemId));
+
+          // B2. Create a NEW row for the cancelled portion
+          await tx.insert(orderItems).values({
+            orderId: item.orderId,
+            productVariantId: item.productVariantId,
+            quantity: quantity,
+            priceAtPurchase: item.priceAtPurchase,
+            status: "cancelled",
+            // createdAt: item.createdAt,
+          });
+        }
+
+        // 3. Restore Stock (Logic applies to both cases)
+        await tx
+          .update(productVariants)
+          .set({
+            stock: sql`${productVariants.stock} + ${quantity}`,
+          })
+          .where(eq(productVariants.id, item.productVariantId));
+
+        return {
+          success: true,
+          message: `Successfully cancelled ${quantity} item(s) and restored stock.`,
+        };
+      });
+    }),
+
+  updateOrderItemReturn: protectedProcedure
+    .input(
+      z.object({
+        orderItemId: z
+          .string()
+          .min(1, "Invalid order item id. Please contact support."),
+        quantity: z.number().min(1, "Invalid quantity."),
+        carrier: z.string().min(1, "Invalid carrier."),
+        trackingNumber: z.string().min(1, "Invalid tracking number."),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { orderItemId, quantity, carrier, trackingNumber } = input;
+
+      return await ctx.db.transaction(async (tx) => {
+        // 1. Find the item to verify ownership, status, and quantity
+        const item = await tx.query.orderItems.findFirst({
+          where: and(eq(orderItems.id, orderItemId)),
+          with: {
+            order: true,
+          },
+        });
+
+        if (!item) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Item not found.",
+          });
+        }
+
+        if (item.status !== "shipped") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot return item with status: ${item.status}`,
+          });
+        }
+
+        if (item.order.userId !== ctx.session.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not authorized to return this item.",
+          });
+        }
+
+        if (quantity > item.quantity) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot return more items than shipped.",
+          });
+        }
+
+        // 2. Logic Branch: Full Return vs. Partial Return
+        if (quantity === item.quantity) {
+          // CASE A: Full Return (Behavior stays the same)
+          await tx
+            .update(orderItems)
+            .set({
+              status: "returned",
+              returnCarrier: carrier,
+              returnTrackingNumber: trackingNumber,
+            })
+            .where(eq(orderItems.id, orderItemId));
+        } else {
+          // CASE B: Partial Return (Row Splitting)
+
+          // B1. Update original row to reduce quantity
+          await tx
+            .update(orderItems)
+            .set({ quantity: item.quantity - quantity })
+            .where(eq(orderItems.id, orderItemId));
+
+          // B2. Create a NEW row for the cancelled portion
+          await tx.insert(orderItems).values({
+            orderId: item.orderId,
+            productVariantId: item.productVariantId,
+            quantity: quantity,
+            priceAtPurchase: item.priceAtPurchase,
+            status: "returned",
+            returnCarrier: carrier,
+            returnTrackingNumber: trackingNumber,
+          });
+        }
+
+        return {
+          success: true,
+          message: `Successfully returned ${quantity} item(s).`,
+        };
+      });
+    }),
+
+  cancelOrderItemReturn: protectedProcedure
+    .input(
+      z.object({
+        orderItemId: z.string(),
+        quantity: z.number().min(1, "Invalid quantity."),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { orderItemId, quantity } = input;
+      return await ctx.db.transaction(async (tx) => {
+        // 1. Find the item
+        const item = await tx.query.orderItems.findFirst({
+          where: eq(orderItems.id, orderItemId),
+        });
+
+        if (!item) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Item not found.",
+          });
+        }
+
+        if (item.status !== "returned") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot cancel return of item with status: ${item.status}.`,
+          });
+        }
+
+        if (quantity > item.quantity) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot cancel more than returned.",
+          });
+        }
+
+        // 2. Partial vs Full cancel ship Logic
+        if (quantity === item.quantity) {
+          // Full shipment of this line item
+          await tx
+            .update(orderItems)
+            .set({
+              status: "shipped",
+              returnCarrier: null,
+              returnTrackingNumber: null,
+            })
+            .where(eq(orderItems.id, orderItemId));
+        } else {
+          // Partial shipment: Split the row
+          // A. Reduce quantity of the original 'shipped' row
+          await tx
+            .update(orderItems)
+            .set({
+              quantity: item.quantity - quantity,
+            })
+            .where(eq(orderItems.id, orderItemId));
+
+          // B. Create new 'paid' row
+          await tx.insert(orderItems).values({
+            orderId: item.orderId,
+            productVariantId: item.productVariantId,
+            quantity: quantity,
+            priceAtPurchase: item.priceAtPurchase,
+            status: "shipped",
+            returnCarrier: null,
+            returnTrackingNumber: null,
+          });
+        }
+        return { success: true };
+      });
     }),
 });

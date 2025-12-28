@@ -9,19 +9,28 @@ import {
 } from "~/server/utils/product";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useSearchParams } from "next/navigation";
-import { getUserOrdersInputSchema } from "~/type";
-import { FaCartPlus, FaPen, FaUndo } from "react-icons/fa";
+import { getUserOrdersInputSchema, type OrderItem } from "~/type";
+import { FaCartPlus, FaEllipsisV, FaPen, FaUndo } from "react-icons/fa";
 import toast from "react-hot-toast";
-import { useState } from "react";
-import OrderDetailsModal from "../../_components/modal/OrderModal";
+import { useEffect, useState } from "react";
+import OrderModal from "../../_components/modal/OrderModal";
 import { ItemGrid } from "~/app/_components/item/ItemGrid";
 import {
   OverlayButton,
+  OverlayDiv,
   OverlayTag,
+  OverlayTagButton,
 } from "~/app/_components/item/ItemImageOverlays";
 import { ItemCard } from "~/app/_components/item/ItemCard";
 import ReviewModal from "~/app/_components/modal/ReviewModal";
 import { useProductVariantModalStore } from "~/app/_hooks/useProductVariantModalStore";
+// import { customToast } from "~/app/_components/toast";
+import CancelModal from "~/app/_components/modal/CancelModal";
+import { customToast } from "~/app/_components/toast";
+import ShipInfoModal from "~/app/_components/modal/ShipInfoModal";
+import { FaXmark } from "react-icons/fa6";
+import { ReturnModal } from "~/app/_components/modal/ReturnModal";
+import { GiOpenBook } from "react-icons/gi";
 
 // Infer type for better safety
 type Order = RouterOutputs["order"]["getUserOrders"]["orders"][number];
@@ -36,10 +45,27 @@ export default function OrdersPage() {
 
   // states
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [reviewItemIds, setReviewItemIds] = useState<{
+  const [cancelModalProps, setCancelModalProps] = useState<{
+    orderItemId: string;
+    maxQuantity: number;
+  } | null>(null);
+  const [shipInfoModalProps, setShipInfoModalProps] =
+    useState<OrderItem | null>(null);
+  const [reviewModalProps, setReviewModalProps] = useState<{
     productId: string;
     productVariantId: string;
   } | null>(null);
+  const [returnModalProps, setReturnModalProps] = useState<OrderItem | null>(
+    null,
+  );
+  const [dropdownItemId, setDropdownItemId] = useState<string | null>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setDropdownItemId(null);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
 
   // Parse URL params to match input schema
   const rawInput = {
@@ -67,6 +93,7 @@ export default function OrdersPage() {
       : undefined,
     carrier: searchParams.get("carrier") ?? undefined,
     trackingNumber: searchParams.get("trackingNumber") ?? undefined,
+    sort: searchParams.get("sort") ?? undefined,
   };
 
   // Safely parse with Zod
@@ -88,13 +115,41 @@ export default function OrdersPage() {
     e.stopPropagation();
     // Simply open the modal with the ID; fetching happens inside
     openVariantModal(productId, "add", { variantId, quantity });
+    setDropdownItemId(null); // Close menu
   };
 
-  const handleReturn = (e: React.MouseEvent) => {
+  const handleCancel = (
+    e: React.MouseEvent,
+    orderItemId: string,
+    maxQuantity: number,
+  ) => {
     e.stopPropagation(); // Stop click from opening the modal
-    toast("Return feature coming soon!", {
-      icon: "↩️",
+    setCancelModalProps({ orderItemId, maxQuantity });
+    setDropdownItemId(null); // Close menu
+  };
+
+  const handleReview = (
+    e: React.MouseEvent,
+    productId: string,
+    productVariantId: string,
+  ) => {
+    e.stopPropagation();
+    setReviewModalProps({
+      productId,
+      productVariantId,
     });
+    setDropdownItemId(null); // Close menu
+  };
+
+  const handleReturn = (e: React.MouseEvent, orderItem: OrderItem) => {
+    e.stopPropagation(); // Stop click from opening the modal
+    setReturnModalProps(orderItem);
+    setDropdownItemId(null); // Close menu
+  };
+
+  const toggleMenu = (e: React.MouseEvent, itemId: string) => {
+    e.stopPropagation(); // Prevent window click listener from immediately closing it
+    setDropdownItemId(dropdownItemId === itemId ? null : itemId);
   };
 
   if (status === "loading" || isFetching) {
@@ -122,18 +177,32 @@ export default function OrdersPage() {
 
   return (
     <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
-      {/* Modal */}
-      <OrderDetailsModal
+      {/* Modals */}
+      <OrderModal
         order={selectedOrder}
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
       />
-
-      {/* Review Modal */}
+      <CancelModal
+        cancelModalProps={cancelModalProps}
+        // itemQuantity={}
+        isOpen={!!cancelModalProps}
+        onClose={() => setCancelModalProps(null)}
+      />
+      <ShipInfoModal
+        isOpen={!!shipInfoModalProps}
+        onClose={() => setShipInfoModalProps(null)}
+        orderItem={shipInfoModalProps}
+      />
       <ReviewModal
-        itemIds={reviewItemIds}
-        isOpen={!!reviewItemIds}
-        onClose={() => setReviewItemIds(null)}
+        itemIds={reviewModalProps}
+        isOpen={!!reviewModalProps}
+        onClose={() => setReviewModalProps(null)}
+      />
+      <ReturnModal
+        isOpen={!!returnModalProps}
+        onClose={() => setReturnModalProps(null)}
+        orderItem={returnModalProps}
       />
 
       {/* orders */}
@@ -179,10 +248,10 @@ export default function OrdersPage() {
                   <label className="min-w-14 font-semibold">Total:</label>
                   <span className="">{formatCurrency(order.totalAmount)}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
+                {/* <div className="flex items-center gap-2 text-sm">
                   <label className="min-w-14 font-semibold">Status:</label>
                   <span className="capitalize">{order.status}</span>
-                </div>
+                </div> */}
               </div>
 
               {/* Order Items Grid */}
@@ -193,6 +262,11 @@ export default function OrdersPage() {
                   const imageUrl =
                     variant.images?.[0] ??
                     "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
+                  const isMenuOpen = dropdownItemId === item.id;
+
+                  const itemMenuPrefetch = () => {
+                    utils.product.getById.prefetch({ id: variant.productId });
+                  };
 
                   return (
                     <ItemCard
@@ -204,14 +278,150 @@ export default function OrdersPage() {
                       }}
                       overlays={
                         <>
-                          <OverlayButton
+                          {item.status === "shipped" ||
+                          item.status === "returned" ? (
+                            <OverlayTagButton
+                              position="topLeft"
+                              className="capitalize"
+                              onClick={() => {
+                                if (!item.carrier || !item.trackingNumber) {
+                                  customToast.error(
+                                    "Delivery info missing. Please contact support.",
+                                  );
+                                  return;
+                                }
+                                setShipInfoModalProps(item);
+                              }}
+                            >
+                              {item.status}
+                            </OverlayTagButton>
+                          ) : (
+                            item.status && (
+                              <OverlayTag
+                                position="topLeft"
+                                className="capitalize"
+                              >
+                                {item.status}
+                              </OverlayTag>
+                            )
+                          )}
+                          <OverlayTag position="bottomLeft">
+                            {formatCurrency(item.priceAtPurchase)} x
+                            {item.quantity}
+                          </OverlayTag>
+                          <OverlayDiv
+                            position="topRight"
+                            className="z-20" // Higher z-index so dropdown floats over other tags
+                            title="Item Options"
+                            // onMouseEnter={itemMenuPrefetch} // Desktop prefetch
+                            onClick={(e) => {
+                              itemMenuPrefetch(); // Mobile prefetch
+                              toggleMenu(e, item.id);
+                            }}
+                          >
+                            <FaEllipsisV size={14} />
+
+                            {/* Dropdown Menu */}
+                            {isMenuOpen && (
+                              <div className="absolute top-8 right-0 z-50 flex min-w-36 flex-col rounded bg-gray-800 p-1 text-left text-xs font-semibold text-gray-400 transition-all">
+                                {/* Buy Again */}
+                                <button
+                                  onClick={(e) =>
+                                    handleBuyAgain(
+                                      e,
+                                      variant.productId,
+                                      variant.id,
+                                      item.quantity,
+                                    )
+                                  }
+                                  className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                >
+                                  <div className="item-center flex min-w-4 justify-center">
+                                    <FaCartPlus className="text-gray-400" />
+                                  </div>
+                                  Buy again
+                                </button>
+
+                                {/* Return */}
+                                {item.status === "paid" && (
+                                  <button
+                                    onClick={(e) =>
+                                      handleCancel(e, item.id, item.quantity)
+                                    }
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                  >
+                                    <div className="item-center flex min-w-4 justify-center">
+                                      <FaXmark className="text-gray-400" />
+                                    </div>
+                                    Cancel item
+                                  </button>
+                                )}
+
+                                {/* Review */}
+                                {(item.status === "shipped" ||
+                                  item.status === "returned" ||
+                                  item.status === "refunded") && (
+                                  <button
+                                    onClick={(e) =>
+                                      handleReview(
+                                        e,
+                                        variant.productId,
+                                        item.productVariantId,
+                                      )
+                                    }
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                  >
+                                    <div className="item-center flex min-w-4 justify-center">
+                                      <GiOpenBook
+                                        size={13}
+                                        className="text-gray-400"
+                                      />
+                                    </div>
+                                    Write review
+                                  </button>
+                                )}
+
+                                {/* Return */}
+                                {item.status === "shipped" && (
+                                  <button
+                                    onClick={(e) => handleReturn(e, item)}
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                  >
+                                    <div className="item-center flex min-w-4 justify-center">
+                                      <FaUndo
+                                        size={10}
+                                        className="text-gray-400"
+                                      />
+                                    </div>
+                                    Return item
+                                  </button>
+                                )}
+
+                                {/* Edit Return */}
+                                {item.status === "returned" && (
+                                  <button
+                                    onClick={(e) => handleReturn(e, item)}
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                  >
+                                    <div className="item-center flex min-w-4 justify-center">
+                                      <FaPen
+                                        size={10}
+                                        className="text-gray-400"
+                                      />
+                                    </div>
+                                    Edit Return
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </OverlayDiv>
+                          {/* <OverlayButton
                             position="topLeft"
                             onClick={handleReturn}
                             title="Return Item"
                           >
                             <FaUndo size={12} />
                           </OverlayButton>
-
                           <OverlayButton
                             position="topRight"
                             onClick={(e) =>
@@ -231,13 +441,6 @@ export default function OrdersPage() {
                           >
                             <FaCartPlus size={14} />
                           </OverlayButton>
-
-                          <OverlayTag position="bottomLeft">
-                            {formatCurrency(item.priceAtPurchase)} x
-                            {item.quantity}
-                          </OverlayTag>
-
-                          {/* Only show "Write Review" button if the order is shipped */}
                           {item.status === "shipped" && (
                             <OverlayButton
                               position="bottomRight"
@@ -251,7 +454,7 @@ export default function OrdersPage() {
                             >
                               <FaPen size={12} />
                             </OverlayButton>
-                          )}
+                          )} */}
                         </>
                       }
                     >

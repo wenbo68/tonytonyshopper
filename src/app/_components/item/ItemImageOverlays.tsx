@@ -10,14 +10,39 @@ export const overlayPositionClasses = {
 };
 
 // Common styles for the circular buttons (Edit, Delete, Add to Cart)
-export const circularOverlayClass =
-  "absolute z-10 flex h-6.5 w-6.5 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-300 backdrop-blur-sm transition-colors hover:bg-black/80 disabled:cursor-default";
+export const circButtonClass =
+  "absolute z-10 flex h-6.5 w-6.5 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-300 backdrop-blur-sm transition-colors hover:bg-black/80 hover:scale-105 disabled:cursor-default";
+export const rectButtonClass =
+  "absolute z-10 px-1.5 py-1 text-xs font-semibold text-gray-300 cursor-pointer items-center justify-center rounded bg-black/60 text-gray-300 backdrop-blur-sm transition-colors hover:bg-black/80 hover:scale-105 disabled:cursor-default";
+export const rectTagClass =
+  "absolute z-10 rounded bg-black/60 px-1.5 py-1 text-xs font-semibold text-gray-300 backdrop-blur-sm";
 
 interface OverlayProps {
   position?: keyof typeof overlayPositionClasses;
   children: ReactNode;
   className?: string;
   title?: string;
+}
+
+// 3. NEW: Div (Use this when you need a dropdown menu)
+export function OverlayDiv({
+  position = "topLeft",
+  children,
+  className,
+  ...props
+}: OverlayProps & React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={clsx(
+        circButtonClass,
+        overlayPositionClasses[position],
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 }
 
 // For interactive buttons (onClick)
@@ -30,7 +55,7 @@ export function OverlayButton({
   return (
     <button
       className={clsx(
-        circularOverlayClass,
+        circButtonClass,
         overlayPositionClasses[position],
         className,
       )}
@@ -53,7 +78,7 @@ export function OverlayLink({
     <Link
       href={href}
       className={clsx(
-        circularOverlayClass,
+        circButtonClass,
         overlayPositionClasses[position],
         className,
       )}
@@ -77,7 +102,7 @@ export function OverlayTag({
   return (
     <div
       className={clsx(
-        "absolute z-10 rounded bg-black/60 px-1.5 py-1 text-xs font-semibold text-gray-300 backdrop-blur-sm",
+        rectTagClass,
         overlayPositionClasses[position],
         className,
       )}
@@ -107,5 +132,25 @@ export function OverlayTagGroup({
     >
       {children}
     </div>
+  );
+}
+
+export function OverlayTagButton({
+  position = "topLeft",
+  children,
+  className,
+  ...props
+}: OverlayProps & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      className={clsx(
+        rectButtonClass,
+        overlayPositionClasses[position],
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
   );
 }

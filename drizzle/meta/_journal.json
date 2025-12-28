@@ -106,6 +106,34 @@
       "when": 1766762564467,
       "tag": "0014_normal_imperial_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1766827458699,
+      "tag": "0015_numerous_switch",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1766836623898,
+      "tag": "0016_spicy_blue_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1766903028838,
+      "tag": "0017_abandoned_hedge_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1766917984587,
+      "tag": "0018_right_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }

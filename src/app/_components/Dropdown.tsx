@@ -13,18 +13,20 @@ type DropdownProps = {
   options: DropdownOption[];
   value: string;
   onChange: (newValue: string) => void;
-  buttonColor?: string;
-  dropdownColor?: string;
-  dropdownHighlightColor?: string;
+  triggerColor?: string;
+  menuColor?: string;
+  // menuRingColor?: string;
+  menuHighlightColor?: string;
 };
 
 export const Dropdown = ({
   options,
   value,
   onChange,
-  buttonColor,
-  dropdownColor,
-  dropdownHighlightColor,
+  triggerColor,
+  menuColor,
+  // menuRingColor,
+  menuHighlightColor,
 }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -55,7 +57,7 @@ export const Dropdown = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex w-full cursor-pointer items-center justify-between rounded ${buttonColor ?? "bg-gray-900"} px-3 py-2 text-xs font-semibold`}
+        className={`flex w-full cursor-pointer items-center justify-between rounded ${triggerColor ?? "bg-gray-900"} px-3 py-2 text-xs font-semibold`}
       >
         {/* Display the selected option's label, or a default */}
         <span>{selectedOption ? selectedOption.label : "Select..."}</span>
@@ -68,7 +70,7 @@ export const Dropdown = ({
 
       {isOpen && (
         <div
-          className={`absolute top-full z-10 mt-2 w-full rounded ${dropdownColor ?? "bg-gray-800"} p-1`}
+          className={`absolute top-full z-10 mt-1.5 w-full rounded ${menuColor ?? "bg-gray-800"} flex flex-col p-1`}
         >
           {options.map((option) => (
             <button
@@ -78,7 +80,7 @@ export const Dropdown = ({
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full rounded p-2 text-left text-xs font-semibold ${dropdownHighlightColor ?? "hover:bg-gray-900"} hover:text-blue-400 ${
+              className={`w-full rounded px-2 ${options.length === 1 ? "py-1.5" : "py-2"} text-left text-xs font-semibold ${menuHighlightColor ?? "hover:bg-gray-900"} hover:text-blue-400 ${
                 value === option.value ? "text-blue-400" : ""
               }`}
             >

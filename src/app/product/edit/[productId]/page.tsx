@@ -45,7 +45,7 @@ export default function EditProductPage() {
     );
 
   // The UPDATE mutation
-  const updateProductMutation = api.admin.update.useMutation({
+  const updateProductMutation = api.admin.updateProduct.useMutation({
     onSuccess: (data) => {
       alert(`Product "${name}" updated successfully!`);
       // Invalidate product query to refresh data elsewhere

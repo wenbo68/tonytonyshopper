@@ -2,7 +2,7 @@ import z from "zod";
 import {
   orderItems,
   orders,
-  orderStatusReasonEnum,
+  // orderStatusReasonEnum,
   products,
   productVariants,
   type comments,
@@ -51,6 +51,7 @@ export type OrderStatus = (typeof orderStatusConst)[number];
 export type OrderStatusReason = (typeof orderStatusReasonConst)[number];
 export type OrderItemStatus = (typeof orderItemStatusConst)[number];
 
+export type OrderItem = typeof orderItems.$inferSelect;
 export type OrderItemAndVariantAndProduct = typeof orderItems.$inferSelect & {
   variant: VariantAndProduct;
 };

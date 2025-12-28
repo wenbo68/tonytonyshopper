@@ -8,7 +8,7 @@ import { api } from "~/trpc/react";
 import { getProductsInputSchema } from "~/type";
 import { ItemCard } from "~/app/_components/item/ItemCard";
 import {
-  circularOverlayClass,
+  circButtonClass,
   overlayPositionClasses,
   OverlayTag,
 } from "~/app/_components/item/ItemImageOverlays";
@@ -149,7 +149,7 @@ export default function ProductsPage() {
                     {/* Add to Cart Button */}
                     <AddToCartButton
                       product={product}
-                      className={`${circularOverlayClass} ${overlayPositionClasses.topRight}`}
+                      className={`${circButtonClass} ${overlayPositionClasses.topRight}`}
                     >
                       <FaCartPlus className="" size={14} />
                     </AddToCartButton>

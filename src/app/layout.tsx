@@ -72,10 +72,9 @@ export default function RootLayout({
 
 // how to handle discounts, subscriptions?
 
-// implement return
-
 // just get rid of guest purchase (they have to provide name and email at checkout anyway)
 // reasoning: hard to handle pending orders in db from guests
 
-// for now make paid/shipped order items work in orders page
-// items with different status should be grouped and shown together (in this order: paid, cancelled, shipped, returned, refunded)
+// in cart, you can change an item's quantity, but if you checkout before the refetch happens, it will use the previous quantity
+
+// implement ship, view ship info, return, refund

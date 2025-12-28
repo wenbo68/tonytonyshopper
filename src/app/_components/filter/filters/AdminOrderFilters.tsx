@@ -1,7 +1,7 @@
 "use client";
 
 import { useAdminOrderFilterContext } from "~/app/_contexts/filter/AdminOrderFilterProvider";
-import { orderSortOptions } from "~/const";
+import { adminOrderSortOptions, orderSortOptions } from "~/const";
 import { isValidDate } from "~/server/utils/generic";
 import type { FilterOption } from "~/type";
 import { GenericFilters, type FilterConfig } from "./GenericFilters";
@@ -129,7 +129,7 @@ export default function AdminOrderFilters() {
       context={context}
       filterConfigs={fields}
       mainFilterKey="Order ID"
-      sortOptions={orderSortOptions}
+      sortOptions={adminOrderSortOptions}
     />
   );
 }

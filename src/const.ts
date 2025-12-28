@@ -100,9 +100,9 @@ export const colorClassMap = {
   gray: "bg-gray-500/20 text-gray-300 ring-gray-500/30",
 };
 
-// ==========================
-// ==== Backend consts =====
-// ==========================
+// ===========================
+// ===== Backend consts ======
+// ===========================
 
 export const orderStatusConst = ["pending", "abandoned", "paid"] as const;
 export const orderStatusReasonConst = [
@@ -119,3 +119,10 @@ export const orderItemStatusConst = [
   "returned",
   "refunded",
 ] as const;
+export const orderItemStatusPriority = {
+  paid: 0,
+  cancelled: 1,
+  shipped: 2,
+  returned: 3,
+  refunded: 4,
+} as const;

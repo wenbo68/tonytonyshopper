@@ -6,12 +6,12 @@ import { isValidDate } from "~/server/utils/generic";
 import type { FilterOption } from "~/type";
 import { GenericFilters, type FilterConfig } from "./GenericFilters";
 
-const statusOptions: FilterOption[] = [
-  { label: "Paid", urlInput: "paid" },
-  { label: "Shipped", urlInput: "shipped" },
-  { label: "Cancelled", urlInput: "cancelled" },
-  { label: "Pending", urlInput: "pending" },
-];
+// const statusOptions: FilterOption[] = [
+//   { label: "Paid", urlInput: "paid" },
+//   { label: "Shipped", urlInput: "shipped" },
+//   { label: "Cancelled", urlInput: "cancelled" },
+//   { label: "Pending", urlInput: "pending" },
+// ];
 
 export default function OrderFilters() {
   const context = useOrderFilterContext();
@@ -89,14 +89,14 @@ export default function OrderFilters() {
         },
       ],
     },
-    {
-      type: "dropdown",
-      filterStateName: "status",
-      label: "Status",
-      options: statusOptions,
-      isGroupOptions: false,
-      mode: "multi",
-    },
+    // {
+    //   type: "dropdown",
+    //   filterStateName: "status",
+    //   label: "Status",
+    //   options: statusOptions,
+    //   isGroupOptions: false,
+    //   mode: "multi",
+    // },
     {
       type: "text",
       label: "Delivery",

@@ -9,17 +9,17 @@ import type { RouterOutputs } from "~/trpc/react";
 type UserOrder = RouterOutputs["order"]["getUserOrders"]["orders"][number];
 type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
-interface OrderDetailsModalProps {
+interface OrderModalProps {
   order: UserOrder | AdminOrder | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function OrderDetailsModal({
+export default function OrderModal({
   order,
   isOpen,
   onClose,
-}: OrderDetailsModalProps) {
+}: OrderModalProps) {
   // Prevent background scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -119,7 +119,7 @@ export default function OrderDetailsModal({
     }
   };
 
-  const isShipped = order.status === "shipped";
+  // const isShipped = order.status === "shipped";
 
   return (
     // Overlay
@@ -244,19 +244,21 @@ export default function OrderDetailsModal({
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Delivery</label>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Carrier:</label>
-            <span className="">
-              {isShipped ? (order.carrier ?? "N/A") : "Not shipped yet"}
-            </span>
+            <label className="font-base text-gray-500">
+              Click the Shipped tag to see an item's delivery info
+            </label>
+            {/* <span className="">
+              Click the Shipped tag to see an item's delivery info
+            </span> */}
           </div>
-          <div className="flex gap-2 text-sm">
+          {/* <div className="flex gap-2 text-sm">
             <label className="font-base min-w-16 text-gray-500">
               Tracking:
             </label>
             <span className="">
-              {isShipped ? (order.trackingNumber ?? "N/A") : "Not shipped yet"}
+              Click the Shipped tag to see an item's delivery info
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

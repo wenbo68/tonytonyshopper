@@ -33,7 +33,16 @@ export const stripeRouter = createTRPCRouter({
         }),
       ),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input: inputProps }) => {
+      // if (input.length === 0) {
+      //   throw new TRPCError({
+      //     code: "BAD_REQUEST",
+      //     message: "Cart is empty.",
+      //   });
+      // }
+
+      // Filter out items with quantity 0
+      const input = inputProps.filter((item) => item.quantity > 0);
       if (input.length === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",

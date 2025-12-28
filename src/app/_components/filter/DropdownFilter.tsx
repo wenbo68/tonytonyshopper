@@ -124,7 +124,7 @@ export default function DropdownFilter(props: DropdownFilterProps) {
           </button>
         </div>
         {isDropdownOpen && (
-          <div className="scrollbar-thin absolute top-full z-20 mt-2 flex max-h-96 w-full flex-col overflow-y-auto rounded bg-gray-800 p-1 text-xs font-semibold">
+          <div className="scrollbar-thin absolute top-full z-20 mt-1.5 flex max-h-96 w-full flex-col overflow-y-auto rounded bg-gray-800 p-1 text-xs font-semibold">
             {isGroupOptions
               ? (filteredOptions as FilterGroupOption[]).map((group) => (
                   <div key={group.groupLabel}>
@@ -135,7 +135,7 @@ export default function DropdownFilter(props: DropdownFilterProps) {
                       <button
                         key={option.urlInput}
                         onClick={() => handleSelectOption(option)}
-                        className={`w-full cursor-pointer rounded p-2 pl-5 text-start hover:bg-gray-900 hover:text-blue-400 ${
+                        className={`w-full cursor-pointer rounded p-2 pl-5 text-left hover:bg-gray-900 hover:text-blue-400 ${
                           String(value) === String(option.urlInput)
                             ? "text-blue-400"
                             : ""
@@ -150,7 +150,7 @@ export default function DropdownFilter(props: DropdownFilterProps) {
                   <button
                     key={option.urlInput}
                     onClick={() => handleSelectOption(option)}
-                    className={`w-full cursor-pointer rounded p-2 text-start hover:bg-gray-900 hover:text-blue-400 ${
+                    className={`w-full cursor-pointer rounded px-2 ${filteredOptions.length === 1 ? "py-1.5" : "py-2"} text-left hover:bg-gray-900 hover:text-blue-400 ${
                       mode === "multi" &&
                       value.some(
                         (item) => String(item) === String(option.urlInput),

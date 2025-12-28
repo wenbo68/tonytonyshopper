@@ -10,19 +10,19 @@ import { toastZodError } from "~/server/utils/generic";
 
 // type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
-interface ShipModalProps {
+interface ReturnModalProps {
   orderItem: OrderItem | null;
   isOpen: boolean;
   onClose: () => void;
   // onSuccess: () => Promise<any>;
 }
 
-export function ShipModal({
+export function ReturnModal({
   orderItem,
   isOpen,
   onClose,
   // onSuccess,
-}: ShipModalProps) {
+}: ReturnModalProps) {
   const utils = api.useUtils();
 
   const [quantity, setQuantity] = useState<number | "">("");
@@ -44,21 +44,23 @@ export function ShipModal({
   // update state when the order item prop changes
   useEffect(() => {
     if (orderItem) {
-      setQuantity(orderItem.status === "paid" ? orderItem.quantity : 1); //default for shipping is all, for canceling is 1
+      setQuantity(orderItem.status === "shipped" ? 1 : orderItem.quantity); //default for return is 1, for canceling return it is all
       setCarrier(
-        orderItem.status === "shipped" ? (orderItem.carrier ?? "") : "",
+        orderItem.status === "returned" ? (orderItem.returnCarrier ?? "") : "",
       );
       setTrackingNumber(
-        orderItem.status === "shipped" ? (orderItem.trackingNumber ?? "") : "",
+        orderItem.status === "returned"
+          ? (orderItem.returnTrackingNumber ?? "")
+          : "",
       );
     }
   }, [orderItem]);
 
   const invalidateQueries = async () => {
-    await utils.admin.getAllOrders.invalidate();
+    await utils.order.getUserOrders.invalidate();
   };
 
-  const updateShipmentMutation = api.admin.updateOrderItemShipment.useMutation({
+  const updateReturnMutation = api.order.updateOrderItemReturn.useMutation({
     onMutate: () => {
       const toastId = customToast.loading("Saving...");
       return { toastId };
@@ -80,7 +82,7 @@ export function ShipModal({
     },
   });
 
-  const cancelShipmentMutation = api.admin.cancelOrderItemShipment.useMutation({
+  const cancelReturnMutation = api.order.cancelOrderItemReturn.useMutation({
     onMutate: () => {
       const toastId = customToast.loading("Canceling...");
       return { toastId };
@@ -111,7 +113,7 @@ export function ShipModal({
     const finalQuantity = quantity === "" ? 0 : quantity;
     setQuantity(finalQuantity);
 
-    updateShipmentMutation.mutate({
+    updateReturnMutation.mutate({
       orderItemId: orderItem.id,
       quantity: finalQuantity,
       carrier,
@@ -119,31 +121,31 @@ export function ShipModal({
     });
   };
 
-  const handleCancelShipment = () => {
+  const handleCancelReturn = () => {
     // e.preventDefault();
     if (
       confirm(
-        "Reverting status to Paid. Deleting carrier & tracking number. Continue?",
+        "Reverting status to Shipped. Deleting return carrier & tracking number. Continue?",
       )
     ) {
       const finalQuantity = quantity === "" ? 0 : quantity;
       setQuantity(finalQuantity);
 
-      cancelShipmentMutation.mutate({
+      cancelReturnMutation.mutate({
         orderItemId: orderItem.id,
         quantity: finalQuantity,
       });
     }
   };
 
-  const updateShipmentMutationIsPending =
-    updateShipmentMutation.isPending &&
-    updateShipmentMutation.variables.orderItemId === orderItem.id;
-  const cancelShipmentMutationIsPending =
-    cancelShipmentMutation.isPending &&
-    cancelShipmentMutation.variables.orderItemId === orderItem.id;
+  const updateReturnMutationIsPending =
+    updateReturnMutation.isPending &&
+    updateReturnMutation.variables.orderItemId === orderItem.id;
+  const cancelReturnMutationIsPending =
+    cancelReturnMutation.isPending &&
+    cancelReturnMutation.variables.orderItemId === orderItem.id;
   const isPending =
-    updateShipmentMutationIsPending || cancelShipmentMutationIsPending;
+    updateReturnMutationIsPending || cancelReturnMutationIsPending;
 
   return (
     <div
@@ -205,16 +207,14 @@ export function ShipModal({
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row">
-          {orderItem.status === "shipped" && (
+          {orderItem.status === "returned" && (
             <button
               type="button"
-              onClick={handleCancelShipment}
+              onClick={handleCancelReturn}
               disabled={isPending}
               className="w-full cursor-pointer rounded bg-red-600/30 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-red-600/40 disabled:cursor-default disabled:bg-red-600/20 sm:min-w-30"
             >
-              {cancelShipmentMutationIsPending
-                ? "Canceling..."
-                : "Cancel Shipment"}
+              {cancelReturnMutationIsPending ? "Canceling..." : "Cancel Return"}
             </button>
           )}
           <button
@@ -222,7 +222,7 @@ export function ShipModal({
             disabled={isPending}
             className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
           >
-            {updateShipmentMutationIsPending ? "Saving..." : "Save Shipment"}
+            {updateReturnMutationIsPending ? "Saving..." : "Save Return"}
           </button>
         </div>
       </form>

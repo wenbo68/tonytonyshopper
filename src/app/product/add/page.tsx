@@ -31,7 +31,7 @@ export default function AddProductPage() {
   const { data: categories, isLoading: isLoadingCategories } =
     api.product.getCategories.useQuery();
 
-  const addProductMutation = api.admin.add.useMutation({
+  const addProductMutation = api.admin.addProduct.useMutation({
     onSuccess: (data) => {
       // Product added successfully, redirect to the new product's page or all products
       alert(`Product "${name}" added with ID: ${data.id}`);
