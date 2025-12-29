@@ -1,3 +1,4 @@
+import type { ReturnReason } from "./server/db/schema";
 import type { FilterGroupOption } from "./type";
 
 // ==========================
@@ -100,9 +101,9 @@ export const colorClassMap = {
   gray: "bg-gray-500/20 text-gray-300 ring-gray-500/30",
 };
 
-// ===========================
-// ===== Backend consts ======
-// ===========================
+// ==========================
+// ===== Backend consts =====
+// ==========================
 
 export const orderStatusConst = ["pending", "abandoned", "paid"] as const;
 export const orderStatusReasonConst = [
@@ -116,13 +117,47 @@ export const orderItemStatusConst = [
   "paid",
   "cancelled",
   "shipped",
+  "return_requested",
+  "return_rejected",
+  "return_approved",
   "returned",
   "refunded",
 ] as const;
-export const orderItemStatusPriority = {
-  paid: 0,
-  cancelled: 1,
-  shipped: 2,
-  returned: 3,
-  refunded: 4,
-} as const;
+// export const orderItemStatusPriorityMap = {
+//   paid: 0,
+//   cancelled: 1,
+//   shipped: 2,
+//   return_requested: 3,
+//   return_rejected: 4,
+//   return_approved: 5,
+//   returned: 6,
+//   refunded: 7,
+// };
+export const returnReasonConst = [
+  "Wrong item sent",
+  "Item doesn't work",
+  "Item is incomplete or missing parts",
+  "Item/package damaged in transit",
+  "Item arrived late",
+  "Bought by mistake",
+  "Better price/alternative available",
+] as const;
+export const returnReasonDetailMap: Record<
+  ReturnReason,
+  { userPaysShipping: boolean }
+> = {
+  "Wrong item sent": { userPaysShipping: false },
+  "Item doesn't work": { userPaysShipping: false },
+  "Item is incomplete or missing parts": { userPaysShipping: false },
+  "Item/package damaged in transit": { userPaysShipping: false },
+  "Item arrived late": { userPaysShipping: false },
+  "Bought by mistake": { userPaysShipping: true },
+  "Better price/alternative available": { userPaysShipping: true },
+};
+export const rejectReturnReasonConst = [
+  "Return window expired",
+  "Item not eligible for return (digitial, hygiene, etc.)",
+  "Suspected return abuse or fraud",
+  "Must use original packaging (sensitive items)",
+  "Incomplete/damaged item",
+] as const;

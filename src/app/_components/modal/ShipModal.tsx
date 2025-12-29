@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
-import toast from "react-hot-toast";
+// import toast from "react-hot-toast";
 import { handleOverlayClick } from "~/server/utils/modal";
 import type { OrderItem } from "~/type";
 import { customToast } from "../toast";

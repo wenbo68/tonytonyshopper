@@ -12,6 +12,8 @@ import {
   orderItemStatusConst,
   orderStatusConst,
   orderStatusReasonConst,
+  returnReasonConst,
+  rejectReturnReasonConst,
 } from "~/const";
 
 /**
@@ -32,8 +34,20 @@ export const orderItemStatusEnum = pgEnum(
   "order_item_status",
   orderItemStatusConst,
 );
+export const returnReasonEnum = pgEnum("return_reason", returnReasonConst);
+export const rejectReturnReasonEnum = pgEnum(
+  "reject_return_reason",
+  rejectReturnReasonConst,
+);
 
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
+export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
+export type OrderStatusReason =
+  (typeof orderStatusReasonEnum.enumValues)[number];
+export type OrderItemStatus = (typeof orderItemStatusEnum.enumValues)[number];
+export type ReturnReason = (typeof returnReasonEnum.enumValues)[number];
+export type RejectReturnReason =
+  (typeof rejectReturnReasonEnum.enumValues)[number];
 
 export const users = createTable("user", (d) => ({
   id: d
@@ -126,12 +140,7 @@ export const products = createTable("product", (d) => ({
   name: d.varchar({ length: 255 }).notNull(),
   description: d.text(),
 
-  // NEW: Store an array of video URLs
   videos: d.json("videos").$type<string[]>(),
-
-  // MOVED TO VARIANTS: price
-  // MOVED TO VARIANTS: images
-  // MOVED TO VARIANTS: stock
 
   // For your "Home page: shows selected products"
   isFeatured: d.boolean("is_featured").default(false).notNull(),
@@ -201,7 +210,6 @@ export const productVariants = createTable(
   ],
 );
 
-// --- NEW Relations for ProductVariants ---
 export const productVariantsRelations = relations(
   productVariants,
   ({ one, many }) => ({
@@ -354,18 +362,12 @@ export const cartItems = createTable(
       .varchar({ length: 255 })
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-
-    // --- UPDATED ---
-    // Now references a specific variant, not the parent product
     productVariantId: d
       .varchar({ length: 255 })
       .notNull()
       .references(() => productVariants.id, { onDelete: "cascade" }),
-    // ---
 
     quantity: d.integer("quantity").default(1).notNull(),
-
-    // --- ADD THIS COLUMN ---
     createdAt: d
       .timestamp({ withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`),
@@ -378,8 +380,6 @@ export const cartItems = createTable(
 
 export const cartItemsRelations = relations(cartItems, ({ one }) => ({
   user: one(users, { fields: [cartItems.userId], references: [users.id] }),
-
-  // --- UPDATED ---
   productVariant: one(productVariants, {
     fields: [cartItems.productVariantId],
     references: [productVariants.id],
@@ -387,7 +387,6 @@ export const cartItemsRelations = relations(cartItems, ({ one }) => ({
 }));
 
 // ======== ORDERS ========
-// The main record of a completed purchase
 export const orders = createTable("order", (d) => ({
   id: d
     .varchar({ length: 255 })
@@ -397,16 +396,14 @@ export const orders = createTable("order", (d) => ({
 
   // Nullable, to support GUEST checkout
   userId: d.varchar({ length: 255 }).references(() => users.id),
-
-  // Required if userId is null
   guestEmail: d.varchar({ length: 255 }),
 
   status: orderStatusEnum("status").notNull(),
-  statusReason: orderStatusReasonEnum("status_reason"),
+  statusReason: orderStatusReasonEnum("statusReason"),
 
   subtotal: d.numeric({ precision: 10, scale: 2 }).notNull(),
-  // the following 3 fields are empty when checkout session is 1st created
-  // and are filled when checkout is completed
+  // the following 3 fields are empty in pending orders
+  // and are filled in paid orders
   tax: d.numeric({ precision: 10, scale: 2 }).notNull().default("0"),
   shippingFee: d.numeric({ precision: 10, scale: 2 }).notNull().default("0"),
   totalAmount: d.numeric({ precision: 10, scale: 2 }).notNull().default("0"),
@@ -424,14 +421,6 @@ export const orders = createTable("order", (d) => ({
   cardBrand: d.varchar({ length: 50 }), // e.g., "visa", "mastercard"
   cardLast4: d.varchar({ length: 4 }), // e.g., "4242"
 
-  // Shipping info
-  // carrier: d.varchar({ length: 50 }), // e.g., "USPS", "FedEx"
-  // trackingNumber: d.varchar({ length: 255 }),
-
-  // returnCarrier: d.varchar({ length: 50 }),
-  // returnTrackingNumber: d.varchar({ length: 255 }),
-  // refundId: d.varchar({ length: 255 }), // Stripe Refund ID for reference
-
   createdAt: d
     .timestamp({ withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
@@ -441,7 +430,6 @@ export const orders = createTable("order", (d) => ({
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   // An order can belong to one user (or null)
   user: one(users, { fields: [orders.userId], references: [users.id] }),
-
   // An order has many items
   orderItems: many(orderItems),
 }));
@@ -470,6 +458,9 @@ export const orderItems = createTable(
     carrier: d.varchar({ length: 50 }), // e.g., "UPS", "FedEx"
     trackingNumber: d.varchar({ length: 255 }),
 
+    returnReason: returnReasonEnum(),
+    rejectReturnReason: rejectReturnReasonEnum(),
+    returnLabel: d.varchar({ length: 255 }),
     returnCarrier: d.varchar({ length: 50 }), // e.g., "UPS", "FedEx"
     returnTrackingNumber: d.varchar({ length: 255 }),
   }),

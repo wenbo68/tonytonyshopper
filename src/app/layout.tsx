@@ -77,4 +77,23 @@ export default function RootLayout({
 
 // in cart, you can change an item's quantity, but if you checkout before the refetch happens, it will use the previous quantity
 
-// implement ship, view ship info, return, refund
+// use shipping api (shippo, easypost, etc) to tracking shipping status (also automates creation of tracking number, return label, etc)
+
+// each product (or product variant) should store weight/dimension (for return purposes)
+
+// implement request return, approve/reject return, return, refund.
+
+// Return policies
+// 1. Process: item shipped -> user request return -> admin rejects/approves return -> item returned -> item refunded
+// 2. return request
+// input: quantity, reason, address (confirm/edit), photos of item and packaging
+// notes:
+// must request within 30 days of shipment arrival
+// some sensitive items require original packaging; others don't
+// 3. reject return: quantity, reason
+// 4. approves return:
+
+// three things to work on:
+// 1. optimistic update
+// 2. upload image/video
+// 3. text filter (but allows multiple entries)

@@ -47,9 +47,9 @@ export const StockEnum = z.enum(["all", "some", "none"]);
 export type StockEnum = z.infer<typeof StockEnum>;
 
 // ==== orders ====
-export type OrderStatus = (typeof orderStatusConst)[number];
-export type OrderStatusReason = (typeof orderStatusReasonConst)[number];
-export type OrderItemStatus = (typeof orderItemStatusConst)[number];
+// export type OrderStatus = (typeof orderStatusConst)[number];
+// export type OrderStatusReason = (typeof orderStatusReasonConst)[number];
+// export type OrderItemStatus = (typeof orderItemStatusConst)[number];
 
 export type OrderItem = typeof orderItems.$inferSelect;
 export type OrderItemAndVariantAndProduct = typeof orderItems.$inferSelect & {

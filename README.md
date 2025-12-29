@@ -50,10 +50,18 @@
 
 - only matters when there are white spaces between image & container of Image (object-center is default)
 
-### race condition
+### race condition (only triggered by db writes/updates but not db reads to the same row in a table)
 
-- db update race condition: if different users can trigger db update simultaneously -> can lead to race condition
+- db update race condition: if different users can trigger db update simultaneously (or 1 user fires 2nd update when 1st update isn't finished) -> can lead to race condition
 - to prevent race condition, make the db update use transaction
+
+### transaction
+
+- prevents partial updates via rollbacks
+- prevents race conditions via isolation.
+- Isolation can be implemented using locks (serializes both reads/writes to the same row so reads will block writes and vice versa), MVCC (only writes to the same row are serialized), etc.
+- best practice: transactions should be declared once at the very top level (usually in the trpc procedure) to represent 1 business logic
+- so helper function should not declare its own transactions but use tx passed from caller (ie trpc procedure)
 
 ### react query
 
