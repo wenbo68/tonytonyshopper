@@ -450,6 +450,7 @@ export const orderItems = createTable(
       .varchar({ length: 255 })
       .notNull()
       .references(() => productVariants.id),
+    // returnLabelId: d.varchar({ length: 255 }).references(() => returnLabels.id),
 
     status: orderItemStatusEnum("status"), // status is null if order is pending/abandoned
     quantity: d.integer().notNull(),
@@ -460,11 +461,18 @@ export const orderItems = createTable(
 
     returnReason: returnReasonEnum(),
     rejectReturnReason: rejectReturnReasonEnum(),
+
+    returnCost: d.numeric({ precision: 10, scale: 2 }),
     returnLabel: d.varchar({ length: 255 }),
     returnCarrier: d.varchar({ length: 50 }), // e.g., "UPS", "FedEx"
     returnTrackingNumber: d.varchar({ length: 255 }),
+
+    refundedAmount: d.numeric({ precision: 10, scale: 2 }),
   }),
-  (t) => [index("order_item_order_id_idx").on(t.orderId)],
+  (t) => [
+    index("order_item_order_id_idx").on(t.orderId),
+    // index("order_item_return_label_id_idx").on(t.returnLabelId), // Added index for performance
+  ],
 );
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
@@ -472,9 +480,37 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     fields: [orderItems.orderId],
     references: [orders.id],
   }),
-
   productVariant: one(productVariants, {
     fields: [orderItems.productVariantId],
     references: [productVariants.id],
   }),
+  // returnLabel: one(returnLabels, {
+  //   fields: [orderItems.returnLabelId],
+  //   references: [returnLabels.id],
+  // }),
 }));
+
+// // ======== RETURN LABELS ========
+// export const returnLabels = createTable("return_label", (d) => ({
+//   id: d
+//     .varchar({ length: 255 })
+//     .notNull()
+//     .primaryKey()
+//     .$defaultFn(() => crypto.randomUUID()),
+
+//   cost: d.numeric({ precision: 10, scale: 2 }).notNull(),
+
+//   // url/carrier/tracking are null when admin quotes the label
+//   labelUrl: d.varchar({ length: 255 }),
+//   carrier: d.varchar({ length: 50 }),
+//   trackingNumber: d.varchar({ length: 255 }),
+
+//   createdAt: d
+//     .timestamp({ withTimezone: true })
+//     .notNull()
+//     .default(sql`CURRENT_TIMESTAMP`),
+// }));
+
+// export const returnLabelsRelations = relations(returnLabels, ({ many }) => ({
+//   orderItems: many(orderItems),
+// }));

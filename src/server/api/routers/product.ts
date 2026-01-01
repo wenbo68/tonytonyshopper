@@ -29,7 +29,7 @@ export const productRouter = createTRPCRouter({
   /**
    * Fetches all products with filtering, sorting, and pagination.
    */
-  search: publicProcedure
+  searchProducts: publicProcedure
     .input(getProductsInputSchema) // <-- Use new input schema
     .query(async ({ ctx, input }) => {
       const {

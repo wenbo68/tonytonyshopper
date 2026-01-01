@@ -1,12 +1,7 @@
 // src/components/Dropdown.tsx
 import { useState, useRef, useEffect } from "react";
 import { IoIosArrowDown } from "react-icons/io";
-
-// Define the shape of a single dropdown option
-type DropdownOption = {
-  value: string;
-  label: string;
-};
+import type { DropdownOption } from "~/type";
 
 // Define the props for our component
 type DropdownProps = {

@@ -6,6 +6,7 @@ import {
   products,
   productVariants,
   type comments,
+  type ReturnReason,
 } from "./server/db/schema";
 import type {
   colorClassMap,
@@ -189,4 +190,10 @@ export type PillConfig = {
   color: keyof typeof colorClassMap;
   onRemove?: () => void;
   className?: string;
+};
+
+// Define the shape of a single dropdown option
+export type DropdownOption = {
+  value: string;
+  label: string;
 };

@@ -10,7 +10,13 @@ import {
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useSearchParams } from "next/navigation";
 import { getUserOrdersInputSchema, type OrderItem } from "~/type";
-import { FaCartPlus, FaEllipsisV, FaPen, FaUndo } from "react-icons/fa";
+import {
+  FaCartPlus,
+  FaCheck,
+  FaEllipsisV,
+  FaPen,
+  FaUndo,
+} from "react-icons/fa";
 // import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import OrderModal from "../../_components/modal/OrderModal";
@@ -27,10 +33,11 @@ import { useProductVariantModalStore } from "~/app/_hooks/useProductVariantModal
 // import { customToast } from "~/app/_components/toast";
 import CancelModal from "~/app/_components/modal/CancelModal";
 import { customToast } from "~/app/_components/toast";
-import ShipInfoModal from "~/app/_components/modal/ShipInfoModal";
+import ShipAndReturnInfoModal from "~/app/_components/modal/ShipAndReturnInfoModal";
 import { FaXmark } from "react-icons/fa6";
-import { ReturnModal } from "~/app/_components/modal/ReturnModal";
+import { RequestReturnModal } from "~/app/_components/modal/RequestReturnModal";
 import { GiOpenBook } from "react-icons/gi";
+import { ReturnModal } from "~/app/_components/modal/ReturnModal";
 
 // Infer type for better safety
 type Order = RouterOutputs["order"]["getUserOrders"]["orders"][number];
@@ -49,12 +56,14 @@ export default function OrdersPage() {
     orderItemId: string;
     maxQuantity: number;
   } | null>(null);
-  const [shipInfoModalProps, setShipInfoModalProps] =
+  const [shipAndReturnInfoModalProps, setShipAndReturnInfoModalProps] =
     useState<OrderItem | null>(null);
   const [reviewModalProps, setReviewModalProps] = useState<{
     productId: string;
     productVariantId: string;
   } | null>(null);
+  const [requestReturnModalProps, setRequestReturnModalProps] =
+    useState<OrderItem | null>(null);
   const [returnModalProps, setReturnModalProps] = useState<OrderItem | null>(
     null,
   );
@@ -141,10 +150,16 @@ export default function OrdersPage() {
     setDropdownItemId(null); // Close menu
   };
 
-  const handleReturn = (e: React.MouseEvent, orderItem: OrderItem) => {
+  const handleReturnRequest = (e: React.MouseEvent, orderItem: OrderItem) => {
     e.stopPropagation(); // Stop click from opening the modal
-    setReturnModalProps(orderItem);
+    setRequestReturnModalProps(orderItem);
     setDropdownItemId(null); // Close menu
+  };
+
+  const handleReturn = (e: React.MouseEvent, orderItem: OrderItem) => {
+    e.stopPropagation();
+    setReturnModalProps(orderItem);
+    setDropdownItemId(null);
   };
 
   const toggleMenu = (e: React.MouseEvent, itemId: string) => {
@@ -189,15 +204,20 @@ export default function OrdersPage() {
         isOpen={!!cancelModalProps}
         onClose={() => setCancelModalProps(null)}
       />
-      <ShipInfoModal
-        isOpen={!!shipInfoModalProps}
-        onClose={() => setShipInfoModalProps(null)}
-        orderItem={shipInfoModalProps}
+      <ShipAndReturnInfoModal
+        isOpen={!!shipAndReturnInfoModalProps}
+        onClose={() => setShipAndReturnInfoModalProps(null)}
+        orderItem={shipAndReturnInfoModalProps}
       />
       <ReviewModal
         itemIds={reviewModalProps}
         isOpen={!!reviewModalProps}
         onClose={() => setReviewModalProps(null)}
+      />
+      <RequestReturnModal
+        isOpen={!!requestReturnModalProps}
+        onClose={() => setRequestReturnModalProps(null)}
+        orderItem={requestReturnModalProps}
       />
       <ReturnModal
         isOpen={!!returnModalProps}
@@ -279,7 +299,11 @@ export default function OrdersPage() {
                       overlays={
                         <>
                           {item.status === "shipped" ||
-                          item.status === "returned" ? (
+                          item.status === "return_requested" ||
+                          item.status === "return_rejected" ||
+                          item.status === "return_approved" ||
+                          item.status === "returned" ||
+                          item.status === "refunded" ? (
                             <OverlayTagButton
                               position="topLeft"
                               className="capitalize"
@@ -290,10 +314,10 @@ export default function OrdersPage() {
                                   );
                                   return;
                                 }
-                                setShipInfoModalProps(item);
+                                setShipAndReturnInfoModalProps(item);
                               }}
                             >
-                              {item.status}
+                              {item.status.split("_").join(" ")}
                             </OverlayTagButton>
                           ) : (
                             item.status && (
@@ -301,7 +325,7 @@ export default function OrdersPage() {
                                 position="topLeft"
                                 className="capitalize"
                               >
-                                {item.status}
+                                {item.status.split("_").join(" ")}
                               </OverlayTag>
                             )
                           )}
@@ -359,6 +383,9 @@ export default function OrdersPage() {
 
                                 {/* Review */}
                                 {(item.status === "shipped" ||
+                                  item.status === "return_requested" ||
+                                  item.status === "return_rejected" ||
+                                  item.status === "return_approved" ||
                                   item.status === "returned" ||
                                   item.status === "refunded") && (
                                   <button
@@ -381,10 +408,12 @@ export default function OrdersPage() {
                                   </button>
                                 )}
 
-                                {/* Return */}
+                                {/* Return Request*/}
                                 {item.status === "shipped" && (
                                   <button
-                                    onClick={(e) => handleReturn(e, item)}
+                                    onClick={(e) =>
+                                      handleReturnRequest(e, item)
+                                    }
                                     className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
                                   >
                                     <div className="item-center flex min-w-4 justify-center">
@@ -393,14 +422,48 @@ export default function OrdersPage() {
                                         className="text-gray-400"
                                       />
                                     </div>
-                                    Return item
+                                    Initiate Return
+                                  </button>
+                                )}
+
+                                {/* Edit Return Request */}
+                                {/* {item.status === "return_requested" && (
+                                  <button
+                                    onClick={(e) =>
+                                      handleReturnRequest(e, item)
+                                    }
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                  >
+                                    <div className="item-center flex min-w-4 justify-center">
+                                      <FaPen
+                                        size={10}
+                                        className="text-gray-400"
+                                      />
+                                    </div>
+                                    Edit Request
+                                  </button>
+                                )} */}
+
+                                {/* Finish Return */}
+                                {item.status === "return_approved" && (
+                                  <button
+                                    onClick={(e) => handleReturn(e, item)}
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                  >
+                                    <div className="item-center flex min-w-4 justify-center">
+                                      <FaCheck
+                                        size={10}
+                                        className="text-gray-400"
+                                      />
+                                    </div>
+                                    Finish Return
                                   </button>
                                 )}
 
                                 {/* Edit Return */}
-                                {item.status === "returned" && (
+                                {/* {item.status === "returned" && (
                                   <button
-                                    onClick={(e) => handleReturn(e, item)}
+                                    onClick={(e) => handleReturn(e)}
                                     className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
                                   >
                                     <div className="item-center flex min-w-4 justify-center">
@@ -411,50 +474,10 @@ export default function OrdersPage() {
                                     </div>
                                     Edit Return
                                   </button>
-                                )}
+                                )} */}
                               </div>
                             )}
                           </OverlayDiv>
-                          {/* <OverlayButton
-                            position="topLeft"
-                            onClick={handleReturn}
-                            title="Return Item"
-                          >
-                            <FaUndo size={12} />
-                          </OverlayButton>
-                          <OverlayButton
-                            position="topRight"
-                            onClick={(e) =>
-                              handleBuyAgain(
-                                e,
-                                variant.productId,
-                                variant.id,
-                                item.quantity,
-                              )
-                            }
-                            onMouseEnter={() =>
-                              utils.product.getById.prefetch({
-                                id: variant.productId,
-                              })
-                            }
-                            title="Buy Again"
-                          >
-                            <FaCartPlus size={14} />
-                          </OverlayButton>
-                          {item.status === "shipped" && (
-                            <OverlayButton
-                              position="bottomRight"
-                              onClick={() => {
-                                setReviewItemIds({
-                                  productId: item.productVariant.productId,
-                                  productVariantId: item.productVariantId,
-                                });
-                              }}
-                              title="Write Review"
-                            >
-                              <FaPen size={12} />
-                            </OverlayButton>
-                          )} */}
                         </>
                       }
                     >

@@ -10,26 +10,26 @@ import { toastZodError } from "~/server/utils/generic";
 
 // type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
-interface ReturnModalProps {
+interface ApproveReturnModalProps {
   orderItem: OrderItem | null;
   isOpen: boolean;
   onClose: () => void;
   // onSuccess: () => Promise<any>;
 }
 
-export function ReturnModal({
+export function ApproveReturnModal({
   orderItem,
   isOpen,
   onClose,
   // onSuccess,
-}: ReturnModalProps) {
+}: ApproveReturnModalProps) {
   const utils = api.useUtils();
 
   const [quantity, setQuantity] = useState<number | "">("");
-  // const [returnCost, setReturnCost] = useState<number | "">("");
-  // const [returnLabel, setReturnLabel] = useState<string>("");
-  // const [returnCarrier, setReturnCarrier] = useState<string>("");
-  // const [returnTrackingNumber, setReturnTrackingNumber] = useState<string>("");
+  const [returnCost, setReturnCost] = useState<number | "">("");
+  const [returnLabel, setReturnLabel] = useState<string>("");
+  const [returnCarrier, setReturnCarrier] = useState<string>("");
+  const [returnTrackingNumber, setReturnTrackingNumber] = useState<string>("");
 
   // prevent scrolling main page when modal is open
   useEffect(() => {
@@ -47,38 +47,39 @@ export function ReturnModal({
   useEffect(() => {
     if (orderItem) {
       setQuantity(orderItem.quantity);
-      // setReturnCost(orderItem.returnCost ? Number(orderItem.returnCost) : "");
-      // setReturnLabel(orderItem.returnLabel ?? "");
-      // setReturnCarrier(orderItem.returnCarrier ?? "");
-      // setReturnTrackingNumber(orderItem.returnTrackingNumber ?? "");
+      setReturnCost(orderItem.returnCost ? Number(orderItem.returnCost) : "");
+      setReturnLabel(orderItem.returnLabel ?? "");
+      setReturnCarrier(orderItem.returnCarrier ?? "");
+      setReturnTrackingNumber(orderItem.returnTrackingNumber ?? "");
     }
   }, [orderItem]);
 
   const invalidateQueries = async () => {
-    await utils.order.getUserOrders.invalidate();
+    await utils.admin.getAllOrders.invalidate();
   };
 
-  const returnMutation = api.orderItem.returnOrderItem.useMutation({
-    onMutate: () => {
-      const toastId = customToast.loading("Returning...");
-      return { toastId };
-    },
-    onSuccess: (data, vars, context) => {
-      void invalidateQueries();
-      customToast.success("Return succeeded.", context?.toastId);
-    },
-    onError: (error, vars, context) => {
-      void invalidateQueries();
+  const approveReturnMutation =
+    api.orderItem.approveOrdetItemReturn.useMutation({
+      onMutate: () => {
+        const toastId = customToast.loading("Approving...");
+        return { toastId };
+      },
+      onSuccess: (data, vars, context) => {
+        void invalidateQueries();
+        customToast.success("Approve succeeded.", context?.toastId);
+      },
+      onError: (error, vars, context) => {
+        void invalidateQueries();
 
-      // Zod input validation error
-      if (error.data?.zodError) {
-        toastZodError(error, context?.toastId);
-        return;
-      }
+        // Zod input validation error
+        if (error.data?.zodError) {
+          toastZodError(error, context?.toastId);
+          return;
+        }
 
-      customToast.error(`Return failed. ${error.message}`, context?.toastId);
-    },
-  });
+        customToast.error(`Approve failed. ${error.message}`, context?.toastId);
+      },
+    });
 
   // const cancelReturnMutation = api.orderItem.cancelOrderItemReturn.useMutation({
   //   onMutate: () => {
@@ -111,9 +112,16 @@ export function ReturnModal({
     const finalQuantity = quantity === "" ? 0 : quantity;
     setQuantity(finalQuantity);
 
-    returnMutation.mutate({
+    const finalReturnCost = returnCost === "" ? 0 : returnCost;
+    setReturnCost(finalReturnCost);
+
+    approveReturnMutation.mutate({
       orderItemId: orderItem.id,
       quantity: finalQuantity,
+      returnCost: finalReturnCost,
+      returnLabel,
+      returnCarrier,
+      returnTrackingNumber,
     });
   };
 
@@ -135,8 +143,8 @@ export function ReturnModal({
   // };
 
   const rejectReturnMutationIsPending =
-    returnMutation.isPending &&
-    returnMutation.variables.orderItemId === orderItem.id;
+    approveReturnMutation.isPending &&
+    approveReturnMutation.variables.orderItemId === orderItem.id;
   // const cancelReturnMutationIsPending =
   //   cancelReturnMutation.isPending &&
   //   cancelReturnMutation.variables.orderItemId === orderItem.id;
@@ -185,6 +193,61 @@ export function ReturnModal({
               required
             />
           </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold">Return Cost</label>
+            <input
+              type="number"
+              // id="quantity"
+              min="0"
+              // max={orderItem.quantity}
+              value={returnCost}
+              onChange={(e) => {
+                const val = e.target.value;
+                // If empty string, allow it so user can type a new number
+                if (val === "") {
+                  setReturnCost("");
+                } else {
+                  // Otherwise, parse as number and ensure it's not negative
+                  setReturnCost(Math.max(0, Number(val)));
+                }
+              }}
+              className="w-full rounded bg-gray-800 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold">Return Label</label>
+            <input
+              type="text"
+              placeholder="Please include http:// or https://"
+              value={returnLabel}
+              onChange={(e) => setReturnLabel(e.target.value)}
+              className="rounded bg-gray-800 p-2 outline-none"
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold">Return Carrier</label>
+            <input
+              type="text"
+              // placeholder="e.g., UPS, FedEx"
+              value={returnCarrier}
+              onChange={(e) => setReturnCarrier(e.target.value)}
+              className="rounded bg-gray-800 p-2 outline-none"
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold">Return Tracking Number</label>
+            <input
+              type="text"
+              // placeholder="e.g., UPS, FedEx"
+              value={returnTrackingNumber}
+              onChange={(e) => setReturnTrackingNumber(e.target.value)}
+              className="rounded bg-gray-800 p-2 outline-none"
+              required
+            />
+          </div>
         </div>
 
         {/* <div className="flex flex-col gap-1"> */}
@@ -204,7 +267,7 @@ export function ReturnModal({
             disabled={isPending}
             className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
           >
-            {rejectReturnMutationIsPending ? "Returning..." : "Return"}
+            {rejectReturnMutationIsPending ? "Approving..." : "Approve"}
           </button>
         </div>
         {/* </div> */}

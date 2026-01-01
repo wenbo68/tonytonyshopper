@@ -16,15 +16,20 @@ import { ShipModal } from "~/app/_components/modal/ShipModal";
 import { ItemGrid } from "~/app/_components/item/ItemGrid";
 import {
   OverlayButton,
+  OverlayDiv,
   OverlayTag,
   OverlayTagButton,
 } from "~/app/_components/item/ItemImageOverlays";
 import { ItemCard } from "~/app/_components/item/ItemCard";
 import { MdLocalShipping } from "react-icons/md";
 import { RiRefundFill } from "react-icons/ri";
-import { FaPen } from "react-icons/fa";
+import { FaCheck, FaEllipsisV, FaPen } from "react-icons/fa";
 import { customToast } from "~/app/_components/toast";
-import ShipInfoModal from "~/app/_components/modal/ShipInfoModal";
+import ShipAndReturnInfoModal from "~/app/_components/modal/ShipAndReturnInfoModal";
+import { FaXmark } from "react-icons/fa6";
+import { RejectReturnModal } from "~/app/_components/modal/RejectReturnModal";
+import { ApproveReturnModal } from "~/app/_components/modal/ApproveReturnModal";
+import { RefundModal } from "~/app/_components/modal/RefundModal";
 
 type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
@@ -34,11 +39,19 @@ export default function AdminOrdersPage() {
 
   // --- Modal State ---
   const [shipModalProps, setShipModalProps] = useState<OrderItem | null>(null);
+  const [rejectReturnModalProps, setRejectReturnModalProps] =
+    useState<OrderItem | null>(null);
+  const [approveReturnModalProps, setApproveReturnModalProps] =
+    useState<OrderItem | null>(null);
+  const [refundModalProps, setRefundModalProps] = useState<OrderItem | null>(
+    null,
+  );
   const [orderModalProps, setOrderModalProps] = useState<AdminOrder | null>(
     null,
   );
   const [shipInfoModalProps, setShipInfoModalProps] =
     useState<OrderItem | null>(null);
+  const [dropdownItemId, setDropdownItemId] = useState<string | null>(null);
 
   // Parse params
   const rawInput = {
@@ -103,6 +116,23 @@ export default function AdminOrdersPage() {
     );
   }
 
+  const handleRejectReturn = (e: React.MouseEvent, orderItem: OrderItem) => {
+    e.stopPropagation(); // Prevent window click listener from immediately closing it
+    setRejectReturnModalProps(orderItem);
+  };
+  const handleApproveReturn = (e: React.MouseEvent, orderItem: OrderItem) => {
+    e.stopPropagation(); // Prevent window click listener from immediately closing it
+    setApproveReturnModalProps(orderItem);
+  };
+  const handleRefund = (e: React.MouseEvent, orderItem: OrderItem) => {
+    e.stopPropagation(); // Prevent window click listener from immediately closing it
+    setRefundModalProps(orderItem);
+  };
+  const toggleMenu = (e: React.MouseEvent, itemId: string) => {
+    e.stopPropagation(); // Prevent window click listener from immediately closing it
+    setDropdownItemId(dropdownItemId === itemId ? null : itemId);
+  };
+
   return (
     <>
       <OrderModal
@@ -117,10 +147,28 @@ export default function AdminOrdersPage() {
         orderItem={shipModalProps}
       />
 
-      <ShipInfoModal
+      <ShipAndReturnInfoModal
         isOpen={!!shipInfoModalProps}
         onClose={() => setShipInfoModalProps(null)}
         orderItem={shipInfoModalProps}
+      />
+
+      <RejectReturnModal
+        isOpen={!!rejectReturnModalProps}
+        onClose={() => setRejectReturnModalProps(null)}
+        orderItem={rejectReturnModalProps}
+      />
+
+      <ApproveReturnModal
+        isOpen={!!approveReturnModalProps}
+        onClose={() => setApproveReturnModalProps(null)}
+        orderItem={approveReturnModalProps}
+      />
+
+      <RefundModal
+        isOpen={!!refundModalProps}
+        onClose={() => setRefundModalProps(null)}
+        orderItem={refundModalProps}
       />
 
       <div className="flex flex-col gap-7 sm:gap-8 md:gap-9 lg:gap-10 xl:gap-11">
@@ -202,6 +250,7 @@ export default function AdminOrdersPage() {
                     const imageUrl =
                       variant.images?.[0] ??
                       "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
+                    const isMenuOpen = dropdownItemId === item.id;
 
                     return (
                       <ItemCard
@@ -229,7 +278,7 @@ export default function AdminOrdersPage() {
                                   setShipInfoModalProps(item);
                                 }}
                               >
-                                {item.status}
+                                {item.status.split("_").join(" ")}
                               </OverlayTagButton>
                             ) : (
                               item.status && (
@@ -237,7 +286,7 @@ export default function AdminOrdersPage() {
                                   position="topLeft"
                                   className="capitalize"
                                 >
-                                  {item.status}
+                                  {item.status.split("_").join(" ")}
                                 </OverlayTag>
                               )
                             )}
@@ -278,13 +327,66 @@ export default function AdminOrdersPage() {
                               </OverlayButton>
                             )}
 
+                            {item.status === "return_requested" && (
+                              <OverlayDiv
+                                position="topRight"
+                                className="z-20" // Higher z-index so dropdown floats over other tags
+                                title="Item Options"
+                                // onMouseEnter={itemMenuPrefetch} // Desktop prefetch
+                                onClick={(e) => {
+                                  // itemMenuPrefetch(); // Mobile prefetch
+                                  toggleMenu(e, item.id);
+                                }}
+                              >
+                                <FaEllipsisV size={14} />
+                                {isMenuOpen && (
+                                  <div className="absolute top-8 right-0 z-50 flex min-w-36 flex-col rounded bg-gray-800 p-1 text-left text-xs font-semibold text-gray-400 transition-all">
+                                    {/* Reject Return*/}
+                                    {item.status === "return_requested" && (
+                                      <button
+                                        onClick={(e) =>
+                                          handleRejectReturn(e, item)
+                                        }
+                                        className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                      >
+                                        <div className="item-center flex min-w-4 justify-center">
+                                          <FaXmark
+                                            size={16}
+                                            className="text-gray-400"
+                                          />
+                                        </div>
+                                        Reject Return
+                                      </button>
+                                    )}
+
+                                    {/* Approve Return*/}
+                                    {item.status === "return_requested" && (
+                                      <button
+                                        onClick={(e) =>
+                                          handleApproveReturn(e, item)
+                                        }
+                                        className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                      >
+                                        <div className="item-center flex min-w-4 justify-center">
+                                          <FaCheck className="text-gray-400" />
+                                        </div>
+                                        Approve Return
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </OverlayDiv>
+                            )}
+
+                            {/* Edit Reject Return */}
+                            {/* Edit Approve Return */}
+
                             {/* Refund */}
                             {item.status === "returned" && (
                               <OverlayButton
                                 position="topRight"
                                 onClick={(e) => {
-                                  e.stopPropagation();
-                                  console.log("Refund item", item.id);
+                                  handleRefund(e, item);
                                 }}
                                 title="Refund Item"
                                 className="font-semibold"

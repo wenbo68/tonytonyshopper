@@ -81,8 +81,6 @@ export default function RootLayout({
 
 // each product (or product variant) should store weight/dimension (for return purposes)
 
-// implement request return, approve/reject return, return, refund.
-
 // Return policies
 // 1. Process: item shipped -> user request return -> admin rejects/approves return -> item returned -> item refunded
 // 2. return request
@@ -97,3 +95,8 @@ export default function RootLayout({
 // 1. optimistic update
 // 2. upload image/video
 // 3. text filter (but allows multiple entries)
+
+// to allow for multiple returns per item, each item should have many returns.
+// each return might have a separate shipping label or share one, so there should be a label entity having many returns.
+
+// don't think about label in return; the steps are now simplified. implement requested business logic when there is a real client

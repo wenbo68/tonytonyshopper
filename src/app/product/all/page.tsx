@@ -59,7 +59,7 @@ export default function ProductsPage() {
   const parsedInput = getProductsInputSchema.safeParse(rawInput);
 
   // 4. Use the `useQuery` hook, but only enable it if parsing succeeded
-  const { data, isFetching } = api.product.search.useQuery(
+  const { data, isFetching } = api.product.searchProducts.useQuery(
     parsedInput.success ? parsedInput.data : (undefined as any),
     {
       enabled: parsedInput.success,

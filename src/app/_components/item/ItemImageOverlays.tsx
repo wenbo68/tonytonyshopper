@@ -11,9 +11,9 @@ export const overlayPositionClasses = {
 
 // Common styles for the circular buttons (Edit, Delete, Add to Cart)
 export const circButtonClass =
-  "absolute z-10 flex h-6.5 w-6.5 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-300 backdrop-blur-sm transition-colors hover:bg-black/80 hover:scale-105 disabled:cursor-default";
+  "absolute z-10 flex h-6.5 w-6.5 cursor-pointer items-center justify-center rounded-full bg-black/60 text-gray-300 backdrop-blur-sm transition-colors hover:bg-black/80 disabled:cursor-default";
 export const rectButtonClass =
-  "absolute z-10 px-1.5 py-1 text-xs font-semibold text-gray-300 cursor-pointer items-center justify-center rounded bg-black/60 text-gray-300 backdrop-blur-sm transition-colors hover:bg-black/80 hover:scale-105 disabled:cursor-default";
+  "absolute z-10 px-1.5 py-1 text-xs font-semibold text-gray-300 cursor-pointer items-center justify-center rounded bg-black/60 text-gray-300 backdrop-blur-sm hover:scale-105 transition-colors hover:bg-black/80 disabled:cursor-default";
 export const rectTagClass =
   "absolute z-10 rounded bg-black/60 px-1.5 py-1 text-xs font-semibold text-gray-300 backdrop-blur-sm";
 

@@ -7,27 +7,33 @@ import { handleOverlayClick } from "~/server/utils/modal";
 import type { OrderItem } from "~/type";
 import { customToast } from "../toast";
 import { toastZodError } from "~/server/utils/generic";
+import { Dropdown } from "../Dropdown";
+import { type ReturnReason, returnReasonEnum } from "~/server/db/schema";
+import {
+  returnReasonConst,
+  returnReasonDetailsMap,
+  returnReasonOptions,
+} from "~/const";
 
 // type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
-interface ShipModalProps {
+interface RequestReturnModalProps {
   orderItem: OrderItem | null;
   isOpen: boolean;
   onClose: () => void;
   // onSuccess: () => Promise<any>;
 }
 
-export function ShipModal({
+export function RequestReturnModal({
   orderItem,
   isOpen,
   onClose,
   // onSuccess,
-}: ShipModalProps) {
+}: RequestReturnModalProps) {
   const utils = api.useUtils();
 
   const [quantity, setQuantity] = useState<number | "">("");
-  const [carrier, setCarrier] = useState("");
-  const [trackingNumber, setTrackingNumber] = useState("");
+  const [returnReason, setReturnReason] = useState<string>("");
 
   // prevent scrolling main page when modal is open
   useEffect(() => {
@@ -44,29 +50,24 @@ export function ShipModal({
   // update state when the order item prop changes
   useEffect(() => {
     if (orderItem) {
-      setQuantity(orderItem.status === "paid" ? orderItem.quantity : 1); //default for shipping is all, for canceling is 1
-      setCarrier(
-        orderItem.status === "shipped" ? (orderItem.carrier ?? "") : "",
-      );
-      setTrackingNumber(
-        orderItem.status === "shipped" ? (orderItem.trackingNumber ?? "") : "",
-      );
+      setQuantity(orderItem.status === "shipped" ? 1 : orderItem.quantity);
+      setReturnReason(orderItem.returnReason ?? "");
     }
   }, [orderItem]);
 
   const invalidateQueries = async () => {
-    await utils.admin.getAllOrders.invalidate();
+    await utils.order.getUserOrders.invalidate();
   };
 
-  const updateShipmentMutation =
-    api.orderItem.updateOrderItemShipment.useMutation({
+  const updateReturnMutation = api.orderItem.requestOrderItemReturn.useMutation(
+    {
       onMutate: () => {
-        const toastId = customToast.loading("Saving...");
+        const toastId = customToast.loading("Requesting...");
         return { toastId };
       },
       onSuccess: (data, vars, context) => {
         void invalidateQueries();
-        customToast.success("Save succeeded.", context?.toastId);
+        customToast.success("Request succeeded.", context?.toastId);
       },
       onError: (error, vars, context) => {
         void invalidateQueries();
@@ -77,33 +78,33 @@ export function ShipModal({
           return;
         }
 
-        customToast.error(`Save failed. ${error.message}`, context?.toastId);
+        customToast.error(`Request failed. ${error.message}`, context?.toastId);
       },
-    });
+    },
+  );
 
-  const cancelShipmentMutation =
-    api.orderItem.cancelOrderItemShipment.useMutation({
-      onMutate: () => {
-        const toastId = customToast.loading("Canceling...");
-        return { toastId };
-      },
-      onSuccess: (data, vars, context) => {
-        void invalidateQueries();
-        customToast.success("Cancel succeeded.", context?.toastId);
-      },
-      onError: (error, vars, context) => {
-        void invalidateQueries();
+  // const cancelReturnMutation = api.orderItem.cancelOrderItemReturn.useMutation({
+  //   onMutate: () => {
+  //     const toastId = customToast.loading("Canceling...");
+  //     return { toastId };
+  //   },
+  //   onSuccess: (data, vars, context) => {
+  //     void invalidateQueries();
+  //     customToast.success("Cancel succeeded.", context?.toastId);
+  //   },
+  //   onError: (error, vars, context) => {
+  //     void invalidateQueries();
 
-        // Zod input validation error
-        if (error.data?.zodError) {
-          toastZodError(error, context?.toastId);
-          return;
-        }
+  //     // Zod input validation error
+  //     if (error.data?.zodError) {
+  //       toastZodError(error, context?.toastId);
+  //       return;
+  //     }
 
-        // Application-level TRPCError
-        customToast.error(error.message, context?.toastId);
-      },
-    });
+  //     // Application-level TRPCError
+  //     customToast.error(error.message, context?.toastId);
+  //   },
+  // });
 
   if (!isOpen || !orderItem) return null;
 
@@ -113,45 +114,55 @@ export function ShipModal({
     const finalQuantity = quantity === "" ? 0 : quantity;
     setQuantity(finalQuantity);
 
-    updateShipmentMutation.mutate({
+    updateReturnMutation.mutate({
       orderItemId: orderItem.id,
       quantity: finalQuantity,
-      carrier,
-      trackingNumber,
+      // carrier,
+      // trackingNumber,
+      returnReason: returnReason as ReturnReason,
     });
   };
 
-  const handleCancelShipment = () => {
-    // e.preventDefault();
-    if (
-      confirm(
-        "Reverting status to Paid. Deleting carrier & tracking number. Continue?",
-      )
-    ) {
-      const finalQuantity = quantity === "" ? 0 : quantity;
-      setQuantity(finalQuantity);
+  // const handleCancelReturn = () => {
+  //   // e.preventDefault();
+  //   if (
+  //     confirm(
+  //       "Reverting status to Shipped. Deleting return carrier & tracking number. Continue?",
+  //     )
+  //   ) {
+  //     const finalQuantity = quantity === "" ? 0 : quantity;
+  //     setQuantity(finalQuantity);
 
-      cancelShipmentMutation.mutate({
-        orderItemId: orderItem.id,
-        quantity: finalQuantity,
-      });
-    }
-  };
+  //     cancelReturnMutation.mutate({
+  //       orderItemId: orderItem.id,
+  //       quantity: finalQuantity,
+  //     });
+  //   }
+  // };
 
-  const updateShipmentMutationIsPending =
-    updateShipmentMutation.isPending &&
-    updateShipmentMutation.variables.orderItemId === orderItem.id;
-  const cancelShipmentMutationIsPending =
-    cancelShipmentMutation.isPending &&
-    cancelShipmentMutation.variables.orderItemId === orderItem.id;
-  const isPending =
-    updateShipmentMutationIsPending || cancelShipmentMutationIsPending;
+  const updateReturnMutationIsPending =
+    updateReturnMutation.isPending &&
+    updateReturnMutation.variables.orderItemId === orderItem.id;
+  // const cancelReturnMutationIsPending =
+  //   cancelReturnMutation.isPending &&
+  //   cancelReturnMutation.variables.orderItemId === orderItem.id;
+  const isPending = updateReturnMutationIsPending;
+  // || cancelReturnMutationIsPending;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-1 bg-black backdrop-blur-sm"
       onMouseDown={(e) => handleOverlayClick(e, onClose)}
     >
+      {returnReason === "" ? null : returnReasonDetailsMap[
+          returnReason as ReturnReason
+        ].userPaysShipping ? (
+        <span className="text-sm text-red-400">
+          Return shipping fee will be deducted from the refund.
+        </span>
+      ) : (
+        <span className="text-sm text-lime-400">Free return!</span>
+      )}
       <form
         onMouseDown={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
@@ -182,51 +193,40 @@ export function ShipModal({
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="font-semibold">Carrier</label>
-            <input
-              type="text"
-              placeholder="e.g., UPS, FedEx"
-              value={carrier}
-              onChange={(e) => setCarrier(e.target.value)}
-              className="rounded bg-gray-800 p-2 outline-none"
-              required
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold">Tracking Number</label>
-            <input
-              type="text"
-              placeholder="e.g., 1Z999AA10123456784"
-              value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
-              className="rounded bg-gray-800 p-2 outline-none"
-              required
+            <label className="font-semibold">Reason</label>
+            <Dropdown
+              options={returnReasonOptions}
+              value={returnReason}
+              onChange={(newValue) => setReturnReason(newValue)}
+              triggerColor="bg-gray-800"
+              menuColor="bg-gray-700"
+              // menuRingColor="bg-gray-600"
+              menuHighlightColor="hover:bg-gray-800"
             />
           </div>
         </div>
 
+        {/* <div className="flex flex-col gap-1"> */}
         <div className="flex flex-col gap-4 sm:flex-row">
-          {orderItem.status === "shipped" && (
+          {/* {orderItem.status === "returned" && (
             <button
               type="button"
-              onClick={handleCancelShipment}
+              onClick={handleCancelReturn}
               disabled={isPending}
               className="w-full cursor-pointer rounded bg-red-600/30 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-red-600/40 disabled:cursor-default disabled:bg-red-600/20 sm:min-w-30"
             >
-              {cancelShipmentMutationIsPending
-                ? "Canceling..."
-                : "Cancel Shipment"}
+              {cancelReturnMutationIsPending ? "Canceling..." : "Cancel Return"}
             </button>
-          )}
+          )} */}
           <button
             type="submit"
             disabled={isPending}
             className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
           >
-            {updateShipmentMutationIsPending ? "Saving..." : "Save Shipment"}
+            {updateReturnMutationIsPending ? "Requesting..." : "Request"}
           </button>
         </div>
+        {/* </div> */}
       </form>
     </div>
   );

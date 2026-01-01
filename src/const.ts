@@ -1,5 +1,5 @@
 import type { ReturnReason } from "./server/db/schema";
-import type { FilterGroupOption } from "./type";
+import type { DropdownOption, FilterGroupOption } from "./type";
 
 // ==========================
 // ==== Frontend consts =====
@@ -113,26 +113,23 @@ export const orderStatusReasonConst = [
   "abandoned_out_of_stock",
   "abandoned_code_error",
 ] as const;
+
 export const orderItemStatusConst = [
   "paid",
-  "cancelled",
+  "canceled",
   "shipped",
   "return_requested",
-  "return_rejected",
+  "return_rejected", // return rejected by admin: user cannot retry return
+  // "label_quoted",
+  // "label_rejected", // label quote rejected by user: user cannot retry return
+  // "label_confirmed",
+  // "label_generated", // admin can cancel label if user doesn't mark item as returned within time limit
+  // "label_canceled", // label canceled by admin: user cannot retry return
   "return_approved",
   "returned",
   "refunded",
 ] as const;
-// export const orderItemStatusPriorityMap = {
-//   paid: 0,
-//   cancelled: 1,
-//   shipped: 2,
-//   return_requested: 3,
-//   return_rejected: 4,
-//   return_approved: 5,
-//   returned: 6,
-//   refunded: 7,
-// };
+
 export const returnReasonConst = [
   "Wrong item sent",
   "Item doesn't work",
@@ -142,7 +139,15 @@ export const returnReasonConst = [
   "Bought by mistake",
   "Better price/alternative available",
 ] as const;
-export const returnReasonDetailMap: Record<
+
+export const returnReasonOptions: DropdownOption[] = returnReasonConst.map(
+  (reason) => ({
+    value: reason,
+    label: reason,
+  }),
+);
+
+export const returnReasonDetailsMap: Record<
   ReturnReason,
   { userPaysShipping: boolean }
 > = {
@@ -154,6 +159,7 @@ export const returnReasonDetailMap: Record<
   "Bought by mistake": { userPaysShipping: true },
   "Better price/alternative available": { userPaysShipping: true },
 };
+
 export const rejectReturnReasonConst = [
   "Return window expired",
   "Item not eligible for return (digitial, hygiene, etc.)",
@@ -161,3 +167,9 @@ export const rejectReturnReasonConst = [
   "Must use original packaging (sensitive items)",
   "Incomplete/damaged item",
 ] as const;
+
+export const rejectReturnReasonOptions: DropdownOption[] =
+  rejectReturnReasonConst.map((reason) => ({
+    value: reason,
+    label: reason,
+  }));

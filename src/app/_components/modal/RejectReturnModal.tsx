@@ -7,29 +7,38 @@ import { handleOverlayClick } from "~/server/utils/modal";
 import type { OrderItem } from "~/type";
 import { customToast } from "../toast";
 import { toastZodError } from "~/server/utils/generic";
+import { Dropdown } from "../Dropdown";
+import {
+  type RejectReturnReason,
+  type ReturnReason,
+  returnReasonEnum,
+} from "~/server/db/schema";
+import {
+  rejectReturnReasonOptions,
+  returnReasonConst,
+  returnReasonDetailsMap,
+  returnReasonOptions,
+} from "~/const";
 
 // type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
-interface ReturnModalProps {
+interface RejectReturnModalProps {
   orderItem: OrderItem | null;
   isOpen: boolean;
   onClose: () => void;
   // onSuccess: () => Promise<any>;
 }
 
-export function ReturnModal({
+export function RejectReturnModal({
   orderItem,
   isOpen,
   onClose,
   // onSuccess,
-}: ReturnModalProps) {
+}: RejectReturnModalProps) {
   const utils = api.useUtils();
 
   const [quantity, setQuantity] = useState<number | "">("");
-  // const [returnCost, setReturnCost] = useState<number | "">("");
-  // const [returnLabel, setReturnLabel] = useState<string>("");
-  // const [returnCarrier, setReturnCarrier] = useState<string>("");
-  // const [returnTrackingNumber, setReturnTrackingNumber] = useState<string>("");
+  const [rejectReturnReason, setRejectReturnReason] = useState<string>("");
 
   // prevent scrolling main page when modal is open
   useEffect(() => {
@@ -46,26 +55,23 @@ export function ReturnModal({
   // update state when the order item prop changes
   useEffect(() => {
     if (orderItem) {
-      setQuantity(orderItem.quantity);
-      // setReturnCost(orderItem.returnCost ? Number(orderItem.returnCost) : "");
-      // setReturnLabel(orderItem.returnLabel ?? "");
-      // setReturnCarrier(orderItem.returnCarrier ?? "");
-      // setReturnTrackingNumber(orderItem.returnTrackingNumber ?? "");
+      setQuantity(orderItem.status === "shipped" ? 1 : orderItem.quantity);
+      setRejectReturnReason(orderItem.rejectReturnReason ?? "");
     }
   }, [orderItem]);
 
   const invalidateQueries = async () => {
-    await utils.order.getUserOrders.invalidate();
+    await utils.admin.getAllOrders.invalidate();
   };
 
-  const returnMutation = api.orderItem.returnOrderItem.useMutation({
+  const rejectReturnMutation = api.orderItem.rejectOrderItemReturn.useMutation({
     onMutate: () => {
-      const toastId = customToast.loading("Returning...");
+      const toastId = customToast.loading("Rejecting...");
       return { toastId };
     },
     onSuccess: (data, vars, context) => {
       void invalidateQueries();
-      customToast.success("Return succeeded.", context?.toastId);
+      customToast.success("Reject succeeded.", context?.toastId);
     },
     onError: (error, vars, context) => {
       void invalidateQueries();
@@ -76,7 +82,7 @@ export function ReturnModal({
         return;
       }
 
-      customToast.error(`Return failed. ${error.message}`, context?.toastId);
+      customToast.error(`Reject failed. ${error.message}`, context?.toastId);
     },
   });
 
@@ -111,9 +117,10 @@ export function ReturnModal({
     const finalQuantity = quantity === "" ? 0 : quantity;
     setQuantity(finalQuantity);
 
-    returnMutation.mutate({
+    rejectReturnMutation.mutate({
       orderItemId: orderItem.id,
       quantity: finalQuantity,
+      rejectReturnReason: rejectReturnReason as RejectReturnReason,
     });
   };
 
@@ -135,8 +142,8 @@ export function ReturnModal({
   // };
 
   const rejectReturnMutationIsPending =
-    returnMutation.isPending &&
-    returnMutation.variables.orderItemId === orderItem.id;
+    rejectReturnMutation.isPending &&
+    rejectReturnMutation.variables.orderItemId === orderItem.id;
   // const cancelReturnMutationIsPending =
   //   cancelReturnMutation.isPending &&
   //   cancelReturnMutation.variables.orderItemId === orderItem.id;
@@ -167,7 +174,7 @@ export function ReturnModal({
             <label className="font-semibold">Quantity</label>
             <input
               type="number"
-              // id="quantity"
+              id="quantity"
               min="1"
               max={orderItem.quantity}
               value={quantity}
@@ -182,7 +189,20 @@ export function ReturnModal({
                 }
               }}
               className="w-full rounded bg-gray-800 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              autoFocus
               required
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-semibold">Reason</label>
+            <Dropdown
+              options={rejectReturnReasonOptions}
+              value={rejectReturnReason}
+              onChange={(newValue) => setRejectReturnReason(newValue)}
+              triggerColor="bg-gray-800"
+              menuColor="bg-gray-700"
+              // menuRingColor="bg-gray-600"
+              menuHighlightColor="hover:bg-gray-800"
             />
           </div>
         </div>
@@ -204,7 +224,7 @@ export function ReturnModal({
             disabled={isPending}
             className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
           >
-            {rejectReturnMutationIsPending ? "Returning..." : "Return"}
+            {rejectReturnMutationIsPending ? "Rejecting..." : "Reject"}
           </button>
         </div>
         {/* </div> */}

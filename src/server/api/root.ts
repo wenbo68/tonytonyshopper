@@ -5,6 +5,7 @@ import { commentRouter } from "./routers/comment";
 import { adminRouter } from "./routers/admin";
 import { stripeRouter } from "./routers/stripe";
 import { orderRouter } from "./routers/order";
+import { orderItemRouter } from "./routers/orderItem";
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   cart: cartRouter,
   stripe: stripeRouter,
   order: orderRouter,
+  orderItem: orderItemRouter,
 });
 
 // export type definition of API

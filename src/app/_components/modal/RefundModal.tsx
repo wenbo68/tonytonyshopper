@@ -10,26 +10,16 @@ import { toastZodError } from "~/server/utils/generic";
 
 // type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
-interface ReturnModalProps {
+interface RefundModalProps {
   orderItem: OrderItem | null;
   isOpen: boolean;
   onClose: () => void;
-  // onSuccess: () => Promise<any>;
 }
 
-export function ReturnModal({
-  orderItem,
-  isOpen,
-  onClose,
-  // onSuccess,
-}: ReturnModalProps) {
+export function RefundModal({ orderItem, isOpen, onClose }: RefundModalProps) {
   const utils = api.useUtils();
 
   const [quantity, setQuantity] = useState<number | "">("");
-  // const [returnCost, setReturnCost] = useState<number | "">("");
-  // const [returnLabel, setReturnLabel] = useState<string>("");
-  // const [returnCarrier, setReturnCarrier] = useState<string>("");
-  // const [returnTrackingNumber, setReturnTrackingNumber] = useState<string>("");
 
   // prevent scrolling main page when modal is open
   useEffect(() => {
@@ -47,25 +37,21 @@ export function ReturnModal({
   useEffect(() => {
     if (orderItem) {
       setQuantity(orderItem.quantity);
-      // setReturnCost(orderItem.returnCost ? Number(orderItem.returnCost) : "");
-      // setReturnLabel(orderItem.returnLabel ?? "");
-      // setReturnCarrier(orderItem.returnCarrier ?? "");
-      // setReturnTrackingNumber(orderItem.returnTrackingNumber ?? "");
     }
   }, [orderItem]);
 
   const invalidateQueries = async () => {
-    await utils.order.getUserOrders.invalidate();
+    await utils.admin.getAllOrders.invalidate();
   };
 
-  const returnMutation = api.orderItem.returnOrderItem.useMutation({
+  const refundMutation = api.orderItem.refundOrderItem.useMutation({
     onMutate: () => {
-      const toastId = customToast.loading("Returning...");
+      const toastId = customToast.loading("Refund...");
       return { toastId };
     },
     onSuccess: (data, vars, context) => {
       void invalidateQueries();
-      customToast.success("Return succeeded.", context?.toastId);
+      customToast.success("Refund succeeded.", context?.toastId);
     },
     onError: (error, vars, context) => {
       void invalidateQueries();
@@ -76,32 +62,9 @@ export function ReturnModal({
         return;
       }
 
-      customToast.error(`Return failed. ${error.message}`, context?.toastId);
+      customToast.error(`Refund failed. ${error.message}`, context?.toastId);
     },
   });
-
-  // const cancelReturnMutation = api.orderItem.cancelOrderItemReturn.useMutation({
-  //   onMutate: () => {
-  //     const toastId = customToast.loading("Canceling...");
-  //     return { toastId };
-  //   },
-  //   onSuccess: (data, vars, context) => {
-  //     void invalidateQueries();
-  //     customToast.success("Cancel succeeded.", context?.toastId);
-  //   },
-  //   onError: (error, vars, context) => {
-  //     void invalidateQueries();
-
-  //     // Zod input validation error
-  //     if (error.data?.zodError) {
-  //       toastZodError(error, context?.toastId);
-  //       return;
-  //     }
-
-  //     // Application-level TRPCError
-  //     customToast.error(error.message, context?.toastId);
-  //   },
-  // });
 
   if (!isOpen || !orderItem) return null;
 
@@ -111,37 +74,16 @@ export function ReturnModal({
     const finalQuantity = quantity === "" ? 0 : quantity;
     setQuantity(finalQuantity);
 
-    returnMutation.mutate({
+    refundMutation.mutate({
       orderItemId: orderItem.id,
       quantity: finalQuantity,
     });
   };
 
-  // const handleCancelReturn = () => {
-  //   // e.preventDefault();
-  //   if (
-  //     confirm(
-  //       "Reverting status to Shipped. Deleting return carrier & tracking number. Continue?",
-  //     )
-  //   ) {
-  //     const finalQuantity = quantity === "" ? 0 : quantity;
-  //     setQuantity(finalQuantity);
-
-  //     cancelReturnMutation.mutate({
-  //       orderItemId: orderItem.id,
-  //       quantity: finalQuantity,
-  //     });
-  //   }
-  // };
-
   const rejectReturnMutationIsPending =
-    returnMutation.isPending &&
-    returnMutation.variables.orderItemId === orderItem.id;
-  // const cancelReturnMutationIsPending =
-  //   cancelReturnMutation.isPending &&
-  //   cancelReturnMutation.variables.orderItemId === orderItem.id;
+    refundMutation.isPending &&
+    refundMutation.variables.orderItemId === orderItem.id;
   const isPending = rejectReturnMutationIsPending;
-  // || cancelReturnMutationIsPending;
 
   return (
     <div
@@ -167,7 +109,6 @@ export function ReturnModal({
             <label className="font-semibold">Quantity</label>
             <input
               type="number"
-              // id="quantity"
               min="1"
               max={orderItem.quantity}
               value={quantity}
@@ -187,27 +128,15 @@ export function ReturnModal({
           </div>
         </div>
 
-        {/* <div className="flex flex-col gap-1"> */}
         <div className="flex flex-col gap-4 sm:flex-row">
-          {/* {orderItem.status === "returned" && (
-            <button
-              type="button"
-              onClick={handleCancelReturn}
-              disabled={isPending}
-              className="w-full cursor-pointer rounded bg-red-600/30 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-red-600/40 disabled:cursor-default disabled:bg-red-600/20 sm:min-w-30"
-            >
-              {cancelReturnMutationIsPending ? "Canceling..." : "Cancel Return"}
-            </button>
-          )} */}
           <button
             type="submit"
             disabled={isPending}
             className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
           >
-            {rejectReturnMutationIsPending ? "Returning..." : "Return"}
+            {rejectReturnMutationIsPending ? "Refunding..." : "Refund"}
           </button>
         </div>
-        {/* </div> */}
       </form>
     </div>
   );
