@@ -1,5 +1,6 @@
 import z from "zod";
 import {
+  categories,
   orderItems,
   orders,
   // orderStatusReasonEnum,
@@ -42,6 +43,7 @@ export type ProductAndVariants = typeof products.$inferSelect & {
 export type VariantAndProduct = typeof productVariants.$inferSelect & {
   product: ProductAndVariants;
 };
+export type Category = typeof categories.$inferSelect;
 
 // ==== stock ====
 export const StockEnum = z.enum(["all", "some", "none"]);

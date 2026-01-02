@@ -5,6 +5,7 @@ import {
   pgEnum,
   pgTableCreator,
   primaryKey,
+  uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
@@ -140,7 +141,7 @@ export const products = createTable("product", (d) => ({
   name: d.varchar({ length: 255 }).notNull(),
   description: d.text(),
 
-  videos: d.json("videos").$type<string[]>(),
+  // videos: d.json("videos").$type<string[]>(),
 
   // For your "Home page: shows selected products"
   isFeatured: d.boolean("is_featured").default(false).notNull(),
@@ -195,7 +196,7 @@ export const productVariants = createTable(
 
     // --- MOVED FROM PRODUCTS ---
     price: d.numeric({ precision: 10, scale: 2 }).notNull(),
-    images: d.json("images").$type<string[]>(),
+    // images: d.json("images").$type<string[]>(),
     stock: d.integer("stock").default(0).notNull(),
 
     /**
@@ -222,6 +223,49 @@ export const productVariantsRelations = relations(
     cartItems: many(cartItems),
     // A variant can be in many order items
     orderItems: many(orderItems),
+    media: many(productVariantMedia),
+  }),
+);
+
+export const productVariantMedia = createTable(
+  "variant_media",
+  (d) => ({
+    id: d
+      .varchar({ length: 255 })
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    variantId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => productVariants.id, { onDelete: "cascade" }),
+
+    type: d.varchar({ length: 10 }).$type<"image" | "video">().notNull(),
+
+    url: d.text().notNull(),
+    key: d.text().notNull(), // UploadThing file key (CRITICAL)
+
+    position: d.integer().notNull(), // 0–9 for images, 0 for video
+
+    createdAt: d.timestamp().defaultNow().notNull(),
+  }),
+  (t) => [
+    index("variant_media_variant_idx").on(t.variantId),
+    uniqueIndex("variant_media_variant_position_idx").on(
+      t.variantId,
+      t.type,
+      t.position,
+    ),
+  ],
+);
+
+export const productVariantMediaRelations = relations(
+  productVariantMedia,
+  ({ one }) => ({
+    variant: one(productVariants, {
+      fields: [productVariantMedia.variantId],
+      references: [productVariants.id],
+    }),
   }),
 );
 
