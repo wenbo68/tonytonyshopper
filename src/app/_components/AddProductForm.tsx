@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import type { Category } from "~/type";
+import { MultiUploader } from "./MultiUploader";
 
 // Define the shape of a variant based on your admin router's input
 type VariantState = {
@@ -482,21 +483,6 @@ export default function AddProductForm({
                     placeholder="0"
                   />
                 </div>
-                {/* Images Input (Placeholder for Uploader) */}
-                {/* <div className="col-span-2 flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-gray-400">
-                    Image URLs (comma separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={variant.images}
-                    onChange={(e) =>
-                      handleVariantChange(index, "images", e.target.value)
-                    }
-                    className="rounded border border-gray-600 bg-gray-800 p-2 text-white outline-none"
-                    placeholder="https://example.com/img1.jpg, ..."
-                  />
-                </div> */}
               </div>
 
               {/* Placeholder Buttons for future features */}

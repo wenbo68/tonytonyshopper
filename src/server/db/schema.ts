@@ -26,6 +26,7 @@ import {
 export const createTable = pgTableCreator((name) => `tonytonyshopper_${name}`);
 
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
+export const mediaTypeEnum = pgEnum("media_type", ["image", "video"]);
 export const orderStatusEnum = pgEnum("order_status", orderStatusConst);
 export const orderStatusReasonEnum = pgEnum(
   "order_status_reason",
@@ -223,11 +224,11 @@ export const productVariantsRelations = relations(
     cartItems: many(cartItems),
     // A variant can be in many order items
     orderItems: many(orderItems),
-    media: many(productVariantMedia),
+    media: many(variantMedia),
   }),
 );
 
-export const productVariantMedia = createTable(
+export const variantMedia = createTable(
   "variant_media",
   (d) => ({
     id: d
@@ -240,14 +241,14 @@ export const productVariantMedia = createTable(
       .notNull()
       .references(() => productVariants.id, { onDelete: "cascade" }),
 
-    type: d.varchar({ length: 10 }).$type<"image" | "video">().notNull(),
+    type: mediaTypeEnum().notNull(),
 
     url: d.text().notNull(),
     key: d.text().notNull(), // UploadThing file key (CRITICAL)
 
     position: d.integer().notNull(), // 0–9 for images, 0 for video
 
-    createdAt: d.timestamp().defaultNow().notNull(),
+    // createdAt: d.timestamp().defaultNow().notNull(),
   }),
   (t) => [
     index("variant_media_variant_idx").on(t.variantId),
@@ -259,15 +260,12 @@ export const productVariantMedia = createTable(
   ],
 );
 
-export const productVariantMediaRelations = relations(
-  productVariantMedia,
-  ({ one }) => ({
-    variant: one(productVariants, {
-      fields: [productVariantMedia.variantId],
-      references: [productVariants.id],
-    }),
+export const variantMediaRelations = relations(variantMedia, ({ one }) => ({
+  variant: one(productVariants, {
+    fields: [variantMedia.variantId],
+    references: [productVariants.id],
   }),
-);
+}));
 
 // ======== CATEGORIES ========
 // For filtering products on your "All page"

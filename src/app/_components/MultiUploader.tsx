@@ -9,13 +9,17 @@ import {
 
 import { useUploadThing } from "~/server/utils/uploadthing";
 
-export function MultiUploader() {
+export function MultiUploader({
+  uploadThingRoute,
+}: {
+  uploadThingRoute: "variantImageUploader" | "variantVideoUploader";
+}) {
   const [files, setFiles] = useState<File[]>([]);
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
   }, []);
 
-  const { startUpload, routeConfig } = useUploadThing("imageUploader", {
+  const { startUpload, routeConfig } = useUploadThing(uploadThingRoute, {
     onClientUploadComplete: () => {
       alert("uploaded successfully!");
     },
@@ -40,11 +44,11 @@ export function MultiUploader() {
       <div>
         {files.length > 0 && (
           <button className="bg-lime-500" onClick={() => startUpload(files)}>
-            Upload {files.length} files
+            Upload {files.length} file
           </button>
         )}
       </div>
-      Drop files here!
+      Drop file here!
     </div>
   );
 }
