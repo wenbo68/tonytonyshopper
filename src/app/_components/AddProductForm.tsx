@@ -1,24 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import type { Category } from "~/type";
 import { MultiUploader } from "./MultiUploader";
 import { FaTrash, FaGripVertical, FaVideo, FaImage } from "react-icons/fa";
 
-// 1. Defined strict separate types for cleaner state management
+// 1. Types
 type MediaItem = {
   key: string;
   url: string;
 };
 
 type VariantState = {
+  id?: string; // Added for Edit mode
   price: string;
   stock: string;
   options: string;
-  // 2. Split media into two separate arrays
   images: MediaItem[];
   videos: MediaItem[];
 };
@@ -26,30 +25,100 @@ type VariantState = {
 type OptionValue = { id: string; name: string };
 type OptionGroup = { id: string; name: string; values: OptionValue[] };
 
+type AddProductFormProps = {
+  categories: Category[];
+  productId?: string;
+};
+
 export default function AddProductForm({
   categories,
-}: {
-  categories: Category[];
-}) {
+  productId,
+}: AddProductFormProps) {
   const { data: session, status } = useSession();
-  const router = useRouter();
 
+  const { data: editedProduct, isFetching: isFetchingProduct } =
+    api.product.getById.useQuery(
+      { id: productId ?? "" },
+      { enabled: !!productId },
+    );
+
+  // --- Initialize State ---
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+
+  // Initialize Variants from Initial Data
   const [variants, setVariants] = useState<VariantState[]>([]);
+
   const [error, setError] = useState<string | null>(null);
 
-  // Options State
+  // Initialize Option Groups from Initial Data (Reconstruction)
   const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([
     { id: crypto.randomUUID(), name: "", values: [] },
   ]);
+
   const [pendingValues, setPendingValues] = useState<Record<string, string>>(
     {},
   );
 
+  // Sync state when editedProduct data arrives
+  useEffect(() => {
+    if (!editedProduct) return;
+
+    // 1. Basic Info
+    setName(editedProduct.name);
+    setDescription(editedProduct.description ?? "");
+    setCategoryIds(
+      editedProduct.productsToCategories.map((ptc) => ptc.categoryId),
+    );
+
+    // 2. Reconstruct Variants
+    const loadedVariants = editedProduct.variants.map((v) => {
+      const sortedMedia = [...v.media].sort((a, b) => a.position - b.position);
+      return {
+        id: v.id,
+        price: String(v.price), // Ensure string for input
+        stock: String(v.stock), // Ensure string for input
+        options: JSON.stringify(v.options ?? {}),
+        images: sortedMedia
+          .filter((m) => m.type === "image")
+          .map((m) => ({ key: m.key, url: m.url })),
+        videos: sortedMedia
+          .filter((m) => m.type === "video")
+          .map((m) => ({ key: m.key, url: m.url })),
+      };
+    });
+    setVariants(loadedVariants);
+
+    // 3. Reconstruct Option Groups
+    const groups: Record<string, Set<string>> = {};
+    editedProduct.variants.forEach((v) => {
+      const opts = (v.options as Record<string, string>) || {};
+      Object.entries(opts).forEach(([key, val]) => {
+        if (!groups[key]) groups[key] = new Set();
+        groups[key]!.add(val);
+      });
+    });
+
+    if (Object.keys(groups).length > 0) {
+      const reconstructedGroups = Object.entries(groups).map(
+        ([groupName, valueSet]) => ({
+          id: crypto.randomUUID(),
+          name: groupName,
+          values: Array.from(valueSet).map((val) => ({
+            id: crypto.randomUUID(),
+            name: val,
+          })),
+        }),
+      );
+      setOptionGroups(reconstructedGroups);
+    } else {
+      // Reset to default if no options exist
+      setOptionGroups([{ id: crypto.randomUUID(), name: "", values: [] }]);
+    }
+  }, [editedProduct]);
+
   // Drag and Drop state
-  // 3. Added 'type' to track what exactly is being dragged
   const [draggedItem, setDraggedItem] = useState<{
     variantIndex: number;
     mediaType: "image" | "video";
@@ -57,16 +126,23 @@ export default function AddProductForm({
   } | null>(null);
 
   // --- Mutations ---
+  const utils = api.useUtils();
+
   const addProductMutation = api.admin.addProduct.useMutation({
     onSuccess: (data) => {
       alert(`Product "${name}" added with ID: ${data.id}`);
-      // router.push(`/product/all`);
     },
     onError: (err) => {
-      setError(
-        `Failed to add product: ${err.message}. Check console for details.`,
-      );
-      console.error(err);
+      setError(`Failed to add product: ${err.message}`);
+    },
+  });
+
+  const updateProductMutation = api.admin.updateProduct.useMutation({
+    onSuccess: (data) => {
+      alert(`Product "${name}" updated successfully!`);
+    },
+    onError: (err) => {
+      setError(`Failed to update product: ${err.message}`);
     },
   });
 
@@ -76,7 +152,10 @@ export default function AddProductForm({
     },
   });
 
-  // --- Option Group Handlers (Unchanged) ---
+  const isPending =
+    addProductMutation.isPending || updateProductMutation.isPending;
+
+  // --- Option Group Handlers ---
   const addOptionGroup = () => {
     setOptionGroups([
       ...optionGroups,
@@ -156,15 +235,18 @@ export default function AddProductForm({
       });
 
       const jsonOptions = JSON.stringify(optionsMap);
+
+      // Check if this variant already exists (to preserve ID, Price, Stock, Media)
       const existingVariant = variants.find((v) => v.options === jsonOptions);
 
       if (existingVariant) return existingVariant;
 
       return {
+        id: undefined, // New variant
         price: "0",
         stock: "0",
-        images: [], // Initialize empty
-        videos: [], // Initialize empty
+        images: [],
+        videos: [],
         options: jsonOptions,
       };
     });
@@ -187,7 +269,7 @@ export default function AddProductForm({
     setVariants(variants.filter((_, i) => i !== index));
   };
 
-  // --- Media Handlers (Updated for Split State) ---
+  // --- Media Handlers ---
   const addMediaToVariant = (
     index: number,
     newMedia: { key: string; url: string }[],
@@ -226,7 +308,6 @@ export default function AddProductForm({
     type: "image" | "video",
   ) => {
     const variant = variants[variantIndex]!;
-    // 1. Identify item
     const mediaItem =
       type === "image"
         ? variant.images[mediaIndex]
@@ -236,7 +317,6 @@ export default function AddProductForm({
       deleteMediaMutation.mutate({ key: mediaItem.key });
     }
 
-    // 2. Remove from specific array
     setVariants((prev) => {
       const newVariants = [...prev];
       const currVariant = newVariants[variantIndex]!;
@@ -256,7 +336,7 @@ export default function AddProductForm({
     });
   };
 
-  // --- Drag and Drop Logic (Updated for Split State) ---
+  // --- Drag and Drop Logic ---
   const onDragStart = (
     e: React.DragEvent,
     variantIndex: number,
@@ -268,7 +348,7 @@ export default function AddProductForm({
   };
 
   const onDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Necessary to allow dropping
+    e.preventDefault();
   };
 
   const onDrop = (
@@ -286,29 +366,21 @@ export default function AddProductForm({
       mediaIndex: sourceMediaIndex,
     } = draggedItem;
 
-    // Strict Checks:
-    // 1. Must stay within the same variant
     if (sourceVariantIndex !== targetVariantIndex) return;
-    // 2. Must stay within the same type (Image -> Image, Video -> Video)
     if (sourceMediaType !== targetMediaType) return;
-    // 3. Don't do anything if dropped on itself
     if (sourceMediaIndex === targetMediaIndex) return;
 
     setVariants((prev) => {
       const newVariants = [...prev];
       const variant = newVariants[sourceVariantIndex]!;
-
-      // Select the correct array to mutate
       let list =
         sourceMediaType === "image" ? [...variant.images] : [...variant.videos];
 
-      // Perform the move
       const [movedItem] = list.splice(sourceMediaIndex, 1);
       if (movedItem) {
         list.splice(targetMediaIndex, 0, movedItem);
       }
 
-      // Update state
       newVariants[sourceVariantIndex] = {
         ...variant,
         images: sourceMediaType === "image" ? list : variant.images,
@@ -344,17 +416,10 @@ export default function AddProductForm({
 
         const options = JSON.parse(v.options);
 
-        // // 4. Merge images and videos back together for the backend
-        // // We explicitly tag them with their type here
-        // const media = [
-        //   ...v.images.map((img) => ({ ...img, type: "image" as const })),
-        //   ...v.videos.map((vid) => ({ ...vid, type: "video" as const })),
-        // ];
-
         return {
+          id: v.id, // Include ID for updates
           price,
           stock,
-          // media, // <--- Sent as one combined array to backend
           options,
           images: v.images,
           videos: v.videos,
@@ -365,12 +430,24 @@ export default function AddProductForm({
       return;
     }
 
-    addProductMutation.mutate({
-      name,
-      description,
-      categoryIds,
-      variants: transformedVariants,
-    });
+    if (productId) {
+      // Update Mode
+      updateProductMutation.mutate({
+        productId,
+        name,
+        description,
+        categoryIds,
+        variants: transformedVariants,
+      });
+    } else {
+      // Create Mode
+      addProductMutation.mutate({
+        name,
+        description,
+        categoryIds,
+        variants: transformedVariants,
+      });
+    }
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -381,16 +458,36 @@ export default function AddProductForm({
     setCategoryIds(selectedOptions);
   };
 
-  if (status === "loading") return <div>Loading...</div>;
+  if (status === "loading" || isFetchingProduct)
+    return (
+      <div className="container mx-auto animate-pulse py-8 text-center">
+        Loading...
+      </div>
+    );
   if (status === "unauthenticated" || session?.user?.role !== "admin")
-    return <div>Unauthorized.</div>;
+    return (
+      <div className="flex flex-col gap-0">
+        <h2 className="text-center font-bold">Unauthorized</h2>
+      </div>
+    );
 
   return (
     <form
       onSubmit={handleSubmit}
       className="mx-auto flex max-w-4xl flex-col gap-8 pb-20 text-sm"
     >
-      {/* ... (Basic Info Block - Unchanged) ... */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">
+          {productId ? "Edit Product" : "Add Product"}
+        </h1>
+        {productId && (
+          <span className="font-mono text-xs text-gray-500">
+            ID: {productId}
+          </span>
+        )}
+      </div>
+
+      {/* Basic Info Block */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
         <h2 className="border-b border-gray-700 pb-2 text-lg font-bold text-gray-200">
           Basic Info
@@ -443,7 +540,7 @@ export default function AddProductForm({
         </div>
       </div>
 
-      {/* ... (Options Configuration Block - Unchanged) ... */}
+      {/* Options Configuration Block */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
         <div className="flex items-center justify-between border-b border-gray-700 pb-2">
           <h2 className="text-lg font-bold text-gray-200">Options</h2>
@@ -455,14 +552,12 @@ export default function AddProductForm({
             + Add Option Key
           </button>
         </div>
-        {/* ... (Same as before) ... */}
         <div className="flex flex-col gap-4">
           {optionGroups.map((group) => (
             <div
               key={group.id}
               className="flex flex-col gap-2 rounded border border-gray-700 bg-gray-900/50 p-3"
             >
-              {/* Option Group Inputs (Same as before) */}
               <div className="flex flex-col items-end gap-3 md:flex-row md:items-center">
                 <div className="flex w-full flex-col gap-1 md:w-1/3">
                   <label className="font-mono text-xs text-gray-400">
@@ -543,11 +638,11 @@ export default function AddProductForm({
           onClick={generateVariants}
           className="mt-2 w-full rounded border border-dashed border-gray-600 p-3 text-gray-400 transition-colors hover:border-gray-400 hover:bg-gray-800 hover:text-white"
         >
-          Generate Variants from Options
+          Generate/Update Variants from Options
         </button>
       </div>
 
-      {/* Variants List with Split Media Grids */}
+      {/* Variants List */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
         <h2 className="border-b border-gray-700 pb-2 text-lg font-bold text-gray-200">
           Variants ({variants.length})
@@ -565,6 +660,11 @@ export default function AddProductForm({
                   <span className="font-mono text-xs text-gray-500">
                     {variant.options}
                   </span>
+                  {variant.id && (
+                    <span className="ml-2 rounded bg-gray-800 px-1 text-[10px] text-gray-500">
+                      Existing ID: {variant.id}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -589,6 +689,8 @@ export default function AddProductForm({
                     }
                     className="rounded border border-gray-600 bg-gray-800 p-2 text-white outline-none"
                     placeholder="0.00"
+                    step="0.01"
+                    min={0.01}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -603,6 +705,7 @@ export default function AddProductForm({
                     }
                     className="rounded border border-gray-600 bg-gray-800 p-2 text-white outline-none"
                     placeholder="0"
+                    min={0}
                   />
                 </div>
               </div>
@@ -736,10 +839,14 @@ export default function AddProductForm({
       <div className="sticky bottom-4 z-10">
         <button
           type="submit"
-          disabled={addProductMutation.isPending}
+          disabled={isPending}
           className="w-full rounded-md bg-green-600 px-6 py-4 font-bold text-white shadow-lg transition-transform hover:bg-green-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-gray-600"
         >
-          {addProductMutation.isPending ? "Saving..." : "Save Product"}
+          {isPending
+            ? "Saving..."
+            : productId
+              ? "Update Product"
+              : "Create Product"}
         </button>
       </div>
     </form>

@@ -31,7 +31,7 @@ import { RejectReturnModal } from "~/app/_components/modal/RejectReturnModal";
 import { ApproveReturnModal } from "~/app/_components/modal/ApproveReturnModal";
 import { RefundModal } from "~/app/_components/modal/RefundModal";
 
-type AdminOrder = RouterOutputs["admin"]["getAdminOrders"]["orders"][number];
+type AdminOrder = RouterOutputs["order"]["getAdminOrders"]["orders"][number];
 
 export default function AdminOrdersPage() {
   const { data: session, status } = useSession();

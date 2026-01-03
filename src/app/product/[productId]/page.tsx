@@ -183,7 +183,7 @@ export default function ProductDetailPage() {
   // ==== Conditional Rendering ====
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 text-center">
+      <div className="container mx-auto animate-pulse py-8 text-center">
         Loading product...
       </div>
     );
@@ -257,7 +257,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
-        <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[560px] sm:max-w-28 sm:flex-col sm:overflow-y-auto">
+        <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[560px] sm:w-28 sm:flex-col sm:overflow-y-auto">
           {activeMediaList.map((media, index) => (
             <button
               key={`${media.id}-${index}`}
