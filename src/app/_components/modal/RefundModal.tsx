@@ -41,7 +41,7 @@ export function RefundModal({ orderItem, isOpen, onClose }: RefundModalProps) {
   }, [orderItem]);
 
   const invalidateQueries = async () => {
-    await utils.admin.getAllOrders.invalidate();
+    await utils.order.getAdminOrders.invalidate();
   };
 
   const refundMutation = api.orderItem.refundOrderItem.useMutation({

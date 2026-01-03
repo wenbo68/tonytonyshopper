@@ -74,15 +74,12 @@ export type OrderAndOrderItemsAndVariantAndProduct =
 const mediaSchema = z.object({
   key: z.string(),
   url: z.string().url(),
-  // type: z.enum(mediaTypeConst),
-  // position: z.number().min(0),
 });
 const variantSchema = z.object({
   id: z.string().optional(),
   options: z.record(z.string()),
   price: z.number().min(0.01),
   stock: z.number().int().min(0),
-  // media: z.array(mediaSchema).optional(),
   images: z.array(mediaSchema),
   videos: z.array(mediaSchema),
 });
@@ -96,7 +93,7 @@ export const updateProductInputSchema = addProductInputSchema.extend({
   productId: z.string(),
 });
 
-export const getAllOrdersInputSchema = z.object({
+export const getAdminOrdersInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(20),
 
@@ -130,7 +127,7 @@ export const getAllOrdersInputSchema = z.object({
     .optional()
     .default("date-desc"),
 });
-export type GetAllOrdersInput = z.infer<typeof getAllOrdersInputSchema>;
+export type GetAdminOrdersInput = z.infer<typeof getAdminOrdersInputSchema>;
 
 export const getUserOrdersInputSchema = z.object({
   page: z.number().min(1).optional().default(1),

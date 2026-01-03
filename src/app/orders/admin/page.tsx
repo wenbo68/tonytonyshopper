@@ -10,7 +10,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import PageSelector from "~/app/_components/pagination/Pagination";
 import { useState } from "react";
-import { getAllOrdersInputSchema, type OrderItem } from "~/type";
+import { getAdminOrdersInputSchema, type OrderItem } from "~/type";
 import OrderModal from "~/app/_components/modal/OrderModal";
 import { ShipModal } from "~/app/_components/modal/ShipModal";
 import { ItemGrid } from "~/app/_components/item/ItemGrid";
@@ -31,7 +31,7 @@ import { RejectReturnModal } from "~/app/_components/modal/RejectReturnModal";
 import { ApproveReturnModal } from "~/app/_components/modal/ApproveReturnModal";
 import { RefundModal } from "~/app/_components/modal/RefundModal";
 
-type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
+type AdminOrder = RouterOutputs["admin"]["getAdminOrders"]["orders"][number];
 
 export default function AdminOrdersPage() {
   const { data: session, status } = useSession();
@@ -83,9 +83,9 @@ export default function AdminOrdersPage() {
     sort: searchParams.get("sort") ?? undefined,
   };
 
-  const parsedInput = getAllOrdersInputSchema.safeParse(rawInput);
+  const parsedInput = getAdminOrdersInputSchema.safeParse(rawInput);
 
-  const { data, isFetching, refetch } = api.admin.getAllOrders.useQuery(
+  const { data, isFetching, refetch } = api.order.getAdminOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
     {
       enabled:

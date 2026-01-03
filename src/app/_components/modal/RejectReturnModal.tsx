@@ -61,7 +61,7 @@ export function RejectReturnModal({
   }, [orderItem]);
 
   const invalidateQueries = async () => {
-    await utils.admin.getAllOrders.invalidate();
+    await utils.order.getAdminOrders.invalidate();
   };
 
   const rejectReturnMutation = api.orderItem.rejectOrderItemReturn.useMutation({
