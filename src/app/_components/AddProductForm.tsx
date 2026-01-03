@@ -6,17 +6,23 @@ import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import type { Category } from "~/type";
 import { MultiUploader } from "./MultiUploader";
+import { FaTrash, FaGripVertical, FaVideo, FaImage } from "react-icons/fa";
 
-// Define the shape of a variant based on your admin router's input
-type VariantState = {
-  name: string;
-  price: string; // Use string for form input
-  stock: string; // Use string for form input
-  images: string; // Comma-separated URLs
-  options: string; // JSON string, e.g., {"color": "Red", "size": "M"}
+// 1. Defined strict separate types for cleaner state management
+type MediaItem = {
+  key: string;
+  url: string;
 };
 
-// Helper types for Option generation
+type VariantState = {
+  price: string;
+  stock: string;
+  options: string;
+  // 2. Split media into two separate arrays
+  images: MediaItem[];
+  videos: MediaItem[];
+};
+
 type OptionValue = { id: string; name: string };
 type OptionGroup = { id: string; name: string; values: OptionValue[] };
 
@@ -28,10 +34,8 @@ export default function AddProductForm({
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Form state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [videoUrls, setVideoUrls] = useState(""); // Comma-separated URLs
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [variants, setVariants] = useState<VariantState[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -40,15 +44,23 @@ export default function AddProductForm({
   const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([
     { id: crypto.randomUUID(), name: "", values: [] },
   ]);
-  // Temporary state for the "value" input field of each group
   const [pendingValues, setPendingValues] = useState<Record<string, string>>(
     {},
   );
 
+  // Drag and Drop state
+  // 3. Added 'type' to track what exactly is being dragged
+  const [draggedItem, setDraggedItem] = useState<{
+    variantIndex: number;
+    mediaType: "image" | "video";
+    mediaIndex: number;
+  } | null>(null);
+
+  // --- Mutations ---
   const addProductMutation = api.admin.addProduct.useMutation({
     onSuccess: (data) => {
       alert(`Product "${name}" added with ID: ${data.id}`);
-      router.push(`/product/all`);
+      // router.push(`/product/all`);
     },
     onError: (err) => {
       setError(
@@ -58,7 +70,13 @@ export default function AddProductForm({
     },
   });
 
-  // --- Option Group Handlers ---
+  const deleteMediaMutation = api.admin.deleteMedia.useMutation({
+    onError: (err) => {
+      console.error("Failed to delete media from UploadThing:", err);
+    },
+  });
+
+  // --- Option Group Handlers (Unchanged) ---
   const addOptionGroup = () => {
     setOptionGroups([
       ...optionGroups,
@@ -68,7 +86,6 @@ export default function AddProductForm({
 
   const removeOptionGroup = (id: string) => {
     setOptionGroups(optionGroups.filter((g) => g.id !== id));
-    // Clean up pending value state
     const newPending = { ...pendingValues };
     delete newPending[id];
     setPendingValues(newPending);
@@ -80,7 +97,6 @@ export default function AddProductForm({
     );
   };
 
-  // --- Option Value Handlers ---
   const addOptionValue = (groupId: string) => {
     const valName = pendingValues[groupId]?.trim();
     if (!valName) return;
@@ -88,7 +104,6 @@ export default function AddProductForm({
     setOptionGroups(
       optionGroups.map((g) => {
         if (g.id === groupId) {
-          // Prevent duplicates
           if (g.values.some((v) => v.name === valName)) return g;
           return {
             ...g,
@@ -98,7 +113,6 @@ export default function AddProductForm({
         return g;
       }),
     );
-    // Clear input
     setPendingValues({ ...pendingValues, [groupId]: "" });
   };
 
@@ -113,21 +127,17 @@ export default function AddProductForm({
     );
   };
 
-  // --- Variant Generation Logic ---
+  // --- Variant Generation ---
   const generateVariants = () => {
-    // 1. Filter out incomplete groups
     const validGroups = optionGroups.filter(
       (g) => g.name.trim() !== "" && g.values.length > 0,
     );
 
     if (validGroups.length === 0) {
-      alert(
-        "Please add at least one Option Key (e.g. Color) and one Value (e.g. Red).",
-      );
+      alert("Please add at least one Option Key and Value.");
       return;
     }
 
-    // 2. Cartesian Product Helper
     const cartesian = (sets: OptionValue[][]) => {
       return sets.reduce<OptionValue[][]>(
         (acc, curr) => acc.flatMap((x) => curr.map((y) => [...x, y])),
@@ -137,32 +147,24 @@ export default function AddProductForm({
 
     const combinations = cartesian(validGroups.map((g) => g.values));
 
-    // 3. Create Variant Objects (Preserving existing data)
     const newVariants: VariantState[] = combinations.map((combo) => {
       const optionsMap: Record<string, string> = {};
-      const nameParts: string[] = [];
 
       combo.forEach((val, idx) => {
         const key = validGroups[idx]?.name ?? "Option";
         optionsMap[key] = val.name;
-        nameParts.push(val.name);
       });
 
       const jsonOptions = JSON.stringify(optionsMap);
-
-      // Check if this variant already exists in the current state
-      // We match based on the `options` JSON string to ensure exact option match
       const existingVariant = variants.find((v) => v.options === jsonOptions);
 
-      if (existingVariant) {
-        return existingVariant;
-      }
+      if (existingVariant) return existingVariant;
 
       return {
-        name: nameParts.join(" / "),
         price: "0",
         stock: "0",
-        images: "",
+        images: [], // Initialize empty
+        videos: [], // Initialize empty
         options: jsonOptions,
       };
     });
@@ -170,7 +172,7 @@ export default function AddProductForm({
     setVariants(newVariants);
   };
 
-  // --- Variant Field Handlers ---
+  // --- Variant Handlers ---
   const handleVariantChange = (
     index: number,
     field: keyof VariantState,
@@ -185,15 +187,141 @@ export default function AddProductForm({
     setVariants(variants.filter((_, i) => i !== index));
   };
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedOptions = Array.from(
-      e.target.selectedOptions,
-      (option) => option.value,
-    );
-    setCategoryIds(selectedOptions);
+  // --- Media Handlers (Updated for Split State) ---
+  const addMediaToVariant = (
+    index: number,
+    newMedia: { key: string; url: string }[],
+    type: "image" | "video",
+  ) => {
+    setVariants((prev) => {
+      const newVariants = [...prev];
+      const variant = newVariants[index]!;
+
+      if (type === "image") {
+        if (variant.images.length + newMedia.length > 8) {
+          alert("Max 8 images allowed per variant.");
+          return prev;
+        }
+        newVariants[index] = {
+          ...variant,
+          images: [...variant.images, ...newMedia],
+        };
+      } else {
+        if (variant.videos.length + newMedia.length > 1) {
+          alert("Max 1 video allowed per variant.");
+          return prev;
+        }
+        newVariants[index] = {
+          ...variant,
+          videos: [...variant.videos, ...newMedia],
+        };
+      }
+      return newVariants;
+    });
   };
 
-  // --- Submit Handler ---
+  const removeMedia = (
+    variantIndex: number,
+    mediaIndex: number,
+    type: "image" | "video",
+  ) => {
+    const variant = variants[variantIndex]!;
+    // 1. Identify item
+    const mediaItem =
+      type === "image"
+        ? variant.images[mediaIndex]
+        : variant.videos[mediaIndex];
+
+    if (mediaItem?.key) {
+      deleteMediaMutation.mutate({ key: mediaItem.key });
+    }
+
+    // 2. Remove from specific array
+    setVariants((prev) => {
+      const newVariants = [...prev];
+      const currVariant = newVariants[variantIndex]!;
+
+      if (type === "image") {
+        newVariants[variantIndex] = {
+          ...currVariant,
+          images: currVariant.images.filter((_, i) => i !== mediaIndex),
+        };
+      } else {
+        newVariants[variantIndex] = {
+          ...currVariant,
+          videos: currVariant.videos.filter((_, i) => i !== mediaIndex),
+        };
+      }
+      return newVariants;
+    });
+  };
+
+  // --- Drag and Drop Logic (Updated for Split State) ---
+  const onDragStart = (
+    e: React.DragEvent,
+    variantIndex: number,
+    mediaType: "image" | "video",
+    mediaIndex: number,
+  ) => {
+    setDraggedItem({ variantIndex, mediaType, mediaIndex });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Necessary to allow dropping
+  };
+
+  const onDrop = (
+    e: React.DragEvent,
+    targetVariantIndex: number,
+    targetMediaType: "image" | "video",
+    targetMediaIndex: number,
+  ) => {
+    e.preventDefault();
+
+    if (!draggedItem) return;
+    const {
+      variantIndex: sourceVariantIndex,
+      mediaType: sourceMediaType,
+      mediaIndex: sourceMediaIndex,
+    } = draggedItem;
+
+    // Strict Checks:
+    // 1. Must stay within the same variant
+    if (sourceVariantIndex !== targetVariantIndex) return;
+    // 2. Must stay within the same type (Image -> Image, Video -> Video)
+    if (sourceMediaType !== targetMediaType) return;
+    // 3. Don't do anything if dropped on itself
+    if (sourceMediaIndex === targetMediaIndex) return;
+
+    setVariants((prev) => {
+      const newVariants = [...prev];
+      const variant = newVariants[sourceVariantIndex]!;
+
+      // Select the correct array to mutate
+      let list =
+        sourceMediaType === "image" ? [...variant.images] : [...variant.videos];
+
+      // Perform the move
+      const [movedItem] = list.splice(sourceMediaIndex, 1);
+      if (movedItem) {
+        list.splice(targetMediaIndex, 0, movedItem);
+      }
+
+      // Update state
+      newVariants[sourceVariantIndex] = {
+        ...variant,
+        images: sourceMediaType === "image" ? list : variant.images,
+        videos: sourceMediaType === "video" ? list : variant.videos,
+      };
+
+      return newVariants;
+    });
+
+    setDraggedItem(null);
+  };
+
+  // --- Submit ---
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -214,42 +342,55 @@ export default function AddProductForm({
         const stock = parseInt(v.stock, 10);
         if (isNaN(price) || isNaN(stock)) throw new Error("Invalid number");
 
-        const images =
-          v.images.trim() === ""
-            ? []
-            : v.images.split(",").map((u) => u.trim());
         const options = JSON.parse(v.options);
 
-        return { name: v.name, price, stock, images, options };
+        // // 4. Merge images and videos back together for the backend
+        // // We explicitly tag them with their type here
+        // const media = [
+        //   ...v.images.map((img) => ({ ...img, type: "image" as const })),
+        //   ...v.videos.map((vid) => ({ ...vid, type: "video" as const })),
+        // ];
+
+        return {
+          price,
+          stock,
+          // media, // <--- Sent as one combined array to backend
+          options,
+          images: v.images,
+          videos: v.videos,
+        };
       });
     } catch (err) {
-      setError("Invalid variant data. Check JSON format and numbers.");
+      setError("Invalid variant data. Check numbers.");
       return;
     }
-
-    const transformedVideos =
-      videoUrls.trim() === "" ? [] : videoUrls.split(",").map((u) => u.trim());
 
     addProductMutation.mutate({
       name,
       description,
-      videoUrls: transformedVideos,
       categoryIds,
       variants: transformedVariants,
     });
   };
 
-  if (status === "loading")
-    return <div className="text-center">Loading...</div>;
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedOptions = Array.from(
+      e.target.selectedOptions,
+      (option) => option.value,
+    );
+    setCategoryIds(selectedOptions);
+  };
+
+  if (status === "loading") return <div>Loading...</div>;
   if (status === "unauthenticated" || session?.user?.role !== "admin")
-    return <div className="text-center">Unauthorized.</div>;
+    return <div>Unauthorized.</div>;
 
   return (
     <form
       onSubmit={handleSubmit}
       className="mx-auto flex max-w-4xl flex-col gap-8 pb-20 text-sm"
     >
-      {/* 1. Basic Info */}
+      {/* ... (Basic Info Block - Unchanged) ... */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
         <h2 className="border-b border-gray-700 pb-2 text-lg font-bold text-gray-200">
           Basic Info
@@ -302,7 +443,7 @@ export default function AddProductForm({
         </div>
       </div>
 
-      {/* 2. Options Configuration */}
+      {/* ... (Options Configuration Block - Unchanged) ... */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
         <div className="flex items-center justify-between border-b border-gray-700 pb-2">
           <h2 className="text-lg font-bold text-gray-200">Options</h2>
@@ -314,18 +455,18 @@ export default function AddProductForm({
             + Add Option Key
           </button>
         </div>
-
-        <div id="options" className="flex flex-col gap-4">
-          {optionGroups.map((group, index) => (
+        {/* ... (Same as before) ... */}
+        <div className="flex flex-col gap-4">
+          {optionGroups.map((group) => (
             <div
               key={group.id}
               className="flex flex-col gap-2 rounded border border-gray-700 bg-gray-900/50 p-3"
             >
-              {/* Top Row: Key Name & Add Value Input */}
+              {/* Option Group Inputs (Same as before) */}
               <div className="flex flex-col items-end gap-3 md:flex-row md:items-center">
                 <div className="flex w-full flex-col gap-1 md:w-1/3">
                   <label className="font-mono text-xs text-gray-400">
-                    Option Name (e.g. Color)
+                    Option Name
                   </label>
                   <input
                     type="text"
@@ -337,10 +478,9 @@ export default function AddProductForm({
                     className="w-full rounded border border-gray-600 bg-gray-800 p-2 text-white outline-none"
                   />
                 </div>
-
                 <div className="flex w-full flex-col gap-1 md:w-1/3">
                   <label className="font-mono text-xs text-gray-400">
-                    Add Value (e.g. Red)
+                    Add Value
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -368,7 +508,6 @@ export default function AddProductForm({
                     </button>
                   </div>
                 </div>
-
                 <div className="ml-auto">
                   <button
                     type="button"
@@ -379,14 +518,7 @@ export default function AddProductForm({
                   </button>
                 </div>
               </div>
-
-              {/* Bottom Row: Chips for added values */}
               <div className="mt-1 flex flex-wrap gap-2">
-                {group.values.length === 0 && (
-                  <span className="text-xs text-gray-500 italic">
-                    No values added yet.
-                  </span>
-                )}
                 {group.values.map((val) => (
                   <span
                     key={val.id}
@@ -406,7 +538,6 @@ export default function AddProductForm({
             </div>
           ))}
         </div>
-
         <button
           type="button"
           onClick={generateVariants}
@@ -416,30 +547,21 @@ export default function AddProductForm({
         </button>
       </div>
 
-      {/* 3. Variants List */}
+      {/* Variants List with Split Media Grids */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
         <h2 className="border-b border-gray-700 pb-2 text-lg font-bold text-gray-200">
           Variants ({variants.length})
         </h2>
 
-        {variants.length === 0 && (
-          <p className="py-4 text-center text-gray-500">
-            No variants generated yet.
-          </p>
-        )}
-
-        <div id="variants" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {variants.map((variant, index) => (
             <div
               key={index}
-              className="group relative flex flex-col gap-3 rounded border border-gray-700 bg-gray-900 p-4"
+              className="flex flex-col gap-4 rounded border border-gray-700 bg-gray-900 p-4 shadow-sm"
             >
-              {/* Header with Name & Remove */}
+              {/* Variant Header */}
               <div className="flex items-start justify-between">
-                <div className="flex flex-col">
-                  <span className="text-lg font-bold text-white">
-                    {variant.name}
-                  </span>
+                <div>
                   <span className="font-mono text-xs text-gray-500">
                     {variant.options}
                   </span>
@@ -449,12 +571,12 @@ export default function AddProductForm({
                   onClick={() => removeVariant(index)}
                   className="text-sm text-red-500 hover:text-red-400"
                 >
-                  Remove
+                  Remove Variant
                 </button>
               </div>
 
-              {/* Inputs Grid */}
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {/* Price & Stock */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-400">
                     Price
@@ -485,20 +607,120 @@ export default function AddProductForm({
                 </div>
               </div>
 
-              {/* Placeholder Buttons for future features */}
-              <div className="mt-1 flex gap-2">
-                <button
-                  type="button"
-                  className="rounded border border-gray-600 bg-gray-800 px-3 py-1 text-xs text-gray-300 hover:bg-gray-700"
-                >
-                  + Upload Images
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-gray-600 bg-gray-800 px-3 py-1 text-xs text-gray-300 hover:bg-gray-700"
-                >
-                  + Add Video
-                </button>
+              {/* --- IMAGE SECTION --- */}
+              <div className="flex flex-col gap-2 rounded bg-gray-800/50 p-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-300">
+                    <FaImage /> Images (Drag to reorder)
+                  </h3>
+                  <span className="text-[10px] text-gray-500">
+                    {variant.images.length}/8
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                  {variant.images.map((item, imgIndex) => (
+                    <div
+                      key={item.key}
+                      draggable
+                      onDragStart={(e) =>
+                        onDragStart(e, index, "image", imgIndex)
+                      }
+                      onDragOver={onDragOver}
+                      onDrop={(e) => onDrop(e, index, "image", imgIndex)}
+                      className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-600 bg-gray-800 active:cursor-grabbing"
+                    >
+                      <img
+                        src={item.url}
+                        alt="Variant"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                        <FaGripVertical className="text-white drop-shadow-md" />
+                      </div>
+                      <div className="absolute top-1 right-1">
+                        <button
+                          type="button"
+                          onClick={() => removeMedia(index, imgIndex, "image")}
+                          className="rounded-full bg-red-600 p-1 text-white hover:bg-red-500"
+                        >
+                          <FaTrash size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Image Uploader Button */}
+                  {variant.images.length < 8 && (
+                    <div className="col-span-1">
+                      <MultiUploader
+                        label="+"
+                        uploadThingRoute="variantImageUploader"
+                        availability={8 - variant.images.length}
+                        onUploadSuccess={(files) =>
+                          addMediaToVariant(index, files, "image")
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* --- VIDEO SECTION --- */}
+              <div className="flex flex-col gap-2 rounded bg-gray-800/50 p-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-300">
+                    <FaVideo /> Video
+                  </h3>
+                  <span className="text-[10px] text-gray-500">
+                    {variant.videos.length}/1
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                  {variant.videos.map((item, vidIndex) => (
+                    <div
+                      key={item.key}
+                      draggable
+                      onDragStart={(e) =>
+                        onDragStart(e, index, "video", vidIndex)
+                      }
+                      onDragOver={onDragOver}
+                      onDrop={(e) => onDrop(e, index, "video", vidIndex)}
+                      className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-600 bg-gray-800 active:cursor-grabbing"
+                    >
+                      <div className="flex h-full w-full items-center justify-center bg-black">
+                        <FaVideo className="text-3xl text-gray-500" />
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                        <FaGripVertical className="text-white drop-shadow-md" />
+                      </div>
+                      <div className="absolute top-1 right-1">
+                        <button
+                          type="button"
+                          onClick={() => removeMedia(index, vidIndex, "video")}
+                          className="rounded-full bg-red-600 p-1 text-white hover:bg-red-500"
+                        >
+                          <FaTrash size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Video Uploader Button */}
+                  {variant.videos.length < 1 && (
+                    <div className="col-span-1">
+                      <MultiUploader
+                        label="+"
+                        uploadThingRoute="variantVideoUploader"
+                        availability={1 - variant.videos.length}
+                        onUploadSuccess={(files) =>
+                          addMediaToVariant(index, files, "video")
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -511,13 +733,13 @@ export default function AddProductForm({
         </div>
       )}
 
-      <div className="sticky bottom-4">
+      <div className="sticky bottom-4 z-10">
         <button
           type="submit"
           disabled={addProductMutation.isPending}
           className="w-full rounded-md bg-green-600 px-6 py-4 font-bold text-white shadow-lg transition-transform hover:bg-green-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-gray-600"
         >
-          {addProductMutation.isPending ? "Adding Product..." : "Save Product"}
+          {addProductMutation.isPending ? "Saving..." : "Save Product"}
         </button>
       </div>
     </form>

@@ -15,6 +15,8 @@ import {
   orderStatusReasonConst,
   returnReasonConst,
   rejectReturnReasonConst,
+  userRoleConst,
+  mediaTypeConst,
 } from "~/const";
 
 /**
@@ -25,8 +27,8 @@ import {
  */
 export const createTable = pgTableCreator((name) => `tonytonyshopper_${name}`);
 
-export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
-export const mediaTypeEnum = pgEnum("media_type", ["image", "video"]);
+export const userRoleEnum = pgEnum("user_role", userRoleConst);
+export const mediaTypeEnum = pgEnum("media_type", mediaTypeConst);
 export const orderStatusEnum = pgEnum("order_status", orderStatusConst);
 export const orderStatusReasonEnum = pgEnum(
   "order_status_reason",
@@ -43,6 +45,7 @@ export const rejectReturnReasonEnum = pgEnum(
 );
 
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
+export type MediaType = (typeof mediaTypeEnum.enumValues)[number];
 export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
 export type OrderStatusReason =
   (typeof orderStatusReasonEnum.enumValues)[number];
@@ -142,8 +145,6 @@ export const products = createTable("product", (d) => ({
   name: d.varchar({ length: 255 }).notNull(),
   description: d.text(),
 
-  // videos: d.json("videos").$type<string[]>(),
-
   // For your "Home page: shows selected products"
   isFeatured: d.boolean("is_featured").default(false).notNull(),
 
@@ -184,20 +185,12 @@ export const productVariants = createTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-
-    // Link back to the parent product
     productId: d
       .varchar({ length: 255 })
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
 
-    // A display name for this specific variant, e.g., "Red / Medium"
-    // You can auto-generate this on the client or server
-    name: d.varchar({ length: 255 }),
-
-    // --- MOVED FROM PRODUCTS ---
     price: d.numeric({ precision: 10, scale: 2 }).notNull(),
-    // images: d.json("images").$type<string[]>(),
     stock: d.integer("stock").default(0).notNull(),
 
     /**
@@ -235,7 +228,6 @@ export const variantMedia = createTable(
       .varchar({ length: 255 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-
     variantId: d
       .varchar({ length: 255 })
       .notNull()
@@ -245,10 +237,7 @@ export const variantMedia = createTable(
 
     url: d.text().notNull(),
     key: d.text().notNull(), // UploadThing file key (CRITICAL)
-
     position: d.integer().notNull(), // 0–9 for images, 0 for video
-
-    // createdAt: d.timestamp().defaultNow().notNull(),
   }),
   (t) => [
     index("variant_media_variant_idx").on(t.variantId),

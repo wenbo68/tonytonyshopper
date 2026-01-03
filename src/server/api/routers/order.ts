@@ -32,6 +32,7 @@ import {
   getOrderItemStatusPriority,
   // updateOrderItem,
 } from "~/server/utils/order";
+import { formatProductOptionsCaption } from "~/server/utils/product";
 // import { rejectReturnReasonConst, returnReasonConst } from "~/const";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
@@ -189,6 +190,7 @@ export const orderRouter = createTRPCRouter({
             with: {
               productVariant: {
                 with: {
+                  media: true,
                   product: {
                     columns: { name: true },
                   },
@@ -209,8 +211,14 @@ export const orderRouter = createTRPCRouter({
           if (prodNameA > prodNameB) return 1;
 
           // B. Secondary Sort: Variant Name (Options)
-          const variantNameA = a.productVariant.name?.toLowerCase() ?? "";
-          const variantNameB = b.productVariant.name?.toLowerCase() ?? "";
+          const variantNameA =
+            formatProductOptionsCaption(
+              a.productVariant.options,
+            )?.toLowerCase() ?? "";
+          const variantNameB =
+            formatProductOptionsCaption(
+              b.productVariant.options,
+            )?.toLowerCase() ?? "";
           if (variantNameA < variantNameB) return -1;
           if (variantNameA > variantNameB) return 1;
 

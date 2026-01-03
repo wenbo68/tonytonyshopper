@@ -248,7 +248,9 @@ export default function AdminOrdersPage() {
                     const variant = item.productVariant;
                     const product = variant.product;
                     const imageUrl =
-                      variant.images?.[0] ??
+                      variant.media.find(
+                        (m) => m.type === "image" && m.position === 0,
+                      )?.url ??
                       "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
                     const isMenuOpen = dropdownItemId === item.id;
 

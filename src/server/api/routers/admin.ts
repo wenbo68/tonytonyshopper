@@ -20,45 +20,39 @@ import {
   productsToCategories,
   productVariants,
   users,
+  variantMedia,
 } from "~/server/db/schema";
 import { updateProductVariantDenorms } from "~/server/utils/product";
 // import { Resend } from "resend";
-import { getAllOrdersInputSchema } from "~/type";
+import {
+  addProductInputSchema,
+  getAllOrdersInputSchema,
+  updateProductInputSchema,
+} from "~/type";
 // import { TRPCError } from "@trpc/server";
 import { getOrderItemStatusPriority } from "~/server/utils/order";
+import { UTApi } from "uploadthing/server";
+import { TRPCError } from "@trpc/server";
 
-// Zod schema for a single variant
-const variantSchema = z.object({
-  name: z.string().min(1), // e.g., "Red / Medium"
-  price: z.number().min(0.01),
-  stock: z.number().int().min(0),
-  images: z.string().url().array().optional(),
-  options: z.record(z.string()), // { "color": "Red", "size": "Medium" }
-});
-
-// Zod schema for an UPDATED variant (has an optional ID)
-const updateVariantSchema = variantSchema.extend({
-  id: z.string().optional(),
-});
-
-// const resend = new Resend(env.RESEND_API_KEY); // <--- Initialize
+// Initialize UTApi (automatically uses UPLOADTHING_TOKEN from env)
+const utapi = new UTApi();
 
 export const adminRouter = createTRPCRouter({
   /**
-   * Add a new product (Admin Only)
+   * Delete a file from UploadThing by its key.
    */
+  deleteMedia: adminProcedure
+    .input(z.object({ key: z.string() }))
+    .mutation(async ({ input }) => {
+      // Delete the file from UploadThing
+      const success = await utapi.deleteFiles(input.key);
+      return { success };
+    }),
+
   addProduct: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-        description: z.string().optional(),
-        videoUrls: z.string().url().array().optional(),
-        categoryIds: z.string().array().min(1),
-        variants: z.array(variantSchema).min(1),
-      }),
-    )
+    .input(addProductInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const { name, description, videoUrls, categoryIds, variants } = input;
+      const { name, description, categoryIds, variants } = input;
 
       // Use a transaction to ensure all or nothing is created
       const newProduct = await ctx.db.transaction(async (tx) => {
@@ -68,13 +62,14 @@ export const adminRouter = createTRPCRouter({
           .values({
             name,
             description,
-            videos: videoUrls,
           })
           .returning({ id: products.id });
 
         if (!createdProduct?.id) {
-          tx.rollback();
-          throw new Error("Failed to create product.");
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create product.",
+          });
         }
         const newProductId = createdProduct.id;
 
@@ -88,19 +83,65 @@ export const adminRouter = createTRPCRouter({
           );
         }
 
-        // 3. Create all the variants
-        await tx.insert(productVariants).values(
-          variants.map((variant) => ({
-            productId: newProductId,
-            name: variant.name,
-            price: variant.price.toString(), // Convert number to string for 'numeric'
-            stock: variant.stock,
-            images: variant.images,
-            options: variant.options,
-          })),
-        );
+        // 3. Create all the variants and capture their IDs
+        const createdVariants = await tx
+          .insert(productVariants)
+          .values(
+            variants.map((variant) => ({
+              productId: newProductId,
+              price: variant.price.toString(),
+              stock: variant.stock,
+              options: variant.options,
+            })),
+          )
+          .returning({ id: productVariants.id });
 
-        // 4. Update denormalized fields (minPrice, totalStock, etc.) <--- ADDED
+        // 4. Batch Insert media [UPDATED]
+        // We now process 'images' and 'videos' separately and merge them
+        const allMediaToInsert = variants.flatMap((variant, i) => {
+          const variantId = createdVariants[i]?.id;
+          if (!variantId) return [];
+
+          const mediaEntries = [];
+
+          console.log("variant images: ", variant.images.length); //undefined
+          console.log("variant videos: ", variant.videos.length); //undefined
+
+          // Process Images (Type: "image", Position: index in images array)
+          if (variant.images.length > 0) {
+            mediaEntries.push(
+              ...variant.images.map((img, index) => ({
+                variantId,
+                type: "image" as const,
+                url: img.url,
+                key: img.key,
+                position: index,
+              })),
+            );
+          }
+
+          // Process Videos (Type: "video", Position: index in videos array)
+          if (variant.videos.length > 0) {
+            mediaEntries.push(
+              ...variant.videos.map((vid, index) => ({
+                variantId,
+                type: "video" as const,
+                url: vid.url,
+                key: vid.key,
+                position: index,
+              })),
+            );
+          }
+
+          console.log("mediaEntries: ", mediaEntries.length); // 0 for all variants
+          return mediaEntries;
+        });
+
+        if (allMediaToInsert.length > 0) {
+          await tx.insert(variantMedia).values(allMediaToInsert);
+        }
+
+        // 5. Update denormalized fields
         await updateProductVariantDenorms(tx, newProductId);
 
         return { id: newProductId };
@@ -113,19 +154,9 @@ export const adminRouter = createTRPCRouter({
    * Update an existing product (Admin Only)
    */
   updateProduct: adminProcedure
-    .input(
-      z.object({
-        productId: z.string(), // ID of the product to update
-        name: z.string().min(1),
-        description: z.string().optional(),
-        videoUrls: z.string().url().array().optional(),
-        categoryIds: z.string().array().min(1),
-        variants: z.array(updateVariantSchema).min(1),
-      }),
-    )
+    .input(updateProductInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const { productId, name, description, videoUrls, categoryIds, variants } =
-        input;
+      const { productId, name, description, categoryIds, variants } = input;
 
       await ctx.db.transaction(async (tx) => {
         // 1. Update the parent product
@@ -397,6 +428,7 @@ export const adminRouter = createTRPCRouter({
             with: {
               productVariant: {
                 with: {
+                  media: true,
                   product: {
                     columns: { name: true },
                   },

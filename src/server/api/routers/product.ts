@@ -174,10 +174,14 @@ export const productRouter = createTRPCRouter({
         limit: pageSize,
         offset: (page - 1) * pageSize,
         with: {
-          variants: true, // Eager load variants for the product cards
+          variants: {
+            with: {
+              media: true,
+            },
+          },
           productsToCategories: {
             with: {
-              category: true, // Get category info
+              category: true,
             },
           },
         },
@@ -211,7 +215,11 @@ export const productRouter = createTRPCRouter({
       const product = await ctx.db.query.products.findFirst({
         where: eq(products.id, input.id),
         with: {
-          variants: true, // Get all variants
+          variants: {
+            with: {
+              media: true,
+            },
+          }, // Get all variants
           productsToCategories: {
             with: {
               category: true, // Get category info
@@ -296,20 +304,20 @@ export const productRouter = createTRPCRouter({
           await tx.insert(productVariants).values([
             {
               productId: tee.id,
-              name: "Red",
+              // name: "Red",
               price: "24.99",
               stock: 100,
-              images: ["https://placehold.co/600x600/f00/fff.png?text=Tee+Red"],
+              // images: ["https://placehold.co/600x600/f00/fff.png?text=Tee+Red"],
               options: { color: "Red" },
             },
             {
               productId: tee.id,
-              name: "Blue",
+              // name: "Blue",
               price: "24.99",
               stock: 50,
-              images: [
-                "https://placehold.co/600x600/00f/fff.png?text=Tee+Blue",
-              ],
+              // images: [
+              //   "https://placehold.co/600x600/00f/fff.png?text=Tee+Blue",
+              // ],
               options: { color: "Blue" },
             },
           ]);
@@ -338,12 +346,12 @@ export const productRouter = createTRPCRouter({
           await tx.insert(productVariants).values([
             {
               productId: jeans.id,
-              name: "Medium Wash / 32x30",
+              // name: "Medium Wash / 32x30",
               price: "59.99",
               stock: 30,
-              images: [
-                "https://placehold.co/600x600/e0e0e0/333.png?text=Jeans",
-              ],
+              // images: [
+              //   "https://placehold.co/600x600/e0e0e0/333.png?text=Jeans",
+              // ],
               options: { wash: "Medium", size: "32x30" },
             },
           ]);

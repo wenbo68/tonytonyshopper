@@ -105,6 +105,8 @@ export const colorClassMap = {
 // ===== Backend consts =====
 // ==========================
 
+export const userRoleConst = ["user", "admin"] as const;
+export const mediaTypeConst = ["image", "video"] as const;
 export const orderStatusConst = ["pending", "abandoned", "paid"] as const;
 export const orderStatusReasonConst = [
   "abandoned_voluntary",

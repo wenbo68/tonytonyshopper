@@ -102,9 +102,12 @@ export default function ProductsPage() {
               parseFloat(curr.price) < parseFloat(prev.price) ? curr : prev,
             );
 
-            const image =
-              variant?.images?.[0] ??
-              product.variants[0]?.images?.[0] ??
+            const imageUrl =
+              variant?.media.find((m) => m.type === "image" && m.position === 0)
+                ?.url ??
+              product.variants[0]?.media.find(
+                (m) => m.type === "image" && m.position === 0,
+              )?.url ??
               "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
 
             const numericRating = parseFloat(product.averageRating);
@@ -113,7 +116,7 @@ export default function ProductsPage() {
               <ItemCard
                 key={product.id}
                 image={{
-                  src: image,
+                  src: imageUrl,
                   alt: product.name,
                   href: `/product/${product.id}`,
                 }}

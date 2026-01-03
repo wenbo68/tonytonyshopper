@@ -12,7 +12,7 @@ import {
 import { useState } from "react";
 import { useProductVariantModalStore } from "../_hooks/useProductVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
-import type { VariantAndProduct } from "~/type";
+import type { VariantAndMediaAndProduct } from "~/type";
 import { FaPen, FaTrash } from "react-icons/fa";
 // import { ItemImage } from "../_components/item/ItemImage";
 import { ItemGrid, itemGridClassName } from "../_components/item/ItemGrid";
@@ -24,7 +24,7 @@ import {
 import { ItemCard } from "../_components/item/ItemCard";
 
 type CartItem = {
-  variant: VariantAndProduct;
+  variant: VariantAndMediaAndProduct;
   quantity: number;
 };
 
@@ -170,15 +170,15 @@ export default function CartPage() {
         {cartItems.map((item) => {
           const variant = item.variant;
           const quantity = item.quantity;
-          const image =
-            variant.images?.[0] ??
-            "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
+          const mediaUrl =
+            variant.media.find((m) => m.type === "image" && m.position === 0)
+              ?.url ?? "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
 
           return (
             <ItemCard
               key={variant.id}
               image={{
-                src: image,
+                src: mediaUrl,
                 alt: variant.product.name,
                 href: `/product/${variant.product.id}`,
               }}
@@ -187,7 +187,7 @@ export default function CartPage() {
                   <OverlayButton
                     position="topRight"
                     onClick={() =>
-                      openVariantModal(variant.product, "edit", {
+                      openVariantModal(variant.productId, "edit", {
                         variantId: variant.id,
                         quantity,
                       })

@@ -6,14 +6,16 @@ import {
   // orderStatusReasonEnum,
   products,
   productVariants,
+  variantMedia,
   type comments,
   type ReturnReason,
 } from "./server/db/schema";
-import type {
-  colorClassMap,
-  orderItemStatusConst,
-  orderStatusConst,
-  orderStatusReasonConst,
+import {
+  mediaTypeConst,
+  type colorClassMap,
+  type orderItemStatusConst,
+  type orderStatusConst,
+  type orderStatusReasonConst,
 } from "./const";
 
 // ==================================
@@ -36,13 +38,18 @@ export type CommentTree = CommentAndUser & {
 };
 
 // ==== product & variant ====
-export type Variant = typeof productVariants.$inferSelect;
-export type ProductAndVariants = typeof products.$inferSelect & {
-  variants: Variant[];
+type Product = typeof products.$inferSelect;
+export type ProductAndVariants = Product & {
+  variants: VariantAndMedia[];
 };
-export type VariantAndProduct = typeof productVariants.$inferSelect & {
-  product: ProductAndVariants;
+type Media = typeof variantMedia.$inferSelect;
+export type VariantAndMedia = typeof productVariants.$inferSelect & {
+  media: Media[];
 };
+export type VariantAndMediaAndProduct = VariantAndMedia & {
+  product: Product;
+};
+
 export type Category = typeof categories.$inferSelect;
 
 // ==== stock ====
@@ -56,7 +63,7 @@ export type StockEnum = z.infer<typeof StockEnum>;
 
 export type OrderItem = typeof orderItems.$inferSelect;
 export type OrderItemAndVariantAndProduct = typeof orderItems.$inferSelect & {
-  variant: VariantAndProduct;
+  variant: VariantAndMediaAndProduct;
 };
 export type OrderAndOrderItemsAndVariantAndProduct =
   typeof orders.$inferSelect & {
@@ -64,6 +71,31 @@ export type OrderAndOrderItemsAndVariantAndProduct =
   };
 
 // ==== search input schemas ====
+const mediaSchema = z.object({
+  key: z.string(),
+  url: z.string().url(),
+  // type: z.enum(mediaTypeConst),
+  // position: z.number().min(0),
+});
+const variantSchema = z.object({
+  id: z.string().optional(),
+  options: z.record(z.string()),
+  price: z.number().min(0.01),
+  stock: z.number().int().min(0),
+  // media: z.array(mediaSchema).optional(),
+  images: z.array(mediaSchema),
+  videos: z.array(mediaSchema),
+});
+export const addProductInputSchema = z.object({
+  name: z.string().min(1),
+  categoryIds: z.string().array().min(1),
+  description: z.string().optional(),
+  variants: z.array(variantSchema).min(1),
+});
+export const updateProductInputSchema = addProductInputSchema.extend({
+  productId: z.string(),
+});
+
 export const getAllOrdersInputSchema = z.object({
   page: z.number().min(1).optional().default(1),
   pageSize: z.number().min(1).max(50).optional().default(20),

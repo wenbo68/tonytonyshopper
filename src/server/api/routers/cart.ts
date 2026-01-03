@@ -16,11 +16,13 @@ export const cartRouter = createTRPCRouter({
       with: {
         productVariant: {
           with: {
-            product: {
-              with: {
-                variants: true, // <--- CHANGED: Fetch all variants to populate the Edit Modal instantly
-              },
-            },
+            media: true,
+            product: true,
+            // product: {
+            //   with: {
+            //     variants: true, // <--- CHANGED: Fetch all variants to populate the Edit Modal instantly
+            //   },
+            // },
           },
         },
       },

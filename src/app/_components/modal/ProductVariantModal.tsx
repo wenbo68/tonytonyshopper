@@ -244,9 +244,12 @@ export function ProductVariantModal() {
   // === 8. Render Logic ===
   if (!isOpen) return null;
 
-  const displayImage =
-    selectedVariant?.images?.[0] ??
-    product?.variants[0]?.images?.[0] ??
+  const displayMediaUrl =
+    selectedVariant?.media.find((m) => m.type === "image" && m.position === 0)
+      ?.url ??
+    product?.variants[0]?.media.find(
+      (m) => m.type === "image" && m.position === 0,
+    )?.url ??
     "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
 
   const displayPrice = selectedVariant
@@ -280,7 +283,7 @@ export function ProductVariantModal() {
           <div className="scrollbar-hide flex w-full flex-col gap-5 overflow-y-auto rounded bg-gray-900 p-4">
             <div className="flex flex-col gap-3">
               <ItemImage
-                src={displayImage}
+                src={displayMediaUrl}
                 alt={product.name ?? "Product image"}
                 href={`/product/${product.id}`}
                 onClick={closeModal}

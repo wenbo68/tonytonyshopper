@@ -3,7 +3,7 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import type { ReactNode } from "react";
 
-interface ItemImageProps {
+interface ItemMediaProps {
   src: string;
   alt: string;
   href?: string;
@@ -21,7 +21,7 @@ export function ItemImage({
   children,
   className,
   imageClassName,
-}: ItemImageProps) {
+}: ItemMediaProps) {
   const imageContent = (
     <Image
       src={src}
