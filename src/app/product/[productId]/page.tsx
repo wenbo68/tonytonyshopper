@@ -12,6 +12,15 @@ import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
 
+// Helper type for media items
+type MediaItem = {
+  id: string;
+  type: "image" | "video";
+  url: string;
+  position: number;
+  key: string;
+};
+
 export default function ProductDetailPage() {
   // ==== hooks ====
   const { data: session } = useSession();
@@ -22,7 +31,7 @@ export default function ProductDetailPage() {
   const { productId } = useProductContext();
 
   // ==== states ====
-  const [activeImage, setActiveImage] = useState<string>("");
+  const [activeMedia, setActiveMedia] = useState<MediaItem | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
@@ -120,27 +129,56 @@ export default function ProductDetailPage() {
     });
   }, [selectedOptions, product?.variants]);
 
-  // ==== effect & memo: images ====
+  // ==== effect & memo: media ====
 
-  // Calculate the list of images to display
-  const activeImageList = useMemo(() => {
-    if (selectedVariant?.images && selectedVariant.images.length > 0) {
-      return selectedVariant.images;
+  // Calculate the list of media (images/videos) to display
+  const activeMediaList = useMemo(() => {
+    let rawList: MediaItem[] = [];
+
+    // 1. Try selected variant's media
+    if (selectedVariant?.media && selectedVariant.media.length > 0) {
+      rawList = selectedVariant.media;
     }
-    // Fallback: If no variant selected or variant has no images, use first variant's images
-    if (product?.variants[0]?.images && product.variants[0].images.length > 0) {
-      return product.variants[0].images;
+    // 2. Fallback: First variant's media
+    else if (
+      product?.variants[0]?.media &&
+      product.variants[0].media.length > 0
+    ) {
+      rawList = product.variants[0].media;
     }
-    // Fallback: Placeholder
-    return ["https://placehold.co/600x600/eee/ccc.png?text=No+Image"];
+    // 3. Fallback: Placeholder
+    else {
+      return [
+        {
+          id: "placeholder",
+          type: "image",
+          url: "https://placehold.co/600x600/eee/ccc.png?text=No+Image",
+          position: 0,
+          key: "placeholder",
+        },
+      ] as MediaItem[];
+    }
+
+    // Sort: Images first, then Videos. Secondary sort by position.
+    return [...rawList].sort((a, b) => {
+      // Priority 1: Type (Image < Video)
+      if (a.type !== b.type) {
+        return a.type === "image" ? -1 : 1;
+      }
+      // Priority 2: Position
+      return a.position - b.position;
+    });
   }, [selectedVariant, product]);
 
-  // Sync activeImage when the available list changes (e.g., variant switch)
+  // Sync activeMedia when the available list changes
   useEffect(() => {
-    if (activeImageList.length > 0) {
-      setActiveImage(activeImageList[0] ?? "");
+    if (activeMediaList.length > 0) {
+      setActiveMedia(activeMediaList[0]!);
     }
-  }, [activeImageList]);
+  }, [activeMediaList]);
+
+  // Determine what to show in the main view
+  const currentMedia = activeMedia ?? activeMediaList[0];
 
   // ==== Conditional Rendering ====
   if (isLoading) {
@@ -182,24 +220,32 @@ export default function ProductDetailPage() {
   return (
     <>
       {/* images */}
-      {/* Left: Image Gallery */}
+      {/* Left: Image/Video Gallery */}
       <div className="flex w-full flex-col gap-3 sm:flex-row">
-        {/* Main Image */}
-        <div className="relative aspect-square w-full grow overflow-hidden rounded border border-gray-800 bg-gray-900">
-          <Image
-            src={
-              activeImage === ""
-                ? (activeImageList[0] ??
-                  "https://placehold.co/600x600/e0e0e0/333.png?text=No-Images")
-                : activeImage
-            }
-            alt={product.name ?? "Product image"}
-            fill
-            className="object-cover"
-            priority
-          />
+        {/* Main Media View */}
+        <div className="relative aspect-square w-full grow overflow-hidden rounded bg-gray-900">
+          {currentMedia?.type === "video" ? (
+            <video
+              src={currentMedia.url}
+              controls
+              className="h-full w-full object-contain"
+              // Optional: You could add a poster image here if you have one
+            />
+          ) : (
+            <Image
+              src={
+                currentMedia?.url ??
+                "https://placehold.co/600x600/e0e0e0/333.png?text=No-Image"
+              }
+              alt={product.name ?? "Product image"}
+              fill
+              className="object-contain"
+              priority
+            />
+          )}
+
           {/* Price Tag (Bottom-Left) */}
-          <div className="absolute bottom-2 left-2 z-10 flex flex-wrap gap-2">
+          <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
             <div className="rounded bg-black/70 px-3 py-2 text-xs font-bold text-gray-300 backdrop-blur-md">
               {displayPrice}
             </div>
@@ -209,25 +255,50 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+
         {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
-        <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[560px] sm:min-w-28 sm:flex-col sm:overflow-y-auto">
-          {activeImageList.map((img, index) => (
+        <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[560px] sm:max-w-28 sm:flex-col sm:overflow-y-auto">
+          {activeMediaList.map((media, index) => (
             <button
-              key={`${img}-${index}`}
-              onClick={() => setActiveImage(img)}
+              key={`${media.id}-${index}`}
+              onClick={() => setActiveMedia(media)}
               className={clsx(
                 "relative aspect-square w-20 shrink-0 overflow-hidden rounded border-2 transition-all sm:w-full",
-                activeImage === img
-                  ? "border-blue-500 opacity-100 ring-2 ring-blue-500/20"
+                activeMedia?.id === media.id
+                  ? "border-blue-500 opacity-100"
                   : "border-transparent bg-gray-800 opacity-60 hover:opacity-100",
               )}
             >
-              <Image
-                src={img}
-                alt={`Product view ${index + 1}`}
-                fill
-                className="object-cover"
-              />
+              {media.type === "video" ? (
+                <div className="relative h-full w-full">
+                  <video
+                    src={media.url}
+                    className="h-full w-full object-contain"
+                  />
+                  {/* Play Icon Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="h-8 w-8 text-white drop-shadow-md"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              ) : (
+                <Image
+                  src={media.url}
+                  alt={`Product view ${index + 1}`}
+                  fill
+                  className="object-contain"
+                />
+              )}
             </button>
           ))}
         </div>
