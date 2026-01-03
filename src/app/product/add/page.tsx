@@ -1,4 +1,4 @@
-import AddProductForm from "~/app/_components/AddProductForm";
+import ProductForm from "~/app/_components/ProductForm";
 import { api } from "~/trpc/server";
 
 export default async function AddProductPage() {
@@ -7,7 +7,7 @@ export default async function AddProductPage() {
 
   return (
     <section className="mx-auto max-w-2xl">
-      <AddProductForm categories={categories} />
+      <ProductForm categories={categories} />
     </section>
   );
 }

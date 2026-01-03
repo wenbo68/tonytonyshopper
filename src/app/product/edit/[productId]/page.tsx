@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import AddProductForm from "~/app/_components/AddProductForm";
+import ProductForm from "~/app/_components/ProductForm";
 import { api } from "~/trpc/server";
 
 export default async function EditProductPage({
@@ -25,7 +25,7 @@ export default async function EditProductPage({
   // 3. Render the shared form with initial data
   return (
     <section className="mx-auto max-w-2xl">
-      <AddProductForm
+      <ProductForm
         categories={categories}
         // initialData={product}
         productId={productId}

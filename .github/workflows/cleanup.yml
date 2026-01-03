@@ -1,0 +1,53 @@
+# .github/workflows/cleanup.yml
+name: Clean UploadThing Orphans
+
+on:
+  schedule:
+    # Runs at 04:00 UTC every day
+    - cron: "0 4 * * *"
+  # Allows you to run this workflow manually from the Actions tab for testing
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Cleanup Script
+        run: npx tsx src/scripts/clean-uploadthing.ts
+        env:
+          # These secrets must be added in your GitHub Repo Settings
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
+          # If your DB requires SSL (like Neon/Vercel Postgres), it usually handles it via the URL,
+          # but sometimes NODE_TLS_REJECT_UNAUTHORIZED=0 is needed for local scripts if SSL certs are tricky.

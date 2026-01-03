@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import type { Category } from "~/type";
 import { MultiUploader } from "./MultiUploader";
 import { FaTrash, FaGripVertical, FaVideo, FaImage } from "react-icons/fa";
@@ -25,15 +25,15 @@ type VariantState = {
 type OptionValue = { id: string; name: string };
 type OptionGroup = { id: string; name: string; values: OptionValue[] };
 
-type AddProductFormProps = {
+type ProductFormProps = {
   categories: Category[];
   productId?: string;
 };
 
-export default function AddProductForm({
+export default function ProductForm({
   categories,
   productId,
-}: AddProductFormProps) {
+}: ProductFormProps) {
   const { data: session, status } = useSession();
 
   const { data: editedProduct, isFetching: isFetchingProduct } =
@@ -146,11 +146,11 @@ export default function AddProductForm({
     },
   });
 
-  const deleteMediaMutation = api.admin.deleteMedia.useMutation({
-    onError: (err) => {
-      console.error("Failed to delete media from UploadThing:", err);
-    },
-  });
+  // const deleteMediaMutation = api.admin.deleteMedia.useMutation({
+  //   onError: (err) => {
+  //     console.error("Failed to delete media from UploadThing:", err);
+  //   },
+  // });
 
   const isPending =
     addProductMutation.isPending || updateProductMutation.isPending;
@@ -313,9 +313,9 @@ export default function AddProductForm({
         ? variant.images[mediaIndex]
         : variant.videos[mediaIndex];
 
-    if (mediaItem?.key) {
-      deleteMediaMutation.mutate({ key: mediaItem.key });
-    }
+    // if (mediaItem?.key) {
+    //   deleteMediaMutation.mutate({ key: mediaItem.key });
+    // }
 
     setVariants((prev) => {
       const newVariants = [...prev];

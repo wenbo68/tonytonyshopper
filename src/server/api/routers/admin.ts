@@ -1,54 +1,16 @@
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  gte,
-  ilike,
-  inArray,
-  lte,
-  or,
-  sql,
-} from "drizzle-orm";
-import { z } from "zod";
+import { and, eq, inArray } from "drizzle-orm";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import {
-  orderItems,
-  orders,
   products,
   productsToCategories,
   productVariants,
-  users,
   variantMedia,
 } from "~/server/db/schema";
 import { updateProductVariantDenorms } from "~/server/utils/product";
-// import { Resend } from "resend";
-import {
-  addProductInputSchema,
-  getAdminOrdersInputSchema,
-  updateProductInputSchema,
-} from "~/type";
-// import { TRPCError } from "@trpc/server";
-import { getOrderItemStatusPriority } from "~/server/utils/order";
-import { UTApi } from "uploadthing/server";
+import { addProductInputSchema, updateProductInputSchema } from "~/type";
 import { TRPCError } from "@trpc/server";
 
-// Initialize UTApi (automatically uses UPLOADTHING_TOKEN from env)
-const utapi = new UTApi();
-
 export const adminRouter = createTRPCRouter({
-  /**
-   * Delete a file from UploadThing by its key.
-   */
-  deleteMedia: adminProcedure
-    .input(z.object({ key: z.string() }))
-    .mutation(async ({ input }) => {
-      // Delete the file from UploadThing
-      const success = await utapi.deleteFiles(input.key);
-      return { success };
-    }),
-
   addProduct: adminProcedure
     .input(addProductInputSchema)
     .mutation(async ({ ctx, input }) => {
