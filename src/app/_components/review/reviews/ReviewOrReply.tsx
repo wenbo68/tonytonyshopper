@@ -31,7 +31,7 @@ export default function ReviewOrReply({
   const [isWritingReply, setIsWritingReply] = useState(false);
 
   const [updateError, setUpdateError] = useState("");
-  const [deleteError, setDeleteError] = useState("");
+  // const [deleteError, setDeleteError] = useState("");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -54,8 +54,8 @@ export default function ReviewOrReply({
   }, []);
 
   const invalidateQueries = async (productId: string) => {
+    utils.comment.getAverageRating.invalidate({ productId });
     await utils.comment.getCommentTree.invalidate();
-    await utils.comment.getAverageRating.invalidate({ productId });
     // await utils.comment.getUserReviewForProduct.invalidate({ productId });
   };
 
@@ -64,15 +64,15 @@ export default function ReviewOrReply({
       const toastId = customToast.loading("Deleting...");
       return { toastId };
     },
-    onSuccess: (data, input, context) => {
-      void invalidateQueries(productId);
+    onSuccess: async (data, input, context) => {
+      await invalidateQueries(productId);
       customToast.success("Delete succeeded.", context?.toastId);
     },
     onError: (err, input, context) => {
       void invalidateQueries(productId);
       // setError("Failed to delete review. Please try again.");
       customToast.error("Delete failed. Please try again.", context?.toastId);
-      console.error("ReviewOrReply deleteMutation onError:", err);
+      // console.error("ReviewOrReply deleteMutation onError:", err);
     },
     // onSettled: () => invalidateQueries(productId),
   });
@@ -82,21 +82,21 @@ export default function ReviewOrReply({
   };
 
   const updateMutation = api.comment.update.useMutation({
-    onMutate: () => {
-      const toastId = customToast.loading("Updating...");
-      return { toastId };
-    },
-    onSuccess: (data, input, context) => {
-      void invalidateQueries(productId);
-      customToast.success("Update succeeded.", context?.toastId);
+    // onMutate: () => {
+    //   const toastId = customToast.loading("Updating...");
+    //   return { toastId };
+    // },
+    onSuccess: async (data, input, context) => {
+      await invalidateQueries(productId);
+      // customToast.success("Update succeeded.", context?.toastId);
+      setIsEditing(false);
     },
     onError: (err, input, context) => {
       void invalidateQueries(productId);
-      // setError("Failed to delete review. Please try again.");
-      customToast.error("Update failed. Please try again.", context?.toastId);
-      console.error("ReviewOrReply updateMutation onError:", err);
+      setUpdateError("Failed to update. Please try again.");
+      // customToast.error("Update failed. Please try again.", context?.toastId);
+      // console.error("ReviewOrReply updateMutation onError:", err);
     },
-    // onSettled: () => invalidateQueries(productId),
   });
 
   const handleUpdate = ({ e, id, type, rating, text }: UpdateCommentInput) => {
@@ -222,7 +222,7 @@ export default function ReviewOrReply({
       ) : (
         // show review/reply
         <div className="flex flex-col gap-2">
-          {deleteError && <p className="text-sm text-red-400">{deleteError}</p>}
+          {/* {deleteError && <p className="text-sm text-red-400">{deleteError}</p>} */}
           <div className="flex gap-3">
             <Image
               src={comment.user.image ?? ""}

@@ -75,8 +75,6 @@ export default function RootLayout({
 // just get rid of guest purchase (they have to provide name and email at checkout anyway)
 // reasoning: hard to handle pending orders in db from guests
 
-// in cart, you can change an item's quantity, but if you checkout before the refetch happens, it will use the previous quantity
-
 // use shipping api (shippo, easypost, etc) to tracking shipping status (also automates creation of tracking number, return label, etc)
 
 // each product (or product variant) should store weight/dimension (for return purposes)
@@ -90,6 +88,3 @@ export default function RootLayout({
 // 1. optimistic update
 // 2. upload image/video
 // 3. text filter (but allows multiple entries)
-
-// customize multi uploader. then store image/video urls to db.
-// debug image grid

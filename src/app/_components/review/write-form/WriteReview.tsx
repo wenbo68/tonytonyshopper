@@ -85,6 +85,22 @@ export default function WriteReview({ updateInput }: WriteReviewProps) {
     });
   };
 
+  const handleCancel = () => {
+    updateInput?.setIsEditing(false);
+    setError("");
+  };
+
+  const handleSubmit = (e: FormEvent<Element>) =>
+    updateInput
+      ? updateInput.handleUpdate({
+          e,
+          id: updateInput.commentId,
+          type: "review",
+          rating,
+          text,
+        })
+      : handleAdd(e);
+
   if (!session)
     return (
       <p
@@ -117,17 +133,7 @@ export default function WriteReview({ updateInput }: WriteReviewProps) {
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <form
-        onSubmit={(e: FormEvent<Element>) =>
-          updateInput
-            ? updateInput.handleUpdate({
-                e,
-                id: updateInput.commentId,
-                type: "review",
-                rating,
-                text,
-              })
-            : handleAdd(e)
-        }
+        onSubmit={handleSubmit}
         className={`bg-gray-900 ${
           updateInput ? `` : `p-5`
         } flex flex-col gap-4 rounded text-sm text-gray-400`}
@@ -162,10 +168,7 @@ export default function WriteReview({ updateInput }: WriteReviewProps) {
           <div className="flex justify-end gap-4 text-gray-500">
             <button
               type="button"
-              onClick={() => {
-                updateInput.setIsEditing(false);
-                setError("");
-              }}
+              onClick={handleCancel}
               disabled={updateInput.isUpdatePending}
               className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
             >
