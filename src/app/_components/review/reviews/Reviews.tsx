@@ -7,6 +7,9 @@ import ReviewOrReply from "./ReviewOrReply";
 import Pagination from "../../pagination/Pagination";
 // import ReviewsFallback from "./ReviewsFallback";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
+import AvgRating from "../rating/AvgRating";
+import ReviewFilters from "../../filter/filters/ReviewFilters";
+import ReviewFilterPills from "../../filter/filterPills/ReviewFilterPills";
 
 export default function Reviews() {
   const { productId } = useProductContext();
@@ -72,6 +75,8 @@ export default function Reviews() {
 
   return (
     <>
+      <ReviewFilters />
+      <ReviewFilterPills />
       {/* reviews */}
       <div className="flex flex-col gap-2 lg:gap-4">
         {commentTree.map((comment) => (

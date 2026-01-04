@@ -11,20 +11,19 @@ export default function StarRating({
   setRating?: (rating: number) => void;
   interactive?: boolean;
 }) {
+  const starSize = "h-3.5 w-3.5";
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((starValue) => {
         let icon;
 
         if (rating >= starValue) {
           // Full Star
-          icon = (
-            <FaStar className="h-3.5 w-3.5 text-yellow-500/80 sm:h-4 sm:w-4" />
-          );
+          icon = <FaStar className={`text-yellow-500/80 ${starSize}`} />;
         } else if (rating >= starValue - 0.99) {
           // Layered Half Star
           icon = (
-            <div className="relative h-3.5 w-3.5 sm:h-4 sm:w-4">
+            <div className={`relative ${starSize}`}>
               {/* Bottom Layer: Full Gray Star */}
               <FaStar className="absolute top-0 left-0 h-full w-full text-gray-600" />
               {/* Top Layer: Half Yellow Star */}
@@ -33,7 +32,7 @@ export default function StarRating({
           );
         } else {
           // Empty Star
-          icon = <FaStar className="h-3.5 w-3.5 text-gray-600 sm:h-4 sm:w-4" />;
+          icon = <FaStar className={`text-gray-600 ${starSize}`} />;
         }
 
         return (

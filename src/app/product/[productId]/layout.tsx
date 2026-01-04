@@ -12,7 +12,7 @@ export default async function Layout({
 
   return (
     <ProductProvider productId={productId}>
-      <section className="mx-auto flex max-w-2xl flex-col gap-5">
+      <section className="mx-auto flex max-w-2xl flex-col gap-8 sm:gap-10">
         {children}
         <ReviewSection />
       </section>

@@ -9,18 +9,8 @@ import { ReviewFilterProvider } from "~/app/_contexts/filter/ReviewFilterProvide
 export default function ReviewSection() {
   return (
     <ReviewFilterProvider>
-      <section className="flex flex-col gap-5">
-        {/* title */}
-        <div className="flex flex-col gap-0">
-          <h2 className="text-lg font-semibold text-gray-300">Reviews</h2>
-          {/* <p className="text-sm text-gray-500">
-            See what others are saying... or say something yourself!
-          </p> */}
-        </div>
-
+      <section className="flex flex-col gap-5 sm:gap-7">
         <AvgRating />
-        <ReviewFilters />
-        <ReviewFilterPills />
         <Reviews />
         {/* <WriteReview /> */}
       </section>

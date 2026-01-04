@@ -1,6 +1,11 @@
-import { eq, avg, count, sql, min, max, sum } from "drizzle-orm";
+import { eq, avg, count, sql, min, max, sum, asc, and } from "drizzle-orm";
 import type { PgTransaction } from "drizzle-orm/pg-core";
-import { products, comments, productVariants } from "~/server/db/schema";
+import {
+  products,
+  comments,
+  productVariants,
+  variantMedia,
+} from "~/server/db/schema";
 
 export function formatNumber(num: number) {
   return Intl.NumberFormat("en", {
@@ -84,11 +89,29 @@ export async function updateProductVariantDenorms(
   const minPrice = stats?.minPrice ?? "0";
   const maxPrice = stats?.maxPrice ?? "0";
   const totalStock = stats?.totalStock ?? 0;
-
   // If the lowest stock for any variant is 0, this is true.
   const hasOutOfStockVariants = (stats?.minStock ?? 0) === 0 && totalStock > 0;
 
-  // 2. Update the products table with the new stats
+  // 2. get image url (1st image of 1st variant)
+  // not using min price image because...
+  // 1) there may be many variants with same price
+  // 2) when you open product var modal, the first image shown is not necessarily min price image
+  const [media] = await tx
+    .select({ url: variantMedia.url })
+    .from(variantMedia)
+    .innerJoin(productVariants, eq(variantMedia.variantId, productVariants.id))
+    .where(
+      and(
+        eq(productVariants.productId, productId),
+        eq(variantMedia.type, "image"),
+      ),
+    )
+    .orderBy(asc(variantMedia.position))
+    .limit(1);
+
+  const mainImage = media?.url ?? null;
+
+  // 3. Update the products table with the new stats
   await tx
     .update(products)
     .set({
@@ -96,6 +119,7 @@ export async function updateProductVariantDenorms(
       maxPrice,
       totalStock,
       hasOutOfStockVariants,
+      imageUrl: mainImage,
     })
     .where(eq(products.id, productId));
 }

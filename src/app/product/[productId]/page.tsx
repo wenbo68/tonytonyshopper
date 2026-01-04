@@ -54,31 +54,32 @@ export default function ProductDetailPage() {
       id: productId,
     },
     {
-      // Check if this product already exists in the 'product.search' cache (from 'All Products' page)
-      initialData: () => {
-        // tRPC query keys are arrays where the first element is the path array
-        // We look for any queries starting with ['product', 'search']
-        const allSearchQueries = queryClient.getQueriesData({
-          queryKey: [["product", "search"]],
-        });
+      // // Check if this product already exists in the 'product.search' cache (from 'All Products' page)
+      // initialData: () => {
+      //   // tRPC query keys are arrays where the first element is the path array
+      //   // We look for any queries starting with ['product', 'search']
+      //   const allSearchQueries = queryClient.getQueriesData({
+      //     queryKey: [["product", "search"]],
+      //   });
 
-        for (const [, queryData] of allSearchQueries) {
-          // Cast queryData to expected shape (it has a 'products' array)
-          const data = queryData as {
-            products: Array<{ id: string; [key: string]: any }>;
-          };
+      //   for (const [, queryData] of allSearchQueries) {
+      //     // Cast queryData to expected shape (it has a 'products' array)
+      //     const data = queryData as {
+      //       products: Array<{ id: string; [key: string]: any }>;
+      //     };
 
-          const foundProduct = data?.products?.find((p) => p.id === productId);
+      //     const foundProduct = data?.products?.find((p) => p.id === productId);
 
-          if (foundProduct) {
-            // Found it! Return it as the initial data.
-            console.log("found");
-            return foundProduct as any;
-          }
-        }
-        console.log("not found");
-        return undefined;
-      },
+      //     if (foundProduct) {
+      //       // Found it! Return it as the initial data.
+      //       console.log("found");
+      //       return foundProduct as any;
+      //     }
+      //   }
+      //   console.log("not found");
+      //   return undefined;
+      // },
+
       // If we found initial data, consider it fresh for 5 mins so we don't immediately background refetch
       staleTime: 1000 * 60 * 10,
     },

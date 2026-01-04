@@ -98,16 +98,12 @@ export default function ProductsPage() {
       <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
         <ItemGrid>
           {data.products.map((product) => {
-            const variant = product.variants.reduce((prev, curr) =>
-              parseFloat(curr.price) < parseFloat(prev.price) ? curr : prev,
-            );
+            // const variant = product.variants.reduce((prev, curr) =>
+            //   parseFloat(curr.price) < parseFloat(prev.price) ? curr : prev,
+            // );
 
             const imageUrl =
-              variant?.media.find((m) => m.type === "image" && m.position === 0)
-                ?.url ??
-              product.variants[0]?.media.find(
-                (m) => m.type === "image" && m.position === 0,
-              )?.url ??
+              product.imageUrl ??
               "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
 
             const numericRating = parseFloat(product.averageRating);
@@ -151,7 +147,7 @@ export default function ProductsPage() {
 
                     {/* Add to Cart Button */}
                     <AddToCartButton
-                      product={product}
+                      product={product.id}
                       className={`${circButtonClass} ${overlayPositionClasses.topRight}`}
                     >
                       <FaCartPlus className="" size={14} />
@@ -161,7 +157,7 @@ export default function ProductsPage() {
                     <OverlayTag position="bottomLeft">
                       <span className="font-semibold">
                         {product.minPrice === product.maxPrice
-                          ? formatCurrency(variant.price)
+                          ? formatCurrency(product.minPrice)
                           : `From ${formatCurrency(product.minPrice)}`}
                       </span>
                     </OverlayTag>

@@ -10,7 +10,7 @@ export function AddToCartButton({
   className,
   children,
 }: {
-  product: ProductAndVariants;
+  product: ProductAndVariants | string;
   initialOptions?: Record<string, string>;
   className?: string;
   children?: ReactNode;

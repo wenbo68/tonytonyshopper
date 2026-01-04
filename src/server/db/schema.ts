@@ -153,6 +153,7 @@ export const products = createTable("product", (d) => ({
   reviewCount: d.integer("review_count").default(0).notNull(),
 
   // --- variant denorm fields ---
+  imageUrl: d.text(),
   minPrice: d.numeric({ precision: 10, scale: 2 }).default("0").notNull(),
   maxPrice: d.numeric({ precision: 10, scale: 2 }).default("0").notNull(),
   totalStock: d.integer("total_stock").default(0).notNull(),

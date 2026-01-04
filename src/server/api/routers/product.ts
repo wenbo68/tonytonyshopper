@@ -173,18 +173,18 @@ export const productRouter = createTRPCRouter({
         orderBy: [orderByClause],
         limit: pageSize,
         offset: (page - 1) * pageSize,
-        with: {
-          variants: {
-            with: {
-              media: true,
-            },
-          },
-          productsToCategories: {
-            with: {
-              category: true,
-            },
-          },
-        },
+        // with: {
+        //   variants: {
+        //     with: {
+        //       media: true,
+        //     },
+        //   },
+        //   productsToCategories: {
+        //     with: {
+        //       category: true,
+        //     },
+        //   },
+        // },
       });
 
       return {
@@ -244,11 +244,12 @@ export const productRouter = createTRPCRouter({
       const variantList = await ctx.db.query.productVariants.findMany({
         where: inArray(productVariants.id, input),
         with: {
-          product: {
-            with: {
-              variants: true, // <--- CHANGED: Fetch all variants for guest cart editing
-            },
-          },
+          product: true,
+          // product: {
+          //   with: {
+          //     variants: true, // <--- CHANGED: Fetch all variants for guest cart editing
+          //   },
+          // },
         },
       });
       return variantList;
