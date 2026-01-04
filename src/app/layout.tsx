@@ -86,5 +86,7 @@ export default function RootLayout({
 
 // three things to work on:
 // 1. optimistic update
-// 2. upload image/video
-// 3. text filter (but allows multiple entries)
+// 2. upload image/video in comment/return
+// 3. text filter but allows multiple entries (eg for order items)
+// 4. finish home page
+// 5. better ui for add/edit product
