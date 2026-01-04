@@ -85,8 +85,10 @@ export default function RootLayout({
 // don't think about label in return; the steps are now simplified. implement requested business logic when there is a real client
 
 // three things to work on:
-// 1. optimistic update
+// 0. product/all prefetch, orders prefetch
+// 1. optimistic update for orders page (cart page done, reviews abandoned)
 // 2. upload image/video in comment/return
+// 2. multiple images/videos in product variant modal
 // 3. text filter but allows multiple entries (eg for order items)
 // 4. finish home page
 // 5. better ui for add/edit product

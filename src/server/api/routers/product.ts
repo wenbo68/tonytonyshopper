@@ -244,6 +244,7 @@ export const productRouter = createTRPCRouter({
       const variantList = await ctx.db.query.productVariants.findMany({
         where: inArray(productVariants.id, input),
         with: {
+          media: true,
           product: true,
           // product: {
           //   with: {
