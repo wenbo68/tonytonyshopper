@@ -5,33 +5,35 @@ import { notFound, useParams } from "next/navigation";
 import { formatCurrency } from "~/server/utils/product";
 import { api } from "~/trpc/react";
 import { useState, useMemo, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+// import { useQueryClient } from "@tanstack/react-query";
 import { Dropdown } from "~/app/_components/Dropdown";
 import clsx from "clsx";
 import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
+import ReviewSection from "~/app/_components/review/ReviewSection";
+import type { Media } from "~/type";
 
-// Helper type for media items
-type MediaItem = {
-  id: string;
-  type: "image" | "video";
-  url: string;
-  position: number;
-  key: string;
-};
+// // Helper type for media items
+// type MediaItem = {
+//   id: string;
+//   type: "image" | "video";
+//   url: string;
+//   position: number;
+//   key: string;
+// };
 
 export default function ProductDetailPage() {
   // ==== hooks ====
   const { data: session } = useSession();
   const utils = api.useUtils();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   // const params = useParams();
   // const productId = params.productId as string;
   const { productId } = useProductContext();
 
   // ==== states ====
-  const [activeMedia, setActiveMedia] = useState<MediaItem | null>(null);
+  const [activeMedia, setActiveMedia] = useState<Media | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
@@ -134,7 +136,7 @@ export default function ProductDetailPage() {
 
   // Calculate the list of media (images/videos) to display
   const activeMediaList = useMemo(() => {
-    let rawList: MediaItem[] = [];
+    let rawList: Media[] = [];
 
     // 1. Try selected variant's media
     if (selectedVariant?.media && selectedVariant.media.length > 0) {
@@ -157,7 +159,7 @@ export default function ProductDetailPage() {
           position: 0,
           key: "placeholder",
         },
-      ] as MediaItem[];
+      ] as Media[];
     }
 
     // Sort: Images first, then Videos. Secondary sort by position.
@@ -376,6 +378,7 @@ export default function ProductDetailPage() {
           </button>
         </div>
       </div>
+      <ReviewSection />
     </>
   );
 }

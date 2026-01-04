@@ -4,15 +4,31 @@ import { api } from "~/trpc/react";
 import StarRating from "./StarRating";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
 
-export default function AvgRating() {
-  const { productId } = useProductContext();
+export default function AvgRating({
+  ratingData,
+}: {
+  ratingData:
+    | {
+        averageRating: number;
+        ratingCount: number;
+        ratingDistribution: {
+          1: number;
+          2: number;
+          3: number;
+          4: number;
+          5: number;
+        };
+      }
+    | undefined;
+}) {
+  // const { productId } = useProductContext();
 
-  const { data: ratingData, isPending } = api.comment.getAverageRating.useQuery(
-    { productId },
-  );
+  // const { data: ratingData, isPending } = api.comment.getAverageRating.useQuery(
+  //   { productId },
+  // );
 
-  if (isPending)
-    return <div className="animate-pulse text-center">Loading ratings...</div>;
+  // if (isPending)
+  //   return <div className="animate-pulse text-center">Loading ratings...</div>;
   if (!ratingData)
     return <div className="text-center">Failed to load ratings.</div>;
 
@@ -61,7 +77,7 @@ export default function AvgRating() {
               <div className="h-2.5 flex-1 overflow-hidden rounded bg-gray-800">
                 {/* Filled Bar */}
                 <div
-                  className="h-full bg-violet-400 transition-all duration-500 ease-out"
+                  className="h-full bg-indigo-500 transition-all duration-500 ease-out"
                   style={{ width: `${percent}%` }}
                 />
               </div>

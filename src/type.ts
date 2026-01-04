@@ -42,7 +42,7 @@ type Product = typeof products.$inferSelect;
 export type ProductAndVariants = Product & {
   variants: VariantAndMedia[];
 };
-type Media = typeof variantMedia.$inferSelect;
+export type Media = typeof variantMedia.$inferSelect;
 export type VariantAndMedia = typeof productVariants.$inferSelect & {
   media: Media[];
 };
