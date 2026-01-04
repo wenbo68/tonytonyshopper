@@ -1,16 +1,16 @@
 "use client"; // 1. Make this a Client Component
 
-import ReviewFilters from "../filter/filters/ReviewFilters";
+// import ReviewFilters from "../filter/filters/ReviewFilters";
 import AvgRating from "./rating/AvgRating";
-import ReviewFilterPills from "../filter/filterPills/ReviewFilterPills";
-import Reviews from "./reviews/Reviews";
-import { ReviewFilterProvider } from "~/app/_contexts/filter/ReviewFilterProvider";
+// import ReviewFilterPills from "../filter/filterPills/ReviewFilterPills";
+import Comments from "./Comments";
+// import { ReviewFilterProvider } from "~/app/_contexts/filter/ReviewFilterProvider";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { GetCommentTreeInputSchema } from "~/type";
 
-export default function ReviewSection() {
+export default function RatingAndCommentSection() {
   const { productId } = useProductContext();
 
   const { data: ratingData, isPending: isRatingDataPending } =
@@ -62,7 +62,7 @@ export default function ReviewSection() {
   return (
     <section className="flex flex-col gap-5 sm:gap-7">
       <AvgRating ratingData={ratingData} />
-      <Reviews commentData={commentData} page={page} />
+      <Comments commentData={commentData} page={page} />
       {/* <WriteReview /> */}
     </section>
   );

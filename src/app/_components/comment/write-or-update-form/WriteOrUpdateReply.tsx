@@ -37,7 +37,7 @@ type WriteReviewProps =
       updateInput: UpdateReplyFields;
     };
 
-export default function WriteReply({
+export default function WriteOrUpdateReply({
   // setError,
   addInput,
   updateInput,

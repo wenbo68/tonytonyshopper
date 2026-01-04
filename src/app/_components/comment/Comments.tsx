@@ -1,17 +1,17 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { api } from "~/trpc/react";
-import { GetCommentTreeInputSchema, type CommentTree } from "~/type";
-import ReviewOrReply from "./ReviewOrReply";
-import Pagination from "../../pagination/Pagination";
+// import { useSearchParams } from "next/navigation";
+// import { api } from "~/trpc/react";
+import { type CommentTree } from "~/type";
+import Comment from "./Comment";
+import Pagination from "./../pagination/Pagination";
 // import ReviewsFallback from "./ReviewsFallback";
-import { useProductContext } from "~/app/_contexts/ProductProvider";
-import AvgRating from "../rating/AvgRating";
-import ReviewFilters from "../../filter/filters/ReviewFilters";
-import ReviewFilterPills from "../../filter/filterPills/ReviewFilterPills";
+// import { useProductContext } from "~/app/_contexts/ProductProvider";
+// import AvgRating from "../rating/AvgRating";
+import ReviewFilters from "./../filter/filters/ReviewFilters";
+import ReviewFilterPills from "./../filter/filterPills/ReviewFilterPills";
 
-export default function Reviews({
+export default function Comments({
   commentData,
   page,
 }: {
@@ -91,7 +91,7 @@ export default function Reviews({
       {/* reviews */}
       <div className="flex flex-col gap-2 lg:gap-4">
         {commentTree.map((comment) => (
-          <ReviewOrReply key={comment.id} comment={comment} className="p-5" />
+          <Comment key={comment.id} comment={comment} className="p-5" />
         ))}
       </div>
 

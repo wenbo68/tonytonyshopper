@@ -27,7 +27,7 @@ type WriteReviewProps = {
   updateInput?: UpdateReviewFields;
 };
 
-export default function WriteReview({ updateInput }: WriteReviewProps) {
+export default function WriteOrUpdateReview({ updateInput }: WriteReviewProps) {
   const { data: session } = useSession();
   const utils = api.useUtils();
   const { productId } = useProductContext();

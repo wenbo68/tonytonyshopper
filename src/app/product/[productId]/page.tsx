@@ -11,7 +11,7 @@ import clsx from "clsx";
 import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
-import ReviewSection from "~/app/_components/review/ReviewSection";
+import RatingAndCommentSection from "~/app/_components/comment/RatingAndCommentSection";
 import type { Media } from "~/type";
 
 // // Helper type for media items
@@ -378,7 +378,7 @@ export default function ProductDetailPage() {
           </button>
         </div>
       </div>
-      <ReviewSection />
+      <RatingAndCommentSection />
     </>
   );
 }

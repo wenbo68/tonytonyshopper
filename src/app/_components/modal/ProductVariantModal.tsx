@@ -8,7 +8,7 @@ import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 import Link from "next/link";
 import { FaPen } from "react-icons/fa";
-import StarRating from "../review/rating/StarRating";
+import StarRating from "../comment/rating/StarRating";
 import { Dropdown } from "../Dropdown";
 import { ItemImage } from "../item/ItemImage";
 import {

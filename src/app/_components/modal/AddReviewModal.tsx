@@ -3,7 +3,7 @@
 
 import { api } from "~/trpc/react";
 import toast from "react-hot-toast";
-import ReviewForm from "../review/write-form/ReviewForm";
+import ReviewForm from "../comment/write-or-update-form/ReviewForm";
 
 interface AddReviewModalProps {
   productId: string;
