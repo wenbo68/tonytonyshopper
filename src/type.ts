@@ -1,6 +1,7 @@
 import z from "zod";
 import {
   categories,
+  commentMedia,
   orderItems,
   orders,
   // orderStatusReasonEnum,
@@ -23,6 +24,7 @@ import {
 // ==================================
 
 // ==== comments ====
+export type CommentMedia = typeof commentMedia.$inferSelect;
 export type FlatCommentWithUser = typeof comments.$inferSelect & {
   userName: string | null;
   userImage: string | null;
@@ -32,6 +34,7 @@ export type CommentAndUser = typeof comments.$inferSelect & {
     name: string | null;
     image: string | null;
   };
+  media: CommentMedia[];
 };
 export type CommentTree = CommentAndUser & {
   replies: CommentTree[];

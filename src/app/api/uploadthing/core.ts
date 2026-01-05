@@ -23,7 +23,7 @@ export const ourFileRouter = {
       const session = await auth();
 
       // If you throw, the user will not be able to upload
-      if (!session?.user?.id) {
+      if (session?.user?.role !== "admin") {
         throw new UploadThingError("Unauthorized");
       }
 
@@ -46,12 +46,43 @@ export const ourFileRouter = {
   })
     .middleware(async ({ req }) => {
       const session = await auth();
-      if (!session?.user?.id) {
+      if (session?.user?.role !== "admin") {
         throw new UploadThingError("Unauthorized");
       }
       return {
         userId: session.user.id,
       };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { key: file.key, url: file.ufsUrl };
+    }),
+
+  // --- NEW: Comment Media Uploaders ---
+  commentImageUploader: f({
+    image: {
+      maxFileSize: "4MB",
+      maxFileCount: 4,
+    },
+  })
+    .middleware(async ({ req }) => {
+      const session = await auth();
+      if (!session?.user?.id) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { key: file.key, url: file.ufsUrl };
+    }),
+
+  commentVideoUploader: f({
+    video: {
+      maxFileSize: "64MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async ({ req }) => {
+      const session = await auth();
+      if (!session?.user?.id) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       return { key: file.key, url: file.ufsUrl };

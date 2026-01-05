@@ -295,10 +295,37 @@ export default function Comment({
                   </div>
                 )}
               </div>
-
-              {/* text */}
-              <p className="text-sm text-gray-400">{comment.text}</p>
             </div>
+          </div>
+          <div className="flex flex-col gap-2 pl-1.5">
+            {/* text */}
+            <p className="text-sm text-gray-400">{comment.text}</p>
+            {/* NEW: Render Media */}
+            {comment.media && comment.media.length > 0 && (
+              <div className="flex flex-wrap gap-1 sm:gap-2">
+                {comment.media.map((mediaItem) => (
+                  <div
+                    key={mediaItem.id}
+                    className="relative h-23 w-23 overflow-hidden rounded bg-black sm:h-29 sm:w-29"
+                  >
+                    {mediaItem.type === "video" ? (
+                      <video
+                        src={mediaItem.url}
+                        className="h-full w-full object-contain"
+                        controls
+                      />
+                    ) : (
+                      <Image
+                        src={mediaItem.url}
+                        alt="Review media"
+                        fill
+                        className="object-contain"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

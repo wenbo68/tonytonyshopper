@@ -5,7 +5,9 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import {
+  commentMedia,
   comments,
+  mediaTypeEnum,
   orderItems,
   orders,
   products,
@@ -27,10 +29,12 @@ import {
 } from "drizzle-orm";
 import {
   GetCommentTreeInputSchema,
+  type CommentMedia,
   type CommentTree,
   type FlatCommentWithUser,
 } from "~/type";
 import { updateProductReviewDenorms } from "~/server/utils/product";
+import { mediaTypeConst } from "~/const";
 
 export const commentRouter = createTRPCRouter({
   /**
@@ -63,24 +67,6 @@ export const commentRouter = createTRPCRouter({
 
       return result.length > 0;
     }),
-
-  // getAverageRating: publicProcedure
-  //   .input(z.object({ productId: z.string() }))
-  //   .query(async ({ ctx, input }) => {
-  //     const { productId } = input;
-
-  //     const product = await ctx.db.query.products.findFirst({
-  //       where: eq(products.id, productId),
-  //       columns: { averageRating: true, reviewCount: true },
-  //     });
-
-  //     return {
-  //       averageRating: product?.averageRating
-  //         ? parseFloat(product.averageRating)
-  //         : 0,
-  //       ratingCount: product?.reviewCount ?? 0,
-  //     };
-  //   }),
 
   getAverageRating: publicProcedure
     .input(z.object({ productId: z.string() }))
@@ -219,6 +205,28 @@ export const commentRouter = createTRPCRouter({
       // db.execute returns a RowList (an array-like result); cast it to the expected type.
       const commentResult = rawResult as unknown as FlatCommentWithUser[];
 
+      // ==== NEW LOGIC START: Fetch Media ====
+      const commentIds = commentResult.map((c) => c.id);
+
+      // Fetch media only if we found comments
+      let mediaResults: CommentMedia[] = [];
+      if (commentIds.length > 0) {
+        mediaResults = await ctx.db
+          .select()
+          .from(commentMedia)
+          .where(inArray(commentMedia.commentId, commentIds));
+      }
+
+      // Group media by commentId
+      const mediaMap = new Map<string, CommentMedia[]>();
+      for (const media of mediaResults) {
+        if (!mediaMap.has(media.commentId)) {
+          mediaMap.set(media.commentId, []);
+        }
+        mediaMap.get(media.commentId)!.push(media);
+      }
+      // ==== NEW LOGIC END ====
+
       // 5. Build the tree structure (this logic remains the same and is correct)
       const commentMap = new Map<string, CommentTree>();
       const topLevelCommentIds = commentResult
@@ -227,9 +235,11 @@ export const commentRouter = createTRPCRouter({
 
       for (const comment of commentResult) {
         const { userName, userImage, ...commentData } = comment;
+        const media = mediaMap.get(comment.id) ?? [];
         commentMap.set(comment.id, {
           ...commentData,
           user: { name: userName, image: userImage },
+          media: media, // Add this field
           replies: [],
         });
       }
@@ -264,6 +274,16 @@ export const commentRouter = createTRPCRouter({
           parentId: z.string().optional(), //null for reviews
           rating: z.number().min(1).max(5).optional(),
           text: z.string().min(1, "Comment cannot be empty."),
+          media: z
+            .array(
+              z.object({
+                key: z.string(),
+                url: z.string(),
+                type: z.enum(mediaTypeConst),
+                position: z.number(),
+              }),
+            )
+            .optional(),
         })
         .refine(
           (data) => {
@@ -282,20 +302,39 @@ export const commentRouter = createTRPCRouter({
         ),
     )
     .mutation(async ({ ctx, input }) => {
-      const { productId, productVariantId, parentId, rating, text } = input;
+      const { productId, productVariantId, parentId, rating, text, media } =
+        input;
       const userId = ctx.session.user.id;
 
       // Wrap everything in a transaction
       await ctx.db.transaction(async (tx) => {
         // 1. Insert the new comment
-        await tx.insert(comments).values({
-          userId,
-          productId,
-          productVariantId,
-          parentId,
-          rating,
-          text,
-        });
+        const [newComment] = await tx
+          .insert(comments)
+          .values({
+            userId,
+            productId,
+            productVariantId,
+            parentId,
+            rating,
+            text,
+          })
+          .returning();
+
+        if (!newComment) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        // 2. Insert Media
+        if (media && media.length > 0) {
+          await tx.insert(commentMedia).values(
+            media.map((m) => ({
+              commentId: newComment.id,
+              type: m.type,
+              url: m.url,
+              key: m.key,
+              position: m.position,
+            })),
+          );
+        }
 
         // 2. If a rating was provided, update the product stats
         if (rating !== undefined && rating !== null) {
@@ -316,10 +355,20 @@ export const commentRouter = createTRPCRouter({
         // IMPORTANT: Allow explicitly setting rating to 'null' to remove it
         rating: z.number().min(1).max(5).nullable().optional(),
         text: z.string().min(1, "Comment cannot be empty.").optional(),
+        media: z
+          .array(
+            z.object({
+              key: z.string(),
+              url: z.string(),
+              type: z.enum(mediaTypeConst),
+              position: z.number(),
+            }),
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, text, rating } = input;
+      const { id, text, rating, media } = input;
       const userId = ctx.session.user.id;
 
       // Get the original product ID *before* the transaction,
@@ -348,18 +397,50 @@ export const commentRouter = createTRPCRouter({
         updateData.rating = rating; // 'rating' can be number or null
       }
 
-      if (Object.keys(updateData).length === 0) {
-        // No changes were actually sent
-        return { success: true, message: "No changes provided." };
-      }
+      //   if (Object.keys(updateData).length === 0) {
+      //     // No changes were actually sent
+      //     return { success: true, message: "No changes provided." };
+      //   }
+
+      //   // Wrap in a transaction
+      //   await ctx.db.transaction(async (tx) => {
+      //     // 1. Perform the update
+      //     await tx.update(comments).set(updateData).where(eq(comments.id, id));
+
+      //     // 2. If the rating was changed, update stats
+      //     // We must check if 'rating' was part of the input (even if it was set to null)
+      //     if (rating !== undefined) {
+      //       await updateProductReviewDenorms(tx, originalComment.productId);
+      //     }
+      //   });
+
+      //   return { success: true };
+      // }),
 
       // Wrap in a transaction
       await ctx.db.transaction(async (tx) => {
         // 1. Perform the update
-        await tx.update(comments).set(updateData).where(eq(comments.id, id));
+        if (Object.keys(updateData).length > 0) {
+          await tx.update(comments).set(updateData).where(eq(comments.id, id));
+        }
 
-        // 2. If the rating was changed, update stats
-        // We must check if 'rating' was part of the input (even if it was set to null)
+        // 2. Handle Media Update (Delete all and re-insert for simplicity)
+        if (media) {
+          await tx.delete(commentMedia).where(eq(commentMedia.commentId, id));
+          if (media.length > 0) {
+            await tx.insert(commentMedia).values(
+              media.map((m) => ({
+                commentId: id,
+                type: m.type,
+                url: m.url,
+                key: m.key,
+                position: m.position,
+              })),
+            );
+          }
+        }
+
+        // 3. If the rating was changed, update stats
         if (rating !== undefined) {
           await updateProductReviewDenorms(tx, originalComment.productId);
         }
@@ -428,8 +509,12 @@ export const commentRouter = createTRPCRouter({
           eq(comments.userId, userId),
           isNull(comments.parentId), // Ensure it's the main review, not a reply
         ),
+        with: {
+          media: true,
+        },
       });
 
+      // console.log("review media: ", review?.media); // always empty []
       // FIX: Return null instead of undefined to satisfy React Query
       return review ?? null;
     }),

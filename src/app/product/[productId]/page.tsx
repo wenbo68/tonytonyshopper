@@ -251,7 +251,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
-        <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[560px] sm:w-28 sm:flex-col sm:overflow-y-auto">
+        <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[530px] sm:w-40 sm:flex-col sm:overflow-y-auto">
           {activeMediaList.map((media, index) => (
             <button
               key={`${media.id}-${index}`}

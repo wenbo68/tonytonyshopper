@@ -384,6 +384,39 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
   replies: many(comments, {
     relationName: "replies",
   }),
+  media: many(commentMedia),
+}));
+
+export const commentMedia = createTable(
+  "comment_media",
+  (d) => ({
+    id: d
+      .varchar({ length: 255 })
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    commentId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => comments.id, { onDelete: "cascade" }),
+
+    type: mediaTypeEnum().notNull(),
+
+    url: d.text().notNull(),
+    key: d.text().notNull(),
+
+    position: d.integer().notNull(),
+  }),
+  (t) => [index("comment_media_comment_id_idx").on(t.commentId)],
+);
+
+export const commentMediaRelations = relations(commentMedia, ({ one }) => ({
+  comment: one(comments, {
+    // WAS: fields: [commentMedia.id],
+    // FIX: Use the foreign key column 'commentId'
+    fields: [commentMedia.commentId],
+    references: [comments.id],
+  }),
 }));
 
 // ======== CART (for logged-in users) ========
@@ -507,7 +540,7 @@ export const orderItems = createTable(
   ],
 );
 
-export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+export const orderItemsRelations = relations(orderItems, ({ one, many }) => ({
   order: one(orders, {
     fields: [orderItems.orderId],
     references: [orders.id],
@@ -516,10 +549,41 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     fields: [orderItems.productVariantId],
     references: [productVariants.id],
   }),
+  media: many(orderItemMedia),
   // returnLabel: one(returnLabels, {
   //   fields: [orderItems.returnLabelId],
   //   references: [returnLabels.id],
   // }),
+}));
+
+export const orderItemMedia = createTable(
+  "order_item_media",
+  (d) => ({
+    id: d
+      .varchar({ length: 255 })
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    orderItemId: d
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => orderItems.id, { onDelete: "cascade" }),
+
+    type: mediaTypeEnum().notNull(),
+
+    url: d.text().notNull(),
+    key: d.text().notNull(),
+
+    position: d.integer().notNull(),
+  }),
+  (t) => [index("order_item_media_order_item_idx").on(t.orderItemId)],
+);
+
+export const orderItemMediaRelations = relations(orderItemMedia, ({ one }) => ({
+  orderItem: one(orderItems, {
+    fields: [orderItemMedia.orderItemId],
+    references: [orderItems.id],
+  }),
 }));
 
 // // ======== RETURN LABELS ========

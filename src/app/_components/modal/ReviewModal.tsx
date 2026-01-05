@@ -3,11 +3,18 @@ import { api } from "~/trpc/react";
 import { handleOverlayClick } from "~/server/utils/modal";
 import StarRating from "../comment/rating/StarRating";
 import { customToast } from "~/app/_components/toast";
+import { MultiUploader } from "~/app/_components/MultiUploader";
+import { FaTrash, FaGripVertical, FaVideo, FaImage } from "react-icons/fa";
 
 type ReviewModalProps = {
   itemIds: { productId: string; productVariantId: string } | null;
   isOpen: boolean;
   onClose: () => void;
+};
+
+type MediaItem = {
+  key: string;
+  url: string;
 };
 
 export default function ReviewModal({
@@ -23,19 +30,47 @@ export default function ReviewModal({
       { enabled: !!itemIds?.productId && isOpen },
     );
 
-  // Initialize state with existing review data if available
-  const [rating, setRating] = useState(existingReview?.rating ?? 0);
-  const [text, setText] = useState(existingReview?.text ?? "");
+  // Initialize state
+  const [rating, setRating] = useState(0);
+  const [text, setText] = useState("");
+  const [images, setImages] = useState<MediaItem[]>([]);
+  const [videos, setVideos] = useState<MediaItem[]>([]);
   const [error, setError] = useState("");
+
+  // Drag and drop state
+  const [draggedItem, setDraggedItem] = useState<{
+    type: "image" | "video";
+    index: number;
+  } | null>(null);
 
   // Sync state when existingReview data arrives
   useEffect(() => {
     if (existingReview) {
       setRating(existingReview.rating ?? 0);
       setText(existingReview.text);
+
+      // --- ADD THIS LOGIC TO LOAD MEDIA FROM DB ---
+      const sortedMedia = [...(existingReview.media ?? [])].sort(
+        (a, b) => a.position - b.position,
+      );
+
+      setImages(
+        sortedMedia
+          .filter((m) => m.type === "image")
+          .map((m) => ({ key: m.key, url: m.url })),
+      );
+
+      setVideos(
+        sortedMedia
+          .filter((m) => m.type === "video")
+          .map((m) => ({ key: m.key, url: m.url })),
+      );
+      // --------------------------------------------
     } else {
       setRating(0);
       setText("");
+      setImages([]);
+      setVideos([]);
     }
   }, [existingReview]);
 
@@ -52,10 +87,23 @@ export default function ReviewModal({
   }, [isOpen]);
 
   const invalidateQueries = async (productId: string) => {
-    await utils.comment.getUserReviewForProduct.invalidate({
-      productId,
-    });
-    // await utils.product.getById.invalidate({ id: productId });
+    await utils.comment.getUserReviewForProduct.invalidate({ productId });
+  };
+
+  const prepareMediaPayload = () => {
+    const imagePayload = images.map((img, idx) => ({
+      key: img.key,
+      url: img.url,
+      type: "image" as const,
+      position: idx,
+    }));
+    const videoPayload = videos.map((vid, idx) => ({
+      key: vid.key,
+      url: vid.url,
+      type: "video" as const,
+      position: idx, // Videos have their own position counter (starts at 0)
+    }));
+    return [...imagePayload, ...videoPayload];
   };
 
   const addMutation = api.comment.add.useMutation({
@@ -66,16 +114,12 @@ export default function ReviewModal({
     onSuccess: (data, input, context) => {
       void invalidateQueries(input.productId);
       customToast.success("Add succeeded.", context?.toastId);
+      onClose(); // Close modal on success
     },
     onError: (err, input, context) => {
-      void invalidateQueries(input.productId);
-
       setRating(input.rating ?? 0);
       setText(input.text);
-
       console.error("ReviewModal addMutation onError:", err);
-      // setError("Add review. Please try again.");
-
       customToast.error("Add failed. Please try again.", context?.toastId);
     },
   });
@@ -88,16 +132,12 @@ export default function ReviewModal({
     onSuccess: (data, input, context) => {
       if (context.productId) void invalidateQueries(context.productId);
       customToast.success("Update succeeded.", context?.toastId);
+      onClose();
     },
     onError: (err, input, context) => {
-      if (context?.productId) void invalidateQueries(context.productId);
-
       setRating(input.rating ?? 0);
       setText(input.text ?? "");
-
       console.error("ReviewModal updateMutation onError:", err);
-      // setError("Update failed. Please try again.");
-
       customToast.error("Update failed. Please try again.", context?.toastId);
     },
   });
@@ -110,16 +150,88 @@ export default function ReviewModal({
     onSuccess: (data, input, context) => {
       if (context.productId) void invalidateQueries(context.productId);
       customToast.success("Delete succeeded.", context?.toastId);
+      onClose();
     },
     onError: (err, input, context) => {
-      if (context?.productId) void invalidateQueries(context.productId);
-
       console.error("ReviewModal deleteMutation onError:", err);
-      // setError("Failed to delete review. Please try again.");
-
       customToast.error("Delete failed. Please try again.", context?.toastId);
     },
   });
+
+  // --- Drag and Drop Logic ---
+  const onDragStart = (
+    e: React.DragEvent,
+    type: "image" | "video",
+    index: number,
+  ) => {
+    setDraggedItem({ type, index });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const onDrop = (
+    e: React.DragEvent,
+    targetType: "image" | "video",
+    targetIndex: number,
+  ) => {
+    e.preventDefault();
+    if (!draggedItem) return;
+    const { type: sourceType, index: sourceIndex } = draggedItem;
+
+    // Only allow dropping within same type
+    if (sourceType !== targetType) return;
+    if (sourceIndex === targetIndex) return;
+
+    if (sourceType === "image") {
+      setImages((prev) => {
+        const list = [...prev];
+        const [moved] = list.splice(sourceIndex, 1);
+        if (moved) list.splice(targetIndex, 0, moved);
+        return list;
+      });
+    } else {
+      setVideos((prev) => {
+        const list = [...prev];
+        const [moved] = list.splice(sourceIndex, 1);
+        if (moved) list.splice(targetIndex, 0, moved);
+        return list;
+      });
+    }
+    setDraggedItem(null);
+  };
+
+  // --- Media Handlers ---
+  const addImages = (newFiles: { key: string; url: string }[]) => {
+    setImages((prev) => {
+      if (prev.length + newFiles.length > 4) {
+        alert("Max 4 images allowed.");
+        return prev;
+      }
+      return [...prev, ...newFiles];
+    });
+  };
+
+  const addVideo = (newFiles: { key: string; url: string }[]) => {
+    setVideos((prev) => {
+      if (prev.length + newFiles.length > 1) {
+        alert("Max 1 video allowed.");
+        return prev;
+      }
+      return [...prev, ...newFiles];
+    });
+  };
+
+  const removeMedia = (index: number, type: "image" | "video") => {
+    if (type === "image") {
+      setImages((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setVideos((prev) => prev.filter((_, i) => i !== index));
+    }
+    // Optionally trigger server-side delete for the file here
+  };
 
   if (!isOpen || !itemIds) return null;
 
@@ -129,20 +241,26 @@ export default function ReviewModal({
     if (!text.trim()) return setError("Please provide a comment.");
 
     setError("");
+    const mediaPayload = prepareMediaPayload();
 
     if (existingReview) {
-      updateMutation.mutate({ id: existingReview.id, rating, text });
+      updateMutation.mutate({
+        id: existingReview.id,
+        rating,
+        text,
+        media: mediaPayload,
+      });
     } else {
       addMutation.mutate({
         productId: itemIds.productId,
         productVariantId: itemIds.productVariantId,
         rating,
         text,
+        media: mediaPayload,
       });
     }
   };
 
-  // Decouple pending state from other items
   const isPending =
     (addMutation.isPending &&
       addMutation.variables?.productId === itemIds.productId) ||
@@ -155,40 +273,41 @@ export default function ReviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onMouseDown={(e) => handleOverlayClick(e, onClose)}
     >
       <div
-        className="max-h-[90vh] w-full max-w-[90vw] sm:max-w-lg"
+        className="scrollbar-thin max-h-[90vh] w-full max-w-[90vw] overflow-y-auto rounded-lg bg-gray-900 sm:max-w-lg"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {isFetchingExistingReview ? (
-          <div className="rounded bg-gray-900 p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-gray-500">
             <p className="animate-pulse">Loading review...</p>
           </div>
         ) : (
-          <div className="flex w-full flex-col gap-2">
+          <div className="flex w-full flex-col gap-2 p-4 sm:p-6">
+            <h2 className="text-lg font-bold text-gray-200">
+              {existingReview ? "Edit Review" : "Write a Review"}
+            </h2>
             {error && <p className="text-sm text-red-400">{error}</p>}
 
             <form
               onSubmit={handleSubmit}
-              className={`flex flex-col gap-4 rounded bg-gray-900 p-4 text-sm text-gray-400`}
+              className="flex flex-col gap-4 text-sm text-gray-400"
             >
-              {/* rating */}
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="flex w-full flex-col gap-1">
-                  <span className="block font-medium">Rating</span>
-                  <div className="flex items-center rounded bg-gray-800 px-3 py-2.5">
-                    <StarRating rating={rating} setRating={setRating} />
-                  </div>
+              {/* Rating */}
+              <div className="flex flex-col gap-1">
+                <span className="block font-medium text-gray-300">Rating</span>
+                <div className="flex w-fit items-center rounded bg-gray-800 px-3 py-2">
+                  <StarRating rating={rating} setRating={setRating} />
                 </div>
               </div>
 
-              {/* comment */}
+              {/* Comment */}
               <div className="flex flex-col gap-1">
                 <label
                   htmlFor="comment"
-                  className="block font-medium text-gray-400"
+                  className="block font-medium text-gray-300"
                 >
                   Comment
                 </label>
@@ -198,12 +317,106 @@ export default function ReviewModal({
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Share your experience..."
-                  className="scrollbar-hide w-full rounded bg-gray-800 px-3 py-2 outline-none"
+                  className="scrollbar-hide w-full rounded bg-gray-800 px-3 py-2 text-white outline-none focus:ring-1 focus:ring-indigo-500"
                 ></textarea>
               </div>
 
-              <div className="flex items-center justify-end gap-2">
-                {/* delete button */}
+              {/* Images */}
+              <div className="flex flex-col gap-2 rounded bg-gray-800/50 p-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300">
+                    <FaImage /> Images ({images.length}/4)
+                  </h3>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {images.map((img, idx) => (
+                    <div
+                      key={img.key}
+                      draggable
+                      onDragStart={(e) => onDragStart(e, "image", idx)}
+                      onDragOver={onDragOver}
+                      onDrop={(e) => onDrop(e, "image", idx)}
+                      className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-600 bg-gray-800 active:cursor-grabbing"
+                    >
+                      <img
+                        src={img.url}
+                        alt="review"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                        <FaGripVertical className="text-white drop-shadow-md" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeMedia(idx, "image")}
+                        className="absolute top-1 right-1 rounded-full bg-red-600 p-1 text-white hover:bg-red-500"
+                      >
+                        <FaTrash size={8} />
+                      </button>
+                    </div>
+                  ))}
+                  {images.length < 4 && (
+                    <div className="col-span-1">
+                      <MultiUploader
+                        label="+"
+                        uploadThingRoute="commentImageUploader"
+                        availability={4 - images.length}
+                        onUploadSuccess={addImages}
+                        className="h-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Video */}
+              <div className="flex flex-col gap-2 rounded bg-gray-800/50 p-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-300">
+                    <FaVideo /> Video ({videos.length}/1)
+                  </h3>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {videos.map((vid, idx) => (
+                    <div
+                      key={vid.key}
+                      draggable
+                      onDragStart={(e) => onDragStart(e, "video", idx)}
+                      onDragOver={onDragOver}
+                      onDrop={(e) => onDrop(e, "video", idx)}
+                      className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-600 bg-gray-800 active:cursor-grabbing"
+                    >
+                      <div className="flex h-full w-full items-center justify-center bg-black">
+                        <FaVideo className="text-xl text-gray-500" />
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                        <FaGripVertical className="text-white drop-shadow-md" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeMedia(idx, "video")}
+                        className="absolute top-1 right-1 rounded-full bg-red-600 p-1 text-white hover:bg-red-500"
+                      >
+                        <FaTrash size={8} />
+                      </button>
+                    </div>
+                  ))}
+                  {videos.length < 1 && (
+                    <div className="col-span-1">
+                      <MultiUploader
+                        label="+"
+                        uploadThingRoute="commentVideoUploader"
+                        availability={1 - videos.length}
+                        onUploadSuccess={addVideo}
+                        className="h-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="mt-2 flex items-center justify-end gap-3">
                 {existingReview && (
                   <button
                     type="button"
@@ -213,16 +426,15 @@ export default function ReviewModal({
                         deleteMutation.mutate({ id: existingReview.id });
                       }
                     }}
-                    className="w-full cursor-pointer rounded bg-red-600/30 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-red-600/40 disabled:cursor-default disabled:bg-red-600/20 sm:min-w-30"
+                    className="cursor-pointer text-sm font-semibold text-red-400 hover:text-red-300 disabled:text-gray-600"
                   >
-                    {isDeleting ? "Deleting..." : "Delete"}
+                    {isDeleting ? "Deleting..." : "Delete Review"}
                   </button>
                 )}
-                {/* submit/update button */}
                 <button
                   type="submit"
                   disabled={isPending || isDeleting}
-                  className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600 sm:min-w-30"
+                  className="min-w-[100px] rounded bg-indigo-600 px-4 py-2 font-semibold text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-700"
                 >
                   {isPending
                     ? "Saving..."

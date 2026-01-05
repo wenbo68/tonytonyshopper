@@ -10,7 +10,11 @@ import {
 import { useUploadThing } from "~/server/utils/uploadthing";
 
 interface MultiUploaderProps {
-  uploadThingRoute: "variantImageUploader" | "variantVideoUploader";
+  uploadThingRoute:
+    | "variantImageUploader"
+    | "variantVideoUploader"
+    | "commentImageUploader"
+    | "commentVideoUploader";
   onUploadSuccess: (files: { key: string; url: string }[]) => void;
   availability: number;
   label?: string;
