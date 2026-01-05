@@ -86,8 +86,8 @@ export default function CartPage() {
   const { data: userCart, isPending: isUserCartPending } =
     api.cart.get.useQuery(undefined, {
       enabled: sessionStatus === "authenticated",
-      staleTime: 0,
-      refetchOnWindowFocus: false,
+      // staleTime: 0,
+      // refetchOnWindowFocus: false,
     });
   // guest cart: get ids from global state -> use ids to fetch details from db
   const { items: guestCartItems, removeItem: removeGuestItem } =
@@ -97,8 +97,8 @@ export default function CartPage() {
     api.product.getVariantsByIds.useQuery(guestVariantIds, {
       enabled:
         sessionStatus === "unauthenticated" && guestVariantIds.length > 0,
-      staleTime: 0,
-      refetchOnWindowFocus: false,
+      // staleTime: 0,
+      // refetchOnWindowFocus: false,
     });
 
   // is merging guest/user cart?

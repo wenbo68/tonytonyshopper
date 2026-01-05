@@ -18,6 +18,11 @@ import { AddToCartButton } from "~/app/_components/button/AddToCartButton";
 import Link from "next/link";
 
 export default function ProductsPage() {
+  const utils = api.useUtils();
+  const prefetchProduct = (productId: string) => {
+    void utils.product.getById.prefetch({ id: productId });
+  };
+
   const searchParams = useSearchParams();
   const name = searchParams.get("name") ?? undefined;
   const category = searchParams.getAll("category");
@@ -59,12 +64,10 @@ export default function ProductsPage() {
   const parsedInput = getProductsInputSchema.safeParse(rawInput);
 
   // 4. Use the `useQuery` hook, but only enable it if parsing succeeded
-  const { data, isFetching } = api.product.searchProducts.useQuery(
+  const { data, isPending } = api.product.searchProducts.useQuery(
     parsedInput.success ? parsedInput.data : (undefined as any),
     {
       enabled: parsedInput.success,
-      staleTime: 0,
-      refetchOnWindowFocus: false,
     },
   );
 
@@ -79,16 +82,17 @@ export default function ProductsPage() {
   // 5. Show a skeleton while fetching new data
   const skeletonCount = 4;
 
-  if (isFetching) {
+  if (isPending) {
     return (
-      <ItemGridSkeleton
-        gridClasses={itemGridClassName}
-        skeletonCount={skeletonCount}
-        classNames={[
-          "w-4/5 text-sm min-h-[calc(1.5em-0.25rem)]",
-          "w-3/5 text-sm min-h-[calc(1.5em-0.25rem)]",
-        ]}
-      />
+      // <ItemGridSkeleton
+      //   gridClasses={itemGridClassName}
+      //   skeletonCount={skeletonCount}
+      //   classNames={[
+      //     "w-4/5 text-sm min-h-[calc(1.5em-0.25rem)]",
+      //     "w-3/5 text-sm min-h-[calc(1.5em-0.25rem)]",
+      //   ]}
+      // />
+      <div className="animate-pulse text-center">Loading products...</div>
     );
   }
 
@@ -109,17 +113,21 @@ export default function ProductsPage() {
             const numericRating = parseFloat(product.averageRating);
 
             return (
-              <ItemCard
+              <div
                 key={product.id}
-                image={{
-                  src: imageUrl,
-                  alt: product.name,
-                  href: `/product/${product.id}`,
-                }}
-                overlays={
-                  <>
-                    {/* Edit Button (Admin) */}
-                    {/* {session?.user?.role === "admin" && (
+                onMouseEnter={(e) => prefetchProduct(product.id)}
+                onFocus={(e) => prefetchProduct(product.id)}
+              >
+                <ItemCard
+                  image={{
+                    src: imageUrl,
+                    alt: product.name,
+                    href: `/product/${product.id}`,
+                  }}
+                  overlays={
+                    <>
+                      {/* Edit Button (Admin) */}
+                      {/* {session?.user?.role === "admin" && (
                       <OverlayLink
                         href={`/product/edit/${product.id}`}
                         position="topLeft"
@@ -129,48 +137,49 @@ export default function ProductsPage() {
                       </OverlayLink>
                     )} */}
 
-                    {/* Rating Tag */}
-                    <OverlayTag position="topLeft">
-                      <div className="flex items-center gap-0.5">
-                        <FaStar
-                          className="relative bottom-px text-yellow-500/80"
-                          size={12}
-                        />
-                        <div className="flex items-center gap-px">
-                          <span className="">{numericRating.toFixed(1)}</span>
-                          <span className="">
-                            ({formatNumber(product.reviewCount)})
-                          </span>
+                      {/* Rating Tag */}
+                      <OverlayTag position="topLeft">
+                        <div className="flex items-center gap-0.5">
+                          <FaStar
+                            className="relative bottom-px text-yellow-500/80"
+                            size={12}
+                          />
+                          <div className="flex items-center gap-px">
+                            <span className="">{numericRating.toFixed(1)}</span>
+                            <span className="">
+                              ({formatNumber(product.reviewCount)})
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </OverlayTag>
+                      </OverlayTag>
 
-                    {/* Add to Cart Button */}
-                    <AddToCartButton
-                      product={product.id}
-                      className={`${circButtonClass} ${overlayPositionClasses.topRight}`}
-                    >
-                      <FaCartPlus className="" size={14} />
-                    </AddToCartButton>
+                      {/* Add to Cart Button */}
+                      <AddToCartButton
+                        product={product.id}
+                        className={`${circButtonClass} ${overlayPositionClasses.topRight}`}
+                      >
+                        <FaCartPlus className="" size={14} />
+                      </AddToCartButton>
 
-                    {/* Price Tag */}
-                    <OverlayTag position="bottomLeft">
-                      <span className="font-semibold">
-                        {product.minPrice === product.maxPrice
-                          ? formatCurrency(product.minPrice)
-                          : `From ${formatCurrency(product.minPrice)}`}
-                      </span>
-                    </OverlayTag>
-                  </>
-                }
-              >
-                <Link
-                  href={`/product/${product.id}`}
-                  className="line-clamp-2 min-h-[3em] text-sm leading-normal font-semibold hover:text-blue-400"
+                      {/* Price Tag */}
+                      <OverlayTag position="bottomLeft">
+                        <span className="font-semibold">
+                          {product.minPrice === product.maxPrice
+                            ? formatCurrency(product.minPrice)
+                            : `From ${formatCurrency(product.minPrice)}`}
+                        </span>
+                      </OverlayTag>
+                    </>
+                  }
                 >
-                  {product.name}
-                </Link>
-              </ItemCard>
+                  <Link
+                    href={`/product/${product.id}`}
+                    className="line-clamp-2 min-h-[3em] text-sm leading-normal font-semibold hover:text-blue-400"
+                  >
+                    {product.name}
+                  </Link>
+                </ItemCard>
+              </div>
             );
           })}
         </ItemGrid>
@@ -184,9 +193,9 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
-      <p className="font-semibold text-gray-300">No results found.</p>
-      <p className="text-sm font-semibold">Please check back later!</p>
+    <div className="flex flex-col gap-0">
+      <h2 className="text-center font-bold">No products found!</h2>
+      <p className="text-center text-sm">Please check back later.</p>
     </div>
   );
 }

@@ -49,8 +49,8 @@ export default function RatingAndCommentSection() {
       parsedInput.success ? parsedInput.data : (undefined as any),
       {
         enabled: parsedInput.success,
-        staleTime: 0,
-        refetchOnWindowFocus: false,
+        // staleTime: 0,
+        // refetchOnWindowFocus: false,
       },
     );
 
