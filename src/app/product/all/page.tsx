@@ -19,7 +19,7 @@ import Link from "next/link";
 
 export default function ProductsPage() {
   const utils = api.useUtils();
-  const prefetchProduct = (productId: string) => {
+  const prefetchProductDetails = (productId: string) => {
     void utils.product.getById.prefetch({ id: productId });
   };
 
@@ -115,8 +115,8 @@ export default function ProductsPage() {
             return (
               <div
                 key={product.id}
-                onMouseEnter={(e) => prefetchProduct(product.id)}
-                onFocus={(e) => prefetchProduct(product.id)}
+                onMouseEnter={(e) => prefetchProductDetails(product.id)}
+                onFocus={(e) => prefetchProductDetails(product.id)}
               >
                 <ItemCard
                   image={{

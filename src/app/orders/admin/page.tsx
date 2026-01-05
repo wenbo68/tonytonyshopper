@@ -30,6 +30,7 @@ import { FaXmark } from "react-icons/fa6";
 import { RejectReturnModal } from "~/app/_components/modal/RejectReturnModal";
 import { ApproveReturnModal } from "~/app/_components/modal/ApproveReturnModal";
 import { RefundModal } from "~/app/_components/modal/RefundModal";
+import type { UserRole } from "~/server/db/schema";
 
 type AdminOrder = RouterOutputs["order"]["getAdminOrders"]["orders"][number];
 
@@ -49,8 +50,8 @@ export default function AdminOrdersPage() {
   const [orderModalProps, setOrderModalProps] = useState<AdminOrder | null>(
     null,
   );
-  const [shipInfoModalProps, setShipInfoModalProps] =
-    useState<OrderItem | null>(null);
+  const [shipAndReturnInfoModalProps, setshipAndReturnInfoModalProps] =
+    useState<{ orderItem: OrderItem; userRole: UserRole } | null>(null);
   const [dropdownItemId, setDropdownItemId] = useState<string | null>(null);
 
   // Parse params
@@ -85,7 +86,7 @@ export default function AdminOrdersPage() {
 
   const parsedInput = getAdminOrdersInputSchema.safeParse(rawInput);
 
-  const { data, isFetching, refetch } = api.order.getAdminOrders.useQuery(
+  const { data, isPending } = api.order.getAdminOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
     {
       enabled:
@@ -95,7 +96,7 @@ export default function AdminOrdersPage() {
     },
   );
 
-  if (status === "loading" || isFetching) {
+  if (status === "loading" || isPending) {
     return (
       <div className="animate-pulse text-center">Loading sales history...</div>
     );
@@ -148,9 +149,9 @@ export default function AdminOrdersPage() {
       />
 
       <ShipAndReturnInfoModal
-        isOpen={!!shipInfoModalProps}
-        onClose={() => setShipInfoModalProps(null)}
-        orderItem={shipInfoModalProps}
+        isOpen={!!shipAndReturnInfoModalProps}
+        onClose={() => setshipAndReturnInfoModalProps(null)}
+        shipAndReturnInfoModalProps={shipAndReturnInfoModalProps}
       />
 
       <RejectReturnModal
@@ -266,7 +267,11 @@ export default function AdminOrdersPage() {
                           <>
                             {/* Status Tag */}
                             {item.status === "shipped" ||
-                            item.status === "returned" ? (
+                            item.status === "return_requested" ||
+                            item.status === "return_rejected" ||
+                            item.status === "return_approved" ||
+                            item.status === "returned" ||
+                            item.status === "refunded" ? (
                               <OverlayTagButton
                                 position="topLeft"
                                 className="capitalize"
@@ -277,7 +282,10 @@ export default function AdminOrdersPage() {
                                     );
                                     return;
                                   }
-                                  setShipInfoModalProps(item);
+                                  setshipAndReturnInfoModalProps({
+                                    orderItem: item,
+                                    userRole: "admin",
+                                  });
                                 }}
                               >
                                 {item.status.split("_").join(" ")}

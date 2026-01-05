@@ -38,6 +38,7 @@ import { FaXmark } from "react-icons/fa6";
 import { RequestReturnModal } from "~/app/_components/modal/RequestReturnModal";
 import { GiOpenBook } from "react-icons/gi";
 import { ReturnModal } from "~/app/_components/modal/ReturnModal";
+import type { UserRole } from "~/server/db/schema";
 
 // Infer type for better safety
 type Order = RouterOutputs["order"]["getUserOrders"]["orders"][number];
@@ -50,14 +51,19 @@ export default function OrdersPage() {
     (state) => state.openModal,
   );
 
+  const prefetchProductDetails = (productId: string) => {
+    void utils.product.getById.prefetch({ id: productId });
+    void utils.comment.getUserReviewForProduct.prefetch({ productId });
+  };
+
   // states
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderModalProps, setOrderModalProps] = useState<Order | null>(null);
   const [cancelModalProps, setCancelModalProps] = useState<{
     orderItemId: string;
     maxQuantity: number;
   } | null>(null);
   const [shipAndReturnInfoModalProps, setShipAndReturnInfoModalProps] =
-    useState<OrderItem | null>(null);
+    useState<{ orderItem: OrderItem; userRole: UserRole } | null>(null);
   const [reviewModalProps, setReviewModalProps] = useState<{
     productId: string;
     productVariantId: string;
@@ -108,7 +114,7 @@ export default function OrdersPage() {
   // Safely parse with Zod
   const parsedInput = getUserOrdersInputSchema.safeParse(rawInput);
 
-  const { data, isFetching } = api.order.getUserOrders.useQuery(
+  const { data, isPending } = api.order.getUserOrders.useQuery(
     parsedInput.success ? parsedInput.data : {},
     {
       enabled: status === "authenticated" && parsedInput.success,
@@ -167,7 +173,7 @@ export default function OrdersPage() {
     setDropdownItemId(dropdownItemId === itemId ? null : itemId);
   };
 
-  if (status === "loading" || isFetching) {
+  if (status === "loading" || isPending) {
     return (
       <div className="animate-pulse text-center">Loading order history...</div>
     );
@@ -194,9 +200,9 @@ export default function OrdersPage() {
     <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
       {/* Modals */}
       <OrderModal
-        order={selectedOrder}
-        isOpen={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)}
+        order={orderModalProps}
+        isOpen={!!orderModalProps}
+        onClose={() => setOrderModalProps(null)}
       />
       <CancelModal
         cancelModalProps={cancelModalProps}
@@ -207,7 +213,7 @@ export default function OrdersPage() {
       <ShipAndReturnInfoModal
         isOpen={!!shipAndReturnInfoModalProps}
         onClose={() => setShipAndReturnInfoModalProps(null)}
-        orderItem={shipAndReturnInfoModalProps}
+        shipAndReturnInfoModalProps={shipAndReturnInfoModalProps}
       />
       <ReviewModal
         itemIds={reviewModalProps}
@@ -250,7 +256,7 @@ export default function OrdersPage() {
                   </div>
                   <button
                     className="hover: cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-400"
-                    onClick={() => setSelectedOrder(order)}
+                    onClick={() => setOrderModalProps(order)}
                   >
                     More Info
                   </button>
@@ -286,150 +292,158 @@ export default function OrdersPage() {
                     "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
                   const isMenuOpen = dropdownItemId === item.id;
 
-                  const itemMenuPrefetch = () => {
-                    utils.product.getById.prefetch({ id: variant.productId });
-                  };
+                  // const itemMenuPrefetch = () => {
+                  //   utils.product.getById.prefetch({ id: variant.productId });
+                  // };
 
                   return (
-                    <ItemCard
+                    <div
                       key={item.id}
-                      image={{
-                        src: imageUrl,
-                        alt: product.name ?? "Product image",
-                        href: `/product/${variant.productId}`,
-                      }}
-                      overlays={
-                        <>
-                          {item.status === "shipped" ||
-                          item.status === "return_requested" ||
-                          item.status === "return_rejected" ||
-                          item.status === "return_approved" ||
-                          item.status === "returned" ||
-                          item.status === "refunded" ? (
-                            <OverlayTagButton
-                              position="topLeft"
-                              className="capitalize"
-                              onClick={() => {
-                                if (!item.carrier || !item.trackingNumber) {
-                                  customToast.error(
-                                    "Delivery info missing. Please contact support.",
-                                  );
-                                  return;
-                                }
-                                setShipAndReturnInfoModalProps(item);
-                              }}
-                            >
-                              {item.status.split("_").join(" ")}
-                            </OverlayTagButton>
-                          ) : (
-                            item.status && (
-                              <OverlayTag
+                      onMouseEnter={(e) =>
+                        prefetchProductDetails(variant.productId)
+                      }
+                      onFocus={(e) => prefetchProductDetails(variant.productId)}
+                    >
+                      <ItemCard
+                        image={{
+                          src: imageUrl,
+                          alt: product.name ?? "Product image",
+                          href: `/product/${variant.productId}`,
+                        }}
+                        overlays={
+                          <>
+                            {item.status === "shipped" ||
+                            item.status === "return_requested" ||
+                            item.status === "return_rejected" ||
+                            item.status === "return_approved" ||
+                            item.status === "returned" ||
+                            item.status === "refunded" ? (
+                              <OverlayTagButton
                                 position="topLeft"
                                 className="capitalize"
+                                onClick={() => {
+                                  if (!item.carrier || !item.trackingNumber) {
+                                    customToast.error(
+                                      "Delivery info missing. Please contact support.",
+                                    );
+                                    return;
+                                  }
+                                  setShipAndReturnInfoModalProps({
+                                    orderItem: item,
+                                    userRole: "user",
+                                  });
+                                }}
                               >
                                 {item.status.split("_").join(" ")}
-                              </OverlayTag>
-                            )
-                          )}
-                          <OverlayTag position="bottomLeft">
-                            {formatCurrency(item.priceAtPurchase)} x
-                            {item.quantity}
-                          </OverlayTag>
-                          <OverlayDiv
-                            position="topRight"
-                            className="z-20" // Higher z-index so dropdown floats over other tags
-                            title="Item Options"
-                            // onMouseEnter={itemMenuPrefetch} // Desktop prefetch
-                            onClick={(e) => {
-                              itemMenuPrefetch(); // Mobile prefetch
-                              toggleMenu(e, item.id);
-                            }}
-                          >
-                            <FaEllipsisV size={14} />
-
-                            {/* Dropdown Menu */}
-                            {isMenuOpen && (
-                              <div className="absolute top-8 right-0 z-50 flex min-w-36 flex-col rounded bg-gray-800 p-1 text-left text-xs font-semibold text-gray-400 transition-all">
-                                {/* Buy Again */}
-                                <button
-                                  onClick={(e) =>
-                                    handleBuyAgain(
-                                      e,
-                                      variant.productId,
-                                      variant.id,
-                                      item.quantity,
-                                    )
-                                  }
-                                  className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                              </OverlayTagButton>
+                            ) : (
+                              item.status && (
+                                <OverlayTag
+                                  position="topLeft"
+                                  className="capitalize"
                                 >
-                                  <div className="item-center flex min-w-4 justify-center">
-                                    <FaCartPlus className="text-gray-400" />
-                                  </div>
-                                  Buy again
-                                </button>
+                                  {item.status.split("_").join(" ")}
+                                </OverlayTag>
+                              )
+                            )}
+                            <OverlayTag position="bottomLeft">
+                              {formatCurrency(item.priceAtPurchase)} x
+                              {item.quantity}
+                            </OverlayTag>
+                            <OverlayDiv
+                              position="topRight"
+                              className="z-20" // Higher z-index so dropdown floats over other tags
+                              title="Item Options"
+                              onClick={(e) => {
+                                prefetchProductDetails(variant.productId); // mobile prefetch
+                                toggleMenu(e, item.id);
+                              }}
+                            >
+                              <FaEllipsisV size={14} />
 
-                                {/* Return */}
-                                {item.status === "paid" && (
+                              {/* Dropdown Menu */}
+                              {isMenuOpen && (
+                                <div className="absolute top-8 right-0 z-50 flex min-w-36 flex-col rounded bg-gray-800 p-1 text-left text-xs font-semibold text-gray-400 transition-all">
+                                  {/* Buy Again */}
                                   <button
                                     onClick={(e) =>
-                                      handleCancel(e, item.id, item.quantity)
-                                    }
-                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
-                                  >
-                                    <div className="item-center flex min-w-4 justify-center">
-                                      <FaXmark className="text-gray-400" />
-                                    </div>
-                                    Cancel item
-                                  </button>
-                                )}
-
-                                {/* Review */}
-                                {(item.status === "shipped" ||
-                                  item.status === "return_requested" ||
-                                  item.status === "return_rejected" ||
-                                  item.status === "return_approved" ||
-                                  item.status === "returned" ||
-                                  item.status === "refunded") && (
-                                  <button
-                                    onClick={(e) =>
-                                      handleReview(
+                                      handleBuyAgain(
                                         e,
                                         variant.productId,
-                                        item.productVariantId,
+                                        variant.id,
+                                        item.quantity,
                                       )
                                     }
                                     className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
                                   >
                                     <div className="item-center flex min-w-4 justify-center">
-                                      <GiOpenBook
-                                        size={13}
-                                        className="text-gray-400"
-                                      />
+                                      <FaCartPlus className="text-gray-400" />
                                     </div>
-                                    Write review
+                                    Buy again
                                   </button>
-                                )}
 
-                                {/* Return Request*/}
-                                {item.status === "shipped" && (
-                                  <button
-                                    onClick={(e) =>
-                                      handleReturnRequest(e, item)
-                                    }
-                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
-                                  >
-                                    <div className="item-center flex min-w-4 justify-center">
-                                      <FaUndo
-                                        size={10}
-                                        className="text-gray-400"
-                                      />
-                                    </div>
-                                    Initiate Return
-                                  </button>
-                                )}
+                                  {/* Return */}
+                                  {item.status === "paid" && (
+                                    <button
+                                      onClick={(e) =>
+                                        handleCancel(e, item.id, item.quantity)
+                                      }
+                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                    >
+                                      <div className="item-center flex min-w-4 justify-center">
+                                        <FaXmark className="text-gray-400" />
+                                      </div>
+                                      Cancel item
+                                    </button>
+                                  )}
 
-                                {/* Edit Return Request */}
-                                {/* {item.status === "return_requested" && (
+                                  {/* Review */}
+                                  {(item.status === "shipped" ||
+                                    item.status === "return_requested" ||
+                                    item.status === "return_rejected" ||
+                                    item.status === "return_approved" ||
+                                    item.status === "returned" ||
+                                    item.status === "refunded") && (
+                                    <button
+                                      onClick={(e) =>
+                                        handleReview(
+                                          e,
+                                          variant.productId,
+                                          item.productVariantId,
+                                        )
+                                      }
+                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                    >
+                                      <div className="item-center flex min-w-4 justify-center">
+                                        <GiOpenBook
+                                          size={13}
+                                          className="text-gray-400"
+                                        />
+                                      </div>
+                                      Write review
+                                    </button>
+                                  )}
+
+                                  {/* Return Request*/}
+                                  {item.status === "shipped" && (
+                                    <button
+                                      onClick={(e) =>
+                                        handleReturnRequest(e, item)
+                                      }
+                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                    >
+                                      <div className="item-center flex min-w-4 justify-center">
+                                        <FaUndo
+                                          size={10}
+                                          className="text-gray-400"
+                                        />
+                                      </div>
+                                      Initiate Return
+                                    </button>
+                                  )}
+
+                                  {/* Edit Return Request */}
+                                  {/* {item.status === "return_requested" && (
                                   <button
                                     onClick={(e) =>
                                       handleReturnRequest(e, item)
@@ -446,24 +460,24 @@ export default function OrdersPage() {
                                   </button>
                                 )} */}
 
-                                {/* Finish Return */}
-                                {item.status === "return_approved" && (
-                                  <button
-                                    onClick={(e) => handleReturn(e, item)}
-                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
-                                  >
-                                    <div className="item-center flex min-w-4 justify-center">
-                                      <FaCheck
-                                        size={10}
-                                        className="text-gray-400"
-                                      />
-                                    </div>
-                                    Finish Return
-                                  </button>
-                                )}
+                                  {/* Finish Return */}
+                                  {item.status === "return_approved" && (
+                                    <button
+                                      onClick={(e) => handleReturn(e, item)}
+                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                    >
+                                      <div className="item-center flex min-w-4 justify-center">
+                                        <FaCheck
+                                          size={10}
+                                          className="text-gray-400"
+                                        />
+                                      </div>
+                                      Finish Return
+                                    </button>
+                                  )}
 
-                                {/* Edit Return */}
-                                {/* {item.status === "returned" && (
+                                  {/* Edit Return */}
+                                  {/* {item.status === "returned" && (
                                   <button
                                     onClick={(e) => handleReturn(e)}
                                     className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
@@ -477,23 +491,24 @@ export default function OrdersPage() {
                                     Edit Return
                                   </button>
                                 )} */}
-                              </div>
-                            )}
-                          </OverlayDiv>
-                        </>
-                      }
-                    >
-                      <Link
-                        href={`/product/${variant.productId}`}
-                        className="line-clamp-1 text-sm leading-normal font-semibold hover:text-blue-400"
-                        onClick={(e) => e.stopPropagation()}
+                                </div>
+                              )}
+                            </OverlayDiv>
+                          </>
+                        }
                       >
-                        {product.name}
-                      </Link>
-                      <p className="line-clamp-1 text-xs leading-normal text-gray-500 capitalize">
-                        {formatProductOptionsCaption(variant.options)}
-                      </p>
-                    </ItemCard>
+                        <Link
+                          href={`/product/${variant.productId}`}
+                          className="line-clamp-1 text-sm leading-normal font-semibold hover:text-blue-400"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {product.name}
+                        </Link>
+                        <p className="line-clamp-1 text-xs leading-normal text-gray-500 capitalize">
+                          {formatProductOptionsCaption(variant.options)}
+                        </p>
+                      </ItemCard>
+                    </div>
                   );
                 })}
               </ItemGrid>
