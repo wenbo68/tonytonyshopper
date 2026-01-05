@@ -1,13 +1,17 @@
+/*
+  type: uploaded file
+  fileName: src/app/_components/modal/ProductVariantModal.tsx
+*/
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useProductVariantModalStore } from "~/app/_hooks/useProductVariantModalStore";
 import { formatCurrency, formatNumber } from "~/server/utils/product";
 import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 import Link from "next/link";
-import { FaPen } from "react-icons/fa";
+import { FaPen, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import StarRating from "../comment/rating/StarRating";
 import { Dropdown } from "../Dropdown";
 import { ItemImage } from "../item/ItemImage";
@@ -38,6 +42,8 @@ export function ProductVariantModal() {
     Record<string, string>
   >({});
   const [quantity, setQuantity] = useState<number | "">(1);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // === 3. Query ===
   const { data: fetchedProduct, isFetching: isFetchingProduct } =
@@ -155,9 +161,73 @@ export function ProductVariantModal() {
     });
   }, [selectedOptions, product?.variants]);
 
+  // === Media Logic ===
+  const mediaList = useMemo(() => {
+    if (!product) return [];
+
+    // 1. Determine which variant's media to show.
+    //    Priority: Selected Variant -> First Variant of Product
+    let sourceVariant = selectedVariant;
+    if (
+      !sourceVariant ||
+      !sourceVariant.media ||
+      sourceVariant.media.length === 0
+    ) {
+      sourceVariant = product.variants[0];
+    }
+
+    const rawMedia = sourceVariant?.media ?? [];
+
+    // 2. If absolutely no media, return fallback
+    if (rawMedia.length === 0) {
+      return [
+        {
+          type: "image",
+          url: "https://placehold.co/600x600/eee/ccc.png?text=No+Image",
+          id: "placeholder",
+        },
+      ];
+    }
+
+    // 3. Sort: Images first, then Videos. Both sorted by position.
+    const images = rawMedia
+      .filter((m) => m.type === "image")
+      .sort((a, b) => a.position - b.position);
+    const videos = rawMedia
+      .filter((m) => m.type === "video")
+      .sort((a, b) => a.position - b.position);
+
+    return [...images, ...videos];
+  }, [product, selectedVariant]);
+
+  // Handle manual scroll (buttons)
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const { clientWidth } = scrollContainerRef.current;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -clientWidth : clientWidth,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  // Handle scroll event (swiping or button scroll) to update the active index
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, clientWidth } = scrollContainerRef.current;
+      const newIndex = Math.round(scrollLeft / clientWidth);
+      setActiveMediaIndex(newIndex);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      // Reset media index and scroll position when modal opens
+      setActiveMediaIndex(0);
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollLeft = 0;
+      }
     } else {
       document.body.style.overflow = "unset";
     }
@@ -250,14 +320,6 @@ export function ProductVariantModal() {
   // === 8. Render Logic ===
   if (!isOpen) return null;
 
-  const displayMediaUrl =
-    selectedVariant?.media.find((m) => m.type === "image" && m.position === 0)
-      ?.url ??
-    product?.variants[0]?.media.find(
-      (m) => m.type === "image" && m.position === 0,
-    )?.url ??
-    "https://placehold.co/600x600/eee/ccc.png?text=No+Image";
-
   const displayPrice = selectedVariant
     ? formatCurrency(selectedVariant.price)
     : "N/A";
@@ -285,31 +347,105 @@ export function ProductVariantModal() {
         ) : (
           <div className="scrollbar-hide flex w-full flex-col gap-5 overflow-y-auto rounded bg-gray-900 p-4">
             <div className="flex flex-col gap-3">
-              <ItemImage
-                src={displayMediaUrl}
-                alt={product.name ?? "Product image"}
-                href={`/product/${product.id}`}
-                onClick={closeModal}
-                className="group"
-              >
+              {/* Media Carousel */}
+              <div className="group relative aspect-square w-full overflow-hidden rounded">
+                <div
+                  ref={scrollContainerRef}
+                  onScroll={handleScroll}
+                  className="scrollbar-hide flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth"
+                >
+                  {mediaList.map((media, idx) => (
+                    <div
+                      key={media.id || idx}
+                      className="h-full w-full shrink-0 snap-center"
+                    >
+                      {media.type === "video" ? (
+                        <video
+                          src={media.url}
+                          controls
+                          className="h-full w-full object-cover"
+                          // Prevent modal close when clicking controls
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <ItemImage
+                          src={media.url}
+                          alt={product.name ?? "Product image"}
+                          href={`/product/${product.id}`}
+                          onClick={closeModal}
+                          className="h-full w-full"
+                          // Note: We don't pass overlays here anymore
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Gradient Overlay & Indicators */}
+                {mediaList.length > 1 && (
+                  <>
+                    {/* Gradient backing for indicators */}
+                    <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-16 bg-linear-to-t from-black/70 to-transparent" />
+
+                    {/* Indicators */}
+                    <div className="absolute right-0 bottom-2 left-0 z-20 flex justify-center gap-1.5 px-2">
+                      {mediaList.map((_, idx) => (
+                        <div
+                          key={idx}
+                          className={`h-[3px] w-full max-w-5.5 rounded-full shadow-sm transition-all duration-300 sm:max-w-6.5 ${
+                            idx === activeMediaIndex
+                              ? "bg-white opacity-100"
+                              : "bg-white/50 opacity-60 hover:bg-white/80"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Navigation Arrows (Desktop) */}
+                {mediaList.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        scroll("left");
+                      }}
+                      className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0"
+                    >
+                      <FaChevronLeft />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        scroll("right");
+                      }}
+                      className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <FaChevronRight />
+                    </button>
+                  </>
+                )}
+
+                {/* Overlays (Static on top of carousel) */}
                 {session?.user?.role === "admin" && (
                   <OverlayLink
                     href={`/product/edit/${product.id}`}
-                    position="topLeft"
+                    position="topRight"
                     title="Edit Product"
                   >
                     <FaPen size={12} />
                   </OverlayLink>
                 )}
-                <OverlayTagGroup position="bottomLeft">
-                  <OverlayTag position="bottomLeft" className="static">
-                    {displayPrice}
-                  </OverlayTag>
-                  <OverlayTag position="bottomLeft" className="static">
+                <OverlayTagGroup position="topLeft">
+                  <OverlayTag className="static">{displayPrice}</OverlayTag>
+                  <OverlayTag className="static">
                     Stock: {displayStock}
                   </OverlayTag>
                 </OverlayTagGroup>
-              </ItemImage>
+              </div>
 
               <div className="flex flex-col items-center gap-0">
                 <Link
@@ -334,7 +470,7 @@ export function ProductVariantModal() {
               </div>
             </div>
 
-            {/* Changed from <div> to <form> */}
+            {/* Form */}
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-3">
               <div className="flex flex-col gap-3">
                 {Object.entries(options).map(([name, values]) => (
