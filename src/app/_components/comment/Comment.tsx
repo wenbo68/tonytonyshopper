@@ -4,18 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import type { CommentTree, UpdateCommentInput } from "~/type";
-import StarRating from "../rating/StarRating";
+import StarRating from "./rating/StarRating";
 import { api } from "~/trpc/react";
-import WriteReply from "../write-form/WriteReply";
+import WriteOrUpdateReply from "./write-or-update-form/WriteOrUpdateReply";
 import { TbDotsVertical } from "react-icons/tb";
 import { useMutationState } from "@tanstack/react-query";
 import { dequal } from "dequal";
 // import toast from "react-hot-toast";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
-import WriteReview from "../write-form/WriteReview";
+import WriteOrUpdateReview from "./write-or-update-form/WriteOrUpdateReview";
 import { customToast } from "~/app/_components/toast";
 
-export default function ReviewOrReply({
+export default function Comment({
   comment,
   className,
 }: {
@@ -31,7 +31,7 @@ export default function ReviewOrReply({
   const [isWritingReply, setIsWritingReply] = useState(false);
 
   const [updateError, setUpdateError] = useState("");
-  const [deleteError, setDeleteError] = useState("");
+  // const [deleteError, setDeleteError] = useState("");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -54,8 +54,8 @@ export default function ReviewOrReply({
   }, []);
 
   const invalidateQueries = async (productId: string) => {
+    utils.comment.getAverageRating.invalidate({ productId });
     await utils.comment.getCommentTree.invalidate();
-    await utils.comment.getAverageRating.invalidate({ productId });
     // await utils.comment.getUserReviewForProduct.invalidate({ productId });
   };
 
@@ -64,15 +64,15 @@ export default function ReviewOrReply({
       const toastId = customToast.loading("Deleting...");
       return { toastId };
     },
-    onSuccess: (data, input, context) => {
-      void invalidateQueries(productId);
+    onSuccess: async (data, input, context) => {
+      await invalidateQueries(productId);
       customToast.success("Delete succeeded.", context?.toastId);
     },
     onError: (err, input, context) => {
       void invalidateQueries(productId);
       // setError("Failed to delete review. Please try again.");
       customToast.error("Delete failed. Please try again.", context?.toastId);
-      console.error("ReviewOrReply deleteMutation onError:", err);
+      // console.error("ReviewOrReply deleteMutation onError:", err);
     },
     // onSettled: () => invalidateQueries(productId),
   });
@@ -82,21 +82,21 @@ export default function ReviewOrReply({
   };
 
   const updateMutation = api.comment.update.useMutation({
-    onMutate: () => {
-      const toastId = customToast.loading("Updating...");
-      return { toastId };
-    },
-    onSuccess: (data, input, context) => {
-      void invalidateQueries(productId);
-      customToast.success("Update succeeded.", context?.toastId);
+    // onMutate: () => {
+    //   const toastId = customToast.loading("Updating...");
+    //   return { toastId };
+    // },
+    onSuccess: async (data, input, context) => {
+      await invalidateQueries(productId);
+      // customToast.success("Update succeeded.", context?.toastId);
+      setIsEditing(false);
     },
     onError: (err, input, context) => {
       void invalidateQueries(productId);
-      // setError("Failed to delete review. Please try again.");
-      customToast.error("Update failed. Please try again.", context?.toastId);
-      console.error("ReviewOrReply updateMutation onError:", err);
+      setUpdateError("Failed to update. Please try again.");
+      // customToast.error("Update failed. Please try again.", context?.toastId);
+      // console.error("ReviewOrReply updateMutation onError:", err);
     },
-    // onSettled: () => invalidateQueries(productId),
   });
 
   const handleUpdate = ({ e, id, type, rating, text }: UpdateCommentInput) => {
@@ -190,7 +190,7 @@ export default function ReviewOrReply({
             {updateError && (
               <p className="text-sm text-red-400">{updateError}</p>
             )}
-            <WriteReply
+            <WriteOrUpdateReply
               updateInput={{
                 id: comment.id,
                 text: comment.text,
@@ -206,7 +206,7 @@ export default function ReviewOrReply({
             {updateError && (
               <p className="text-sm text-red-400">{updateError}</p>
             )}
-            <WriteReview
+            <WriteOrUpdateReview
               // productId={productId}
               updateInput={{
                 commentId: comment.id,
@@ -222,7 +222,7 @@ export default function ReviewOrReply({
       ) : (
         // show review/reply
         <div className="flex flex-col gap-2">
-          {deleteError && <p className="text-sm text-red-400">{deleteError}</p>}
+          {/* {deleteError && <p className="text-sm text-red-400">{deleteError}</p>} */}
           <div className="flex gap-3">
             <Image
               src={comment.user.image ?? ""}
@@ -272,11 +272,13 @@ export default function ReviewOrReply({
                               ) : null;
                             })
                           ) : (
-                            <p className="p-1 text-xs">Processing...</p>
+                            <p className="px-2 py-1.5 text-left text-xs font-semibold">
+                              Processing...
+                            </p>
                           )
                         ) : (
-                          <p className="p-1 text-xs">
-                            Please login to interact with the reviews.
+                          <p className="px-2 py-1.5 text-left text-xs font-semibold">
+                            Please login first.
                           </p>
                         )}
                       </div>
@@ -303,7 +305,7 @@ export default function ReviewOrReply({
 
       {/* write reply form */}
       {isWritingReply && (
-        <WriteReply
+        <WriteOrUpdateReply
           addInput={{
             parentId: comment.id,
             setIsWritingReply,
@@ -315,11 +317,7 @@ export default function ReviewOrReply({
       {comment.replies && comment.replies.length > 0 && (
         <div className="border-l-2 border-gray-800">
           {comment.replies.map((reply) => (
-            <ReviewOrReply
-              key={reply.id}
-              comment={reply}
-              className="mt-5 pl-10"
-            />
+            <Comment key={reply.id} comment={reply} className="mt-5 pl-10" />
           ))}
         </div>
       )}

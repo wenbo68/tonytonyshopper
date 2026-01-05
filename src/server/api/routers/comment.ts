@@ -55,7 +55,7 @@ export const commentRouter = createTRPCRouter({
         .where(
           and(
             eq(orders.userId, userId),
-            eq(orders.status, "shipped"), // Only allow if shipped
+            // eq(orders.status, "shipped"), // Only allow if shipped
             eq(productVariants.productId, productId),
           ),
         )
@@ -64,14 +64,56 @@ export const commentRouter = createTRPCRouter({
       return result.length > 0;
     }),
 
+  // getAverageRating: publicProcedure
+  //   .input(z.object({ productId: z.string() }))
+  //   .query(async ({ ctx, input }) => {
+  //     const { productId } = input;
+
+  //     const product = await ctx.db.query.products.findFirst({
+  //       where: eq(products.id, productId),
+  //       columns: { averageRating: true, reviewCount: true },
+  //     });
+
+  //     return {
+  //       averageRating: product?.averageRating
+  //         ? parseFloat(product.averageRating)
+  //         : 0,
+  //       ratingCount: product?.reviewCount ?? 0,
+  //     };
+  //   }),
+
   getAverageRating: publicProcedure
     .input(z.object({ productId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { productId } = input;
 
-      const product = await ctx.db.query.products.findFirst({
-        where: eq(products.id, productId),
-        columns: { averageRating: true, reviewCount: true },
+      // Fetch product stats and actual rating distribution in parallel
+      const [product, distributionRaw] = await Promise.all([
+        ctx.db.query.products.findFirst({
+          where: eq(products.id, productId),
+          columns: { averageRating: true, reviewCount: true },
+        }),
+        ctx.db
+          .select({
+            rating: comments.rating,
+            count: count(),
+          })
+          .from(comments)
+          .where(
+            and(
+              eq(comments.productId, productId),
+              isNotNull(comments.rating), // Only count actual ratings (not replies)
+            ),
+          )
+          .groupBy(comments.rating),
+      ]);
+
+      // Normalize distribution to ensure all keys 1-5 exist
+      const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      distributionRaw.forEach((row) => {
+        if (row.rating && row.rating >= 1 && row.rating <= 5) {
+          ratingDistribution[row.rating as 1 | 2 | 3 | 4 | 5] = row.count;
+        }
       });
 
       return {
@@ -79,6 +121,7 @@ export const commentRouter = createTRPCRouter({
           ? parseFloat(product.averageRating)
           : 0,
         ratingCount: product?.reviewCount ?? 0,
+        ratingDistribution,
       };
     }),
 

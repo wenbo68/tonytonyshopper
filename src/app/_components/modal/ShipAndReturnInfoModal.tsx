@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { returnReasonDetailsMap } from "~/const";
+import type { UserRole } from "~/server/db/schema";
 import { handleOverlayClick } from "~/server/utils/modal";
 import { formatCurrency } from "~/server/utils/product";
 import type { OrderItem } from "~/type";
@@ -9,13 +10,16 @@ import type { OrderItem } from "~/type";
 interface ShipAndReturnInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  orderItem: OrderItem | null;
+  shipAndReturnInfoModalProps: {
+    orderItem: OrderItem;
+    userRole: UserRole;
+  } | null;
 }
 
 export default function ShipAndReturnInfoModal({
   isOpen,
   onClose,
-  orderItem,
+  shipAndReturnInfoModalProps,
 }: ShipAndReturnInfoModalProps) {
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -29,7 +33,9 @@ export default function ShipAndReturnInfoModal({
     };
   }, [isOpen]);
 
-  if (!isOpen || !orderItem) return null;
+  if (!isOpen || !shipAndReturnInfoModalProps) return null;
+
+  const { orderItem, userRole } = shipAndReturnInfoModalProps;
 
   return (
     // Overlay
@@ -149,7 +155,11 @@ export default function ShipAndReturnInfoModal({
                   Amount:
                 </label>
                 <span className="">
-                  {formatCurrency(orderItem.refundedAmount)}
+                  {Number(orderItem.refundedAmount) < 0
+                    ? userRole === "user"
+                      ? 0
+                      : formatCurrency(orderItem.refundedAmount)
+                    : formatCurrency(orderItem.refundedAmount)}
                 </span>
               </div>
             </div>

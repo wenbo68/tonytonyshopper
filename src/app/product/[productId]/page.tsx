@@ -5,33 +5,26 @@ import { notFound, useParams } from "next/navigation";
 import { formatCurrency } from "~/server/utils/product";
 import { api } from "~/trpc/react";
 import { useState, useMemo, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+// import { useQueryClient } from "@tanstack/react-query";
 import { Dropdown } from "~/app/_components/Dropdown";
 import clsx from "clsx";
 import { useSession } from "next-auth/react";
 import { useGuestCartStore } from "~/app/_hooks/useGuestCartStore";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
-
-// Helper type for media items
-type MediaItem = {
-  id: string;
-  type: "image" | "video";
-  url: string;
-  position: number;
-  key: string;
-};
+import RatingAndCommentSection from "~/app/_components/comment/RatingAndCommentSection";
+import type { Media } from "~/type";
 
 export default function ProductDetailPage() {
   // ==== hooks ====
   const { data: session } = useSession();
   const utils = api.useUtils();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   // const params = useParams();
   // const productId = params.productId as string;
   const { productId } = useProductContext();
 
   // ==== states ====
-  const [activeMedia, setActiveMedia] = useState<MediaItem | null>(null);
+  const [activeMedia, setActiveMedia] = useState<Media | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
@@ -53,35 +46,36 @@ export default function ProductDetailPage() {
     {
       id: productId,
     },
-    {
-      // Check if this product already exists in the 'product.search' cache (from 'All Products' page)
-      initialData: () => {
-        // tRPC query keys are arrays where the first element is the path array
-        // We look for any queries starting with ['product', 'search']
-        const allSearchQueries = queryClient.getQueriesData({
-          queryKey: [["product", "search"]],
-        });
+    // {
+    //   // Check if this product already exists in the 'product.search' cache (from 'All Products' page)
+    //   initialData: () => {
+    //     // tRPC query keys are arrays where the first element is the path array
+    //     // We look for any queries starting with ['product', 'search']
+    //     const allSearchQueries = queryClient.getQueriesData({
+    //       queryKey: [["product", "search"]],
+    //     });
 
-        for (const [, queryData] of allSearchQueries) {
-          // Cast queryData to expected shape (it has a 'products' array)
-          const data = queryData as {
-            products: Array<{ id: string; [key: string]: any }>;
-          };
+    //     for (const [, queryData] of allSearchQueries) {
+    //       // Cast queryData to expected shape (it has a 'products' array)
+    //       const data = queryData as {
+    //         products: Array<{ id: string; [key: string]: any }>;
+    //       };
 
-          const foundProduct = data?.products?.find((p) => p.id === productId);
+    //       const foundProduct = data?.products?.find((p) => p.id === productId);
 
-          if (foundProduct) {
-            // Found it! Return it as the initial data.
-            console.log("found");
-            return foundProduct as any;
-          }
-        }
-        console.log("not found");
-        return undefined;
-      },
-      // If we found initial data, consider it fresh for 5 mins so we don't immediately background refetch
-      staleTime: 1000 * 60 * 10,
-    },
+    //       if (foundProduct) {
+    //         // Found it! Return it as the initial data.
+    //         console.log("found");
+    //         return foundProduct as any;
+    //       }
+    //     }
+    //     console.log("not found");
+    //     return undefined;
+    //   },
+
+    //   // If we found initial data, consider it fresh for 5 mins so we don't immediately background refetch
+    //   staleTime: 1000 * 60 * 10,
+    // },
   );
 
   // ==== effect & memo: options ====
@@ -133,7 +127,7 @@ export default function ProductDetailPage() {
 
   // Calculate the list of media (images/videos) to display
   const activeMediaList = useMemo(() => {
-    let rawList: MediaItem[] = [];
+    let rawList: Media[] = [];
 
     // 1. Try selected variant's media
     if (selectedVariant?.media && selectedVariant.media.length > 0) {
@@ -156,7 +150,7 @@ export default function ProductDetailPage() {
           position: 0,
           key: "placeholder",
         },
-      ] as MediaItem[];
+      ] as Media[];
     }
 
     // Sort: Images first, then Videos. Secondary sort by position.
@@ -198,7 +192,7 @@ export default function ProductDetailPage() {
     ? formatCurrency(selectedVariant.price)
     : "N/A";
   const displayStock = selectedVariant?.stock ?? 0;
-  const isOptionAvailable = !selectedVariant && product.variants.length > 0;
+  const isOptionAvailable = !!selectedVariant;
 
   // ==== Handlers ====
   const handleOptionChange = (optionName: string, value: string) => {
@@ -366,7 +360,7 @@ export default function ProductDetailPage() {
             className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
           >
             {!isOptionAvailable
-              ? `Unavailable Options`
+              ? `Unavailable`
               : displayStock <= 0
                 ? `Out of Stock`
                 : isAddingToUserCart
@@ -375,6 +369,7 @@ export default function ProductDetailPage() {
           </button>
         </div>
       </div>
+      <RatingAndCommentSection />
     </>
   );
 }

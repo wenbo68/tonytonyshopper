@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 import { handleOverlayClick } from "~/server/utils/modal";
-import StarRating from "../review/rating/StarRating";
+import StarRating from "../comment/rating/StarRating";
 import { customToast } from "~/app/_components/toast";
 
 type ReviewModalProps = {

@@ -5,16 +5,21 @@
 ### products
 
 - Home page: shows selected products
-- All page: all products, filters, pagination
-- detail page: details of a product, comments, comment filters
-- cart page: guest -> localstorage | user -> db
-- checkout page: stripe
+- All products page: all products, filters, pagination
+- Product details page: details of a product, comments, comment filters
+- Cart page: guest -> localstorage | user -> db
+- Checkout page: stripe
 
 ### user
 
-- login page: google/discord oauth
-- order history
-- admin: add product page
+- Login page: google/discord oauth
+- Orders page: user's order history, order filters, returns
+
+### admin
+
+- Sales page: admin's sales history, sales filters, ship/refunds
+- Add product page: add new product
+- Edit product page: edit existing product
 
 ### legal
 
@@ -22,6 +27,14 @@
 - contact us
 - privacy policy
 - terms & conditions
+
+## pending features
+
+### comments
+
+- current comments design: backend feed tree to frontend (as opposed to backend feeding list and frontend building tree out of list)
+- good for reading: frontend just displays the tree
+- bad to interactivity (optimistic updates): needs to change the entire comment tree instead of just 1 comment in the list
 
 ## reminders
 

@@ -1,4 +1,4 @@
-import ReviewSection from "~/app/_components/review/ReviewSection";
+// import ReviewSection from "~/app/_components/review/ReviewSection";
 import { ProductProvider } from "~/app/_contexts/ProductProvider";
 
 export default async function Layout({
@@ -12,9 +12,8 @@ export default async function Layout({
 
   return (
     <ProductProvider productId={productId}>
-      <section className="mx-auto flex max-w-2xl flex-col gap-5">
+      <section className="mx-auto flex max-w-2xl flex-col gap-8 sm:gap-10">
         {children}
-        <ReviewSection />
       </section>
     </ProductProvider>
   );

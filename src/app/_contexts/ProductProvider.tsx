@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useMemo } from "react";
+import { ReviewFilterProvider } from "./filter/ReviewFilterProvider";
 
 // 1. Define the shape of the context data
 interface ProductContextState {
@@ -9,7 +10,7 @@ interface ProductContextState {
 
 // 2. Create the context with a default value of 'undefined'
 const ProductContext = createContext<ProductContextState | undefined>(
-  undefined
+  undefined,
 );
 
 // 3. Create a custom hook for consuming the context
@@ -19,7 +20,7 @@ export function useProductContext() {
   // 4. Add a safety check
   if (context === undefined) {
     throw new Error(
-      'useProductContext must be used within a ProductContextProvider'
+      "useProductContext must be used within a ProductContextProvider",
     );
   }
 
@@ -39,6 +40,8 @@ export function ProductProvider({
   const value = useMemo(() => ({ productId }), [productId]);
 
   return (
-    <ProductContext.Provider value={value}>{children}</ProductContext.Provider>
+    <ProductContext.Provider value={value}>
+      <ReviewFilterProvider>{children} </ReviewFilterProvider>
+    </ProductContext.Provider>
   );
 }

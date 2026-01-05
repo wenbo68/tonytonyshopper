@@ -37,7 +37,7 @@ type WriteReviewProps =
       updateInput: UpdateReplyFields;
     };
 
-export default function WriteReply({
+export default function WriteOrUpdateReply({
   // setError,
   addInput,
   updateInput,
@@ -56,19 +56,19 @@ export default function WriteReply({
   };
 
   const addMutation = api.comment.add.useMutation({
-    onMutate: () => {
-      const toastId = customToast.loading("Adding...");
-      return { toastId };
-    },
-    onSuccess: (data, input, context) => {
-      void invalidateQueries(productId);
-      customToast.success("Add succeeded.", context?.toastId);
+    // onMutate: () => {
+    //   const toastId = customToast.loading("Adding...");
+    //   return { toastId };
+    // },
+    onSuccess: async (data, input, context) => {
+      await invalidateQueries(productId);
+      // customToast.success("Add succeeded.", context?.toastId);
+      handleCancel();
     },
     onError: (err, input, context) => {
       void invalidateQueries(productId);
-      // setError("Failed to delete review. Please try again.");
-      customToast.error("Add failed. Please try again.", context?.toastId);
-      console.error("WriteReply AddMutation onError:", err);
+      setError("Failed to add reply. Please try again.");
+      // customToast.error("Add failed. Please try again.", context?.toastId);
     },
   });
 
@@ -85,44 +85,48 @@ export default function WriteReply({
     addMutation.mutate({ productId, parentId: addInput.parentId, text });
   };
 
+  const handleCancel = () => {
+    if (addInput) {
+      addInput.setIsWritingReply(false);
+    } else {
+      updateInput?.setIsEditing(false);
+    }
+    setError("");
+  };
+
+  const handleSubmit = (e: FormEvent<Element>) =>
+    updateInput
+      ? updateInput.handleUpdate({
+          e,
+          id: updateInput.id,
+          type: "reply",
+          rating: undefined,
+          text,
+        })
+      : handleAdd(e);
+
   return (
     <form
-      onSubmit={(e: FormEvent<Element>) =>
-        updateInput
-          ? updateInput.handleUpdate({
-              e,
-              id: updateInput.id,
-              type: "reply",
-              rating: undefined,
-              text,
-            })
-          : handleAdd(e)
-      }
+      onSubmit={handleSubmit}
       className={`flex flex-col gap-2 bg-gray-900 ${
         updateInput ? "" : "pt-5 pl-10"
       } rounded text-sm text-gray-500`}
     >
       {error && <p className="text-sm text-red-400">{error}</p>}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Write a reply..."
           className="scrollbar-hide w-full rounded bg-gray-800 p-2 text-gray-400 outline-none"
           rows={2}
+          autoFocus
         ></textarea>
 
         <div className="flex justify-end gap-4">
           <button
             type="button"
-            onClick={() => {
-              if (addInput) {
-                addInput.setIsWritingReply(false);
-              } else {
-                updateInput?.setIsEditing(false);
-              }
-              setError("");
-            }}
+            onClick={handleCancel}
             disabled={updateInput?.isUpdatePending || addMutation.isPending}
             className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
           >

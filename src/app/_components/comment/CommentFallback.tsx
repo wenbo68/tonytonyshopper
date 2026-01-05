@@ -1,8 +1,8 @@
 // src/app/_components/review/reviews/ReviewOrReplyFallback.tsx
 
-export default function ReviewOrReplyFallback() {
+export default function CommentFallback() {
   return (
-    <div className="bg-gray-900 rounded p-5">
+    <div className="rounded bg-gray-900 p-5">
       <div className="flex animate-pulse gap-3">
         {/* Avatar Skeleton */}
         <div className="h-8 w-8 shrink-0 rounded-full bg-gray-800"></div>

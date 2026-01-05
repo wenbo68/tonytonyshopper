@@ -9,19 +9,20 @@ import {
   formatCurrency,
   formatProductOptionsCaption,
 } from "~/server/utils/product";
-import { useState } from "react";
+import { useEffect, useState } from "react"; // <--- Ensure useEffect is imported
 import { useProductVariantModalStore } from "../_hooks/useProductVariantModalStore";
 import { useCartMergeStore } from "../_hooks/useMergeCartStore";
 import type { VariantAndMediaAndProduct } from "~/type";
 import { FaPen, FaTrash } from "react-icons/fa";
 // import { ItemImage } from "../_components/item/ItemImage";
-import { ItemGrid, itemGridClassName } from "../_components/item/ItemGrid";
+import { ItemGrid } from "../_components/item/ItemGrid";
 import {
   OverlayButton,
   OverlayTag,
 } from "../_components/item/ItemImageOverlays";
 // import ItemGridSkeleton from "../_components/item/ItemGridSkeleton";
 import { ItemCard } from "../_components/item/ItemCard";
+import { customToast } from "../_components/toast";
 
 type CartItem = {
   variant: VariantAndMediaAndProduct;
@@ -41,8 +42,30 @@ export default function CartPage() {
 
   // ==== db mutations ====
   const removeUserItemMutation = api.cart.remove.useMutation({
-    onSuccess: () => {
-      utils.cart.get.invalidate();
+    onMutate: async ({ productVariantId }) => {
+      // 1. Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await utils.cart.get.cancel();
+
+      // 2. Snapshot the previous value
+      const previousCart = utils.cart.get.getData();
+
+      // 3. Optimistically update to the new value (Remove the item)
+      utils.cart.get.setData(undefined, (old) => {
+        if (!old) return [];
+        return old.filter((item) => item.productVariantId !== productVariantId);
+      });
+
+      // 4. Return a context object with the snapshotted value
+      return { previousCart };
+    },
+    onError: (err, newTodo, context) => {
+      // 5. If the mutation fails, use the context returned from onMutate to roll back
+      utils.cart.get.setData(undefined, context?.previousCart);
+      customToast.error("Failed to remove item. Please try again later.");
+    },
+    onSettled: () => {
+      // 6. Always refetch after error or success to ensure the client is in sync
+      void utils.cart.get.invalidate();
     },
   });
   const createCheckoutMutation = api.stripe.createCheckoutSession.useMutation({
@@ -60,26 +83,50 @@ export default function CartPage() {
 
   // ==== db queries ====
   // user cart
-  const { data: userCart, isFetching: isUserCartFetching } =
+  const { data: userCart, isPending: isUserCartPending } =
     api.cart.get.useQuery(undefined, {
       enabled: sessionStatus === "authenticated",
-      staleTime: 0,
-      refetchOnWindowFocus: false,
+      // staleTime: 0,
+      // refetchOnWindowFocus: false,
     });
   // guest cart: get ids from global state -> use ids to fetch details from db
   const { items: guestCartItems, removeItem: removeGuestItem } =
     useGuestCartStore();
   const guestVariantIds = guestCartItems.map((item) => item.productVariantId);
-  const { data: guestVariants, isFetching: isGuestVariantsFetching } =
+  const { data: guestVariants, isPending: isGuestVariantsPending } =
     api.product.getVariantsByIds.useQuery(guestVariantIds, {
       enabled:
         sessionStatus === "unauthenticated" && guestVariantIds.length > 0,
-      staleTime: 0,
-      refetchOnWindowFocus: false,
+      // staleTime: 0,
+      // refetchOnWindowFocus: false,
     });
 
   // is merging guest/user cart?
   const isMerging = useCartMergeStore((state) => state.isMerging);
+
+  // ==== OPTIMIZATION: Prefetch Product Details ====
+  // This loads the product data (including all variants) into the cache in the background.
+  // When the user clicks "Edit", the Modal's useQuery will find this data immediately.
+  useEffect(() => {
+    if (userCart) {
+      userCart.forEach((item) => {
+        const productId = item.productVariant.productId;
+        // We use 'void' to explicitly ignore the promise (fire and forget)
+        void utils.product.getById.prefetch({ id: productId });
+      });
+    }
+  }, [userCart, utils]);
+
+  // We can also prefetch for guest carts if needed, though getVariantsByIds
+  // often already fetches enough data depending on your router setup.
+  useEffect(() => {
+    if (guestVariants) {
+      guestVariants.forEach((variant) => {
+        void utils.product.getById.prefetch({ id: variant.productId });
+      });
+    }
+  }, [guestVariants, utils]);
+  // ================================================
 
   // ==== Fill cartItems with user/guest cart items ====
   let cartItems: CartItem[] = [];
@@ -87,7 +134,7 @@ export default function CartPage() {
 
   if (session?.user) {
     const isPendingMerge = guestCartItems.length > 0;
-    showLoading = isUserCartFetching || isMerging || isPendingMerge;
+    showLoading = isUserCartPending || isMerging || isPendingMerge;
 
     cartItems =
       userCart?.map((item) => ({
@@ -95,7 +142,7 @@ export default function CartPage() {
         quantity: item.quantity,
       })) ?? [];
   } else {
-    showLoading = isGuestVariantsFetching;
+    showLoading = isGuestVariantsPending;
 
     if (guestVariants) {
       const guestVariantMap = new Map(guestVariants.map((v) => [v.id, v]));

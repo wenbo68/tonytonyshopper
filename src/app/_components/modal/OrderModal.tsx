@@ -7,7 +7,7 @@ import type { RouterOutputs } from "~/trpc/react";
 
 // Define a union type that accepts either User Order or Admin Order
 type UserOrder = RouterOutputs["order"]["getUserOrders"]["orders"][number];
-type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
+type AdminOrder = RouterOutputs["order"]["getAdminOrders"]["orders"][number];
 
 interface OrderModalProps {
   order: UserOrder | AdminOrder | null;
