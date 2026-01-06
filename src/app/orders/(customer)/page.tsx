@@ -51,9 +51,10 @@ export default function OrdersPage() {
     (state) => state.openModal,
   );
 
-  const prefetchProductDetails = (productId: string) => {
+  const prefetchProductDetails = (productId: string, orderItemId: string) => {
     void utils.product.getById.prefetch({ id: productId });
     void utils.comment.getUserReviewForProduct.prefetch({ productId });
+    void utils.orderItem.getReturnMedia.prefetch({ orderItemId });
   };
 
   // states
@@ -299,9 +300,11 @@ export default function OrdersPage() {
                     <div
                       key={item.id}
                       onMouseEnter={(e) =>
-                        prefetchProductDetails(variant.productId)
+                        prefetchProductDetails(variant.productId, item.id)
                       }
-                      onFocus={(e) => prefetchProductDetails(variant.productId)}
+                      onFocus={(e) =>
+                        prefetchProductDetails(variant.productId, item.id)
+                      }
                     >
                       <ItemCard
                         image={{
@@ -354,7 +357,10 @@ export default function OrdersPage() {
                               className="z-20" // Higher z-index so dropdown floats over other tags
                               title="Item Options"
                               onClick={(e) => {
-                                prefetchProductDetails(variant.productId); // mobile prefetch
+                                prefetchProductDetails(
+                                  variant.productId,
+                                  item.id,
+                                ); // mobile prefetch
                                 toggleMenu(e, item.id);
                               }}
                             >

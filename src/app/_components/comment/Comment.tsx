@@ -312,6 +312,7 @@ export default function Comment({
           <div className="flex flex-col gap-2 pl-1.5">
             {/* text */}
             <p className="text-sm text-gray-400">{comment.text}</p>
+            {/* media list */}
             {comment.media && comment.media.length > 0 && (
               <div className="flex flex-wrap gap-1 sm:gap-2">
                 {comment.media.map((mediaItem, index) => (

@@ -17,7 +17,8 @@ import { TRPCError } from "@trpc/server";
 // import { orderItems } from "~/server/db/schema";
 import Stripe from "stripe";
 import { env } from "~/env";
-import { returnMedia } from "~/server/db/schema";
+import { orderItems, returnMedia } from "~/server/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 export const orderItemRouter = createTRPCRouter({
   // paid -> canceled
@@ -415,5 +416,25 @@ export const orderItemRouter = createTRPCRouter({
           { refundedAmount: (refundTotalCents / 100).toString() },
         );
       });
+    }),
+
+  getReturnMedia: protectedProcedure
+    .input(z.object({ orderItemId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const media = await ctx.db
+        .select()
+        .from(returnMedia)
+        .where(eq(returnMedia.orderItemId, input.orderItemId))
+        .orderBy(
+          sql`CASE
+            WHEN ${returnMedia.type} = 'image' THEN 0
+            WHEN ${returnMedia.type} = 'video' THEN 1
+          END`,
+          returnMedia.position,
+        );
+
+      return {
+        returnMedia: media,
+      };
     }),
 });

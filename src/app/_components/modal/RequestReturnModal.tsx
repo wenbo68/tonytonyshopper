@@ -14,6 +14,7 @@ import {
   returnReasonDetailsMap,
   returnReasonOptions,
 } from "~/const";
+import { MediaGrid, type MediaItem } from "../MediaGrid";
 
 // type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
 
@@ -34,6 +35,8 @@ export function RequestReturnModal({
 
   const [quantity, setQuantity] = useState<number | "">("");
   const [returnReason, setReturnReason] = useState<string>("");
+  const [images, setImages] = useState<MediaItem[]>([]);
+  const [videos, setVideos] = useState<MediaItem[]>([]);
 
   // prevent scrolling main page when modal is open
   useEffect(() => {
@@ -52,6 +55,9 @@ export function RequestReturnModal({
     if (orderItem) {
       setQuantity(orderItem.status === "shipped" ? 1 : orderItem.quantity);
       setReturnReason(orderItem.returnReason ?? "");
+      // Reset media
+      setImages([]);
+      setVideos([]);
     }
   }, [orderItem]);
 
@@ -114,12 +120,29 @@ export function RequestReturnModal({
     const finalQuantity = quantity === "" ? 0 : quantity;
     setQuantity(finalQuantity);
 
+    // Combine images and videos into the expected media array format
+    const mediaPayload = [
+      ...images.map((img, i) => ({
+        key: img.key,
+        url: img.url,
+        type: "image" as const,
+        position: i,
+      })),
+      ...videos.map((vid, i) => ({
+        key: vid.key,
+        url: vid.url,
+        type: "video" as const,
+        position: i,
+      })),
+    ];
+
     updateReturnMutation.mutate({
       orderItemId: orderItem.id,
       quantity: finalQuantity,
       // carrier,
       // trackingNumber,
       returnReason: returnReason as ReturnReason,
+      media: mediaPayload,
     });
   };
 
@@ -202,6 +225,24 @@ export function RequestReturnModal({
               menuColor="bg-gray-700"
               // menuRingColor="bg-gray-600"
               menuHighlightColor="hover:bg-gray-800"
+            />
+          </div>
+          {/* Media Upload Section */}
+          <div className="flex flex-col gap-2">
+            <label className="font-semibold">Evidence</label>
+            <MediaGrid
+              items={images}
+              onChange={setImages}
+              mediaType="image"
+              maxItems={4}
+              uploadThingRoute="returnImageUploader"
+            />
+            <MediaGrid
+              items={videos}
+              onChange={setVideos}
+              mediaType="video"
+              maxItems={1}
+              uploadThingRoute="returnVideoUploader"
             />
           </div>
         </div>

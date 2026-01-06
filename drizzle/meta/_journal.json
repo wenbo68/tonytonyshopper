@@ -169,6 +169,13 @@
       "when": 1767621692961,
       "tag": "0023_secret_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1767691522689,
+      "tag": "0024_careless_hydra",
+      "breakpoints": true
     }
   ]
 }
