@@ -29,7 +29,7 @@ export function ItemImage({
       width={600}
       height={600}
       className={clsx(
-        "aspect-square h-full w-full object-cover transition-transform duration-300 hover:scale-105",
+        "aspect-square h-full w-full object-contain transition-transform duration-300 hover:scale-105",
         imageClassName,
       )}
     />

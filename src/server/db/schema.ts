@@ -576,7 +576,7 @@ export const orderItemMedia = createTable(
 
     position: d.integer().notNull(),
   }),
-  (t) => [index("order_item_media_order_item_idx").on(t.orderItemId)],
+  (t) => [index("order_item_media_order_item_id_idx").on(t.orderItemId)],
 );
 
 export const orderItemMediaRelations = relations(orderItemMedia, ({ one }) => ({

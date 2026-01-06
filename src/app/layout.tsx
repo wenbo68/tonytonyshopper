@@ -87,7 +87,6 @@ export default function RootLayout({
 // don't think about label in return; the steps are now simplified. implement requested business logic when there is a real client
 
 // three things to work on:
-// 2. upload/edit image/video in review modal (then show in comment and allow editing in writeOrUpdateReview)
 // 3. upload image/video in return modal (then show in shipAndReturnInfoModal)
 // 4. finish home page
 // make user reviews show the user's purchased variants
@@ -95,5 +94,3 @@ export default function RootLayout({
 // 3. text filter but allows multiple entries (eg for order items)
 // 5. better ui for add/edit product (enforce 1/+ images for each variant)
 // 1. optimistic update for return modals
-
-// fix writeOrUpdateReview media grid bugs => also refactor the edit media section to reuse in ProductForm, ReviewModal, WriteOrUpdateReview

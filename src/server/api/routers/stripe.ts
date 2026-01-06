@@ -107,7 +107,7 @@ export const stripeRouter = createTRPCRouter({
           price_data: {
             currency: "usd",
             product_data: {
-              name: `${cartItemInfo.product.name} - ${cartItemInfo.name ?? ""}`.trim(),
+              name: `${cartItemInfo.product.name} ${formatProductOptionsCaption(cartItemInfo.options) ?? ""}`.trim(),
             },
             unit_amount: itemPrice,
           },
