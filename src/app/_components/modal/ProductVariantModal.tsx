@@ -22,6 +22,7 @@ import {
 } from "../item/ItemImageOverlays";
 import { handleOverlayClick } from "~/server/utils/modal";
 import { customToast } from "~/app/_components/toast";
+import { MediaCarousel } from "../MediaCarousel";
 
 export function ProductVariantModal() {
   const { data: session } = useSession();
@@ -42,8 +43,8 @@ export function ProductVariantModal() {
     Record<string, string>
   >({});
   const [quantity, setQuantity] = useState<number | "">(1);
-  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  // const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // === 3. Query ===
   const { data: fetchedProduct, isFetching: isFetchingProduct } =
@@ -181,11 +182,11 @@ export function ProductVariantModal() {
     // 2. If absolutely no media, return fallback
     if (rawMedia.length === 0) {
       return [
-        {
-          type: "image",
-          url: "https://placehold.co/600x600/eee/ccc.png?text=No+Image",
-          id: "placeholder",
-        },
+        // {
+        //   type: "image",
+        //   url: "https://placehold.co/600x600/eee/ccc.png?text=No+Image",
+        //   id: "placeholder",
+        // },
       ];
     }
 
@@ -200,41 +201,41 @@ export function ProductVariantModal() {
     return [...images, ...videos];
   }, [product, selectedVariant]);
 
-  // Handle manual scroll (buttons)
-  const scroll = (direction: "left" | "right") => {
-    if (scrollContainerRef.current) {
-      const { clientWidth } = scrollContainerRef.current;
-      scrollContainerRef.current.scrollBy({
-        left: direction === "left" ? -clientWidth : clientWidth,
-        behavior: "smooth",
-      });
-    }
-  };
+  // // Handle manual scroll (buttons)
+  // const scroll = (direction: "left" | "right") => {
+  //   if (scrollContainerRef.current) {
+  //     const { clientWidth } = scrollContainerRef.current;
+  //     scrollContainerRef.current.scrollBy({
+  //       left: direction === "left" ? -clientWidth : clientWidth,
+  //       behavior: "smooth",
+  //     });
+  //   }
+  // };
 
-  // Handle scroll event (swiping or button scroll) to update the active index
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, clientWidth } = scrollContainerRef.current;
-      const newIndex = Math.round(scrollLeft / clientWidth);
-      setActiveMediaIndex(newIndex);
-    }
-  };
+  // // Handle scroll event (swiping or button scroll) to update the active index
+  // const handleScroll = () => {
+  //   if (scrollContainerRef.current) {
+  //     const { scrollLeft, clientWidth } = scrollContainerRef.current;
+  //     const newIndex = Math.round(scrollLeft / clientWidth);
+  //     setActiveMediaIndex(newIndex);
+  //   }
+  // };
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      // Reset media index and scroll position when modal opens
-      setActiveMediaIndex(0);
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollLeft = 0;
-      }
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     document.body.style.overflow = "hidden";
+  //     // Reset media index and scroll position when modal opens
+  //     setActiveMediaIndex(0);
+  //     if (scrollContainerRef.current) {
+  //       scrollContainerRef.current.scrollLeft = 0;
+  //     }
+  //   } else {
+  //     document.body.style.overflow = "unset";
+  //   }
+  //   return () => {
+  //     document.body.style.overflow = "unset";
+  //   };
+  // }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && product) {
@@ -348,88 +349,28 @@ export function ProductVariantModal() {
           <div className="scrollbar-hide flex w-full flex-col gap-5 overflow-y-auto rounded bg-gray-900 p-4">
             <div className="flex flex-col gap-3">
               {/* Media Carousel */}
-              <div className="group relative aspect-square w-full overflow-hidden rounded">
-                <div
-                  ref={scrollContainerRef}
-                  onScroll={handleScroll}
-                  className="scrollbar-hide flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth"
-                >
-                  {mediaList.map((media, idx) => (
-                    <div
-                      key={media.id || idx}
-                      className="h-full w-full shrink-0 snap-center"
-                    >
-                      {media.type === "video" ? (
-                        <video
-                          src={media.url}
-                          controls
-                          className="h-full w-full object-cover"
-                          // Prevent modal close when clicking controls
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        <ItemImage
-                          src={media.url}
-                          alt={product.name ?? "Product image"}
-                          href={`/product/${product.id}`}
-                          onClick={closeModal}
-                          className="h-full w-full"
-                          // Note: We don't pass overlays here anymore
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Gradient Overlay & Indicators */}
-                {mediaList.length > 1 && (
-                  <>
-                    {/* Gradient backing for indicators */}
-                    <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-16 bg-linear-to-t from-black/70 to-transparent" />
-
-                    {/* Indicators */}
-                    <div className="absolute right-0 bottom-2 left-0 z-20 flex justify-center gap-1.5 px-2">
-                      {mediaList.map((_, idx) => (
-                        <div
-                          key={idx}
-                          className={`h-[3px] w-full max-w-5.5 rounded-full shadow-sm transition-all duration-300 sm:max-w-6.5 ${
-                            idx === activeMediaIndex
-                              ? "bg-white opacity-100"
-                              : "bg-white/50 opacity-60 hover:bg-white/80"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {/* Navigation Arrows (Desktop) */}
-                {mediaList.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        scroll("left");
-                      }}
-                      className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0"
-                    >
-                      <FaChevronLeft />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        scroll("right");
-                      }}
-                      className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                      <FaChevronRight />
-                    </button>
-                  </>
-                )}
-
-                {/* Overlays (Static on top of carousel) */}
+              <MediaCarousel
+                mediaList={mediaList}
+                renderItem={(media) =>
+                  media.type === "video" ? (
+                    <video
+                      src={media.url}
+                      controls
+                      className="h-full w-full object-cover"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <ItemImage
+                      src={media.url}
+                      alt={product.name ?? "Product image"}
+                      href={`/product/${product.id}`}
+                      onClick={closeModal}
+                      className="h-full w-full"
+                    />
+                  )
+                }
+              >
+                {/* Overlays */}
                 {session?.user?.role === "admin" && (
                   <OverlayLink
                     href={`/product/edit/${product.id}`}
@@ -445,7 +386,7 @@ export function ProductVariantModal() {
                     Stock: {displayStock}
                   </OverlayTag>
                 </OverlayTagGroup>
-              </div>
+              </MediaCarousel>
 
               <div className="flex flex-col items-center gap-0">
                 <Link

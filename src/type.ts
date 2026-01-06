@@ -205,6 +205,13 @@ export type UpdateCommentInput = {
   e: React.FormEvent;
   id: string;
   text: string;
+  // New optional media field
+  media?: {
+    key: string;
+    url: string;
+    type: "image" | "video";
+    position: number;
+  }[];
 } & (
   | {
       type: "review";

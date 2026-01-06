@@ -213,160 +213,162 @@ export default function ProductDetailPage() {
 
   return (
     <>
-      {/* images */}
-      {/* Left: Image/Video Gallery */}
-      <div className="flex w-full flex-col gap-3 sm:flex-row">
-        {/* Main Media View */}
-        <div className="relative aspect-square w-full grow overflow-hidden rounded bg-gray-900">
-          {currentMedia?.type === "video" ? (
-            <video
-              src={currentMedia.url}
-              controls
-              className="h-full w-full object-contain"
-              // Optional: You could add a poster image here if you have one
-            />
-          ) : (
-            <Image
-              src={
-                currentMedia?.url ??
-                "https://placehold.co/600x600/e0e0e0/333.png?text=No-Image"
-              }
-              alt={product.name ?? "Product image"}
-              fill
-              className="object-contain"
-              priority
-            />
-          )}
+      <div className="flex flex-col gap-4">
+        <div className="flex w-full flex-col gap-3 sm:flex-row">
+          {/* Main Media View */}
+          <div className="relative aspect-square w-full grow overflow-hidden rounded bg-gray-900">
+            {currentMedia?.type === "video" ? (
+              <video
+                src={currentMedia.url}
+                controls
+                className="h-full w-full object-contain"
+                // Optional: You could add a poster image here if you have one
+              />
+            ) : (
+              <Image
+                src={
+                  currentMedia?.url ??
+                  "https://placehold.co/600x600/e0e0e0/333.png?text=No-Image"
+                }
+                alt={product.name ?? "Product image"}
+                fill
+                className="object-contain"
+                priority
+              />
+            )}
 
-          {/* Price Tag (Bottom-Left) */}
-          <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
-            <div className="rounded bg-black/70 px-3 py-2 text-xs font-bold text-gray-300 backdrop-blur-md">
-              {displayPrice}
-            </div>
-            {/* Stock Tag */}
-            <div className="rounded bg-black/70 px-3 py-2 text-xs font-bold text-gray-300 backdrop-blur-md">
-              Stock: {displayStock}
+            {/* Price Tag (Bottom-Left) */}
+            <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2">
+              <div className="rounded bg-black/70 px-3 py-2 text-xs font-bold text-gray-300 backdrop-blur-md">
+                {displayPrice}
+              </div>
+              {/* Stock Tag */}
+              <div className="rounded bg-black/70 px-3 py-2 text-xs font-bold text-gray-300 backdrop-blur-md">
+                Stock: {displayStock}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
-        <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[530px] sm:w-40 sm:flex-col sm:overflow-y-auto">
-          {activeMediaList.map((media, index) => (
-            <button
-              key={`${media.id}-${index}`}
-              onClick={() => setActiveMedia(media)}
-              className={clsx(
-                "relative aspect-square w-20 shrink-0 overflow-hidden rounded border-2 transition-all sm:w-full",
-                activeMedia?.id === media.id
-                  ? "border-blue-500 opacity-100"
-                  : "border-transparent bg-gray-800 opacity-60 hover:opacity-100",
-              )}
-            >
-              {media.type === "video" ? (
-                <div className="relative h-full w-full">
-                  <video
-                    src={media.url}
-                    className="h-full w-full object-contain"
-                  />
-                  {/* Play Icon Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="h-8 w-8 text-white drop-shadow-md"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+          {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
+          <div className="scrollbar-hide flex gap-3 overflow-x-auto sm:h-[530px] sm:w-40 sm:flex-col sm:overflow-y-auto">
+            {activeMediaList.map((media, index) => (
+              <button
+                key={`${media.id}-${index}`}
+                onClick={() => setActiveMedia(media)}
+                className={clsx(
+                  "relative aspect-square w-20 shrink-0 overflow-hidden rounded border-2 transition-all sm:w-full",
+                  activeMedia?.id === media.id
+                    ? "border-blue-500 opacity-100"
+                    : "border-transparent bg-gray-800 opacity-60 hover:opacity-100",
+                )}
+              >
+                {media.type === "video" ? (
+                  <div className="relative h-full w-full">
+                    <video
+                      src={media.url}
+                      className="h-full w-full object-contain"
+                    />
+                    {/* Play Icon Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="h-8 w-8 text-white drop-shadow-md"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Image
-                  src={media.url}
-                  alt={`Product view ${index + 1}`}
-                  fill
-                  className="object-contain"
-                />
-              )}
-            </button>
-          ))}
+                ) : (
+                  <Image
+                    src={media.url}
+                    alt={`Product view ${index + 1}`}
+                    fill
+                    className="object-contain"
+                  />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-0">
-          {/* product name */}
-          <h1 className="text-xl font-semibold text-gray-300">
-            {product.name}
-          </h1>
-          {/* description */}
-          <p className="text-sm text-gray-400">{product.description}</p>
-        </div>
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-0">
+            {/* product name */}
+            <h1 className="text-xl font-semibold text-gray-300">
+              {product.name}
+            </h1>
+            {/* description */}
+            <p className="text-sm text-gray-400">{product.description}</p>
+          </div>
 
-        <div className="flex flex-col gap-3">
-          {/* options */}
-          {Object.entries(options).map(([name, values]) => (
-            <div key={name} className="flex items-center gap-2">
-              <label className="min-w-16 text-sm text-gray-400 capitalize">
-                {name}:
+          <div className="flex flex-col gap-3">
+            {/* options */}
+            {Object.entries(options).map(([name, values]) => (
+              <div key={name} className="flex items-center gap-2">
+                <label className="min-w-16 text-sm text-gray-400 capitalize">
+                  {name}:
+                </label>
+                <Dropdown
+                  options={values.map((v) => ({ label: v, value: v }))}
+                  value={selectedOptions[name] ?? ""}
+                  onChange={(newValue) => handleOptionChange(name, newValue)}
+                  triggerColor="bg-gray-900"
+                  menuColor="bg-gray-800"
+                  // menuRingColor="bg-gray-700"
+                  menuHighlightColor="hover:bg-gray-900"
+                />
+              </div>
+            ))}
+            {/* Quantity */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="quantity"
+                className="min-w-16 text-sm text-gray-400"
+              >
+                Quantity:
               </label>
-              <Dropdown
-                options={values.map((v) => ({ label: v, value: v }))}
-                value={selectedOptions[name] ?? ""}
-                onChange={(newValue) => handleOptionChange(name, newValue)}
-                triggerColor="bg-gray-900"
-                menuColor="bg-gray-800"
-                // menuRingColor="bg-gray-700"
-                menuHighlightColor="hover:bg-gray-900"
+              <input
+                type="number"
+                id="quantity"
+                min="1"
+                max={displayStock}
+                value={quantity}
+                onChange={(e) =>
+                  setQuantity(Math.max(0, Number(e.target.value)))
+                }
+                className="w-full rounded bg-gray-900 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
             </div>
-          ))}
-          {/* Quantity */}
-          <div className="flex items-center gap-2">
-            <label
-              htmlFor="quantity"
-              className="min-w-16 text-sm text-gray-400"
-            >
-              Quantity:
-            </label>
-            <input
-              type="number"
-              id="quantity"
-              min="1"
-              max={displayStock}
-              value={quantity}
-              onChange={(e) => setQuantity(Math.max(0, Number(e.target.value)))}
-              className="w-full rounded bg-gray-900 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
           </div>
-        </div>
 
-        <div className="flex flex-col gap-0">
-          {!selectedVariant && product.variants.length > 0 && (
-            <p className="text-sm text-red-600">
-              This combination of options is not available.
-            </p>
-          )}
-          {/* <AddToCartButton product={product} initialOptions={selectedOptions} /> */}
-          <button
-            onClick={handleAddToCart}
-            disabled={
-              isAddingToUserCart || !isOptionAvailable || displayStock <= 0
-            }
-            className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
-          >
-            {!isOptionAvailable
-              ? `Unavailable`
-              : displayStock <= 0
-                ? `Out of Stock`
-                : isAddingToUserCart
-                  ? `Adding...`
-                  : `Add To Cart`}
-          </button>
+          <div className="flex flex-col gap-0">
+            {!selectedVariant && product.variants.length > 0 && (
+              <p className="text-sm text-red-600">
+                This combination of options is not available.
+              </p>
+            )}
+            {/* <AddToCartButton product={product} initialOptions={selectedOptions} /> */}
+            <button
+              onClick={handleAddToCart}
+              disabled={
+                isAddingToUserCart || !isOptionAvailable || displayStock <= 0
+              }
+              className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-gray-300 transition-all hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-600"
+            >
+              {!isOptionAvailable
+                ? `Unavailable`
+                : displayStock <= 0
+                  ? `Out of Stock`
+                  : isAddingToUserCart
+                    ? `Adding...`
+                    : `Add To Cart`}
+            </button>
+          </div>
         </div>
       </div>
       <RatingAndCommentSection />

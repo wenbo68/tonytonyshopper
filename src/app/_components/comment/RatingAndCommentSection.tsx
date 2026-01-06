@@ -57,7 +57,11 @@ export default function RatingAndCommentSection() {
   const isPending = isRatingDataPending || isCommentDataPending;
 
   if (isPending)
-    return <div className="animate-pulse text-center">Loading reviews...</div>;
+    return (
+      <div className="animate-pulse text-center text-gray-300">
+        Loading reviews...
+      </div>
+    );
 
   return (
     <section className="flex flex-col gap-5 sm:gap-7">

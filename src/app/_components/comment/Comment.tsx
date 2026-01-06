@@ -14,6 +14,8 @@ import { dequal } from "dequal";
 import { useProductContext } from "~/app/_contexts/ProductProvider";
 import WriteOrUpdateReview from "./write-or-update-form/WriteOrUpdateReview";
 import { customToast } from "~/app/_components/toast";
+import { useMediaModalStore } from "~/app/_hooks/useMediaModalStore";
+import { FaPlay } from "react-icons/fa";
 
 export default function Comment({
   comment,
@@ -24,6 +26,7 @@ export default function Comment({
 }) {
   const { data: session } = useSession();
   const { productId } = useProductContext();
+  const openMediaModal = useMediaModalStore((state) => state.open);
   const utils = api.useUtils();
 
   const [showDropdown, setShowDropdown] = useState(false);
@@ -99,7 +102,14 @@ export default function Comment({
     },
   });
 
-  const handleUpdate = ({ e, id, type, rating, text }: UpdateCommentInput) => {
+  const handleUpdate = ({
+    e,
+    id,
+    type,
+    rating,
+    text,
+    media,
+  }: UpdateCommentInput) => {
     e.preventDefault();
     if (type === "review") {
       if (rating === 0) {
@@ -116,6 +126,7 @@ export default function Comment({
       id,
       text,
       rating,
+      media,
     });
   };
 
@@ -212,6 +223,7 @@ export default function Comment({
                 commentId: comment.id,
                 rating: comment.rating ?? 0,
                 text: comment.text,
+                media: comment.media,
                 setIsEditing,
                 handleUpdate,
                 isUpdatePending: updateMutation.isPending,
@@ -300,20 +312,25 @@ export default function Comment({
           <div className="flex flex-col gap-2 pl-1.5">
             {/* text */}
             <p className="text-sm text-gray-400">{comment.text}</p>
-            {/* NEW: Render Media */}
             {comment.media && comment.media.length > 0 && (
               <div className="flex flex-wrap gap-1 sm:gap-2">
-                {comment.media.map((mediaItem) => (
+                {comment.media.map((mediaItem, index) => (
                   <div
                     key={mediaItem.id}
-                    className="relative h-23 w-23 overflow-hidden rounded bg-black sm:h-29 sm:w-29"
+                    className="relative h-23 w-23 cursor-pointer overflow-hidden rounded border border-gray-700 bg-black hover:opacity-80 sm:h-29 sm:w-29"
+                    onClick={() => openMediaModal(comment.media, index)}
                   >
                     {mediaItem.type === "video" ? (
-                      <video
-                        src={mediaItem.url}
-                        className="h-full w-full object-contain"
-                        controls
-                      />
+                      <>
+                        <video
+                          src={mediaItem.url}
+                          className="h-full w-full object-contain"
+                          // No controls here
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <FaPlay className="text-gray-300" />
+                        </div>
+                      </>
                     ) : (
                       <Image
                         src={mediaItem.url}

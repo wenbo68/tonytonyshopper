@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import { ProductVariantModal } from "./_components/modal/ProductVariantModal";
 import { CartMergeHandler } from "./_components/CartMergeHandler";
 import { CheckoutListener } from "./_components/CheckoutListener";
+import { MediaModal } from "./_components/modal/MediaModal";
 
 export const metadata: Metadata = {
   title: "TonyTonyShopper",
@@ -33,6 +34,7 @@ export default function RootLayout({
           <CartMergeHandler />
           {/* we don't use zustand for order modal bc its only used directly in the orders & orders/admin page */}
           <ProductVariantModal />
+          <MediaModal />
           <TopNav />
           <main className="mx-auto w-full max-w-7xl grow px-2 pt-4 pb-10 sm:pt-5 sm:pb-11 md:pt-6 md:pb-12 lg:pt-7 lg:pb-13 xl:pt-8 xl:pb-14">
             {children}
@@ -93,3 +95,5 @@ export default function RootLayout({
 // 3. text filter but allows multiple entries (eg for order items)
 // 5. better ui for add/edit product (enforce 1/+ images for each variant)
 // 1. optimistic update for return modals
+
+// fix writeOrUpdateReview media grid bugs => also refactor the edit media section to reuse in ProductForm, ReviewModal, WriteOrUpdateReview
