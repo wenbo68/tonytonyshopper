@@ -4,10 +4,11 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Image from "next/image";
 import { clsx } from "clsx";
+import type { MediaType } from "~/server/db/schema";
 
 export interface MediaItem {
   id?: string;
-  type: "image" | "video";
+  type: MediaType;
   url: string;
   [key: string]: any;
 }

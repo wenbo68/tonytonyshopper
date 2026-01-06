@@ -4,17 +4,11 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
 import type { Category } from "~/type";
-import { MultiUploader } from "./MultiUploader";
-import { FaTrash, FaGripVertical, FaVideo, FaImage } from "react-icons/fa";
-
-// 1. Types
-type MediaItem = {
-  key: string;
-  url: string;
-};
+import { FaImage, FaVideo } from "react-icons/fa";
+import { MediaGrid, type MediaItem } from "./MediaGrid";
 
 type VariantState = {
-  id?: string; // Added for Edit mode
+  id?: string;
   price: string;
   stock: string;
   options: string;
@@ -46,17 +40,11 @@ export default function ProductForm({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
-
-  // Initialize Variants from Initial Data
   const [variants, setVariants] = useState<VariantState[]>([]);
-
   const [error, setError] = useState<string | null>(null);
-
-  // Initialize Option Groups from Initial Data (Reconstruction)
   const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([
     { id: crypto.randomUUID(), name: "", values: [] },
   ]);
-
   const [pendingValues, setPendingValues] = useState<Record<string, string>>(
     {},
   );
@@ -65,20 +53,18 @@ export default function ProductForm({
   useEffect(() => {
     if (!editedProduct) return;
 
-    // 1. Basic Info
     setName(editedProduct.name);
     setDescription(editedProduct.description ?? "");
     setCategoryIds(
       editedProduct.productsToCategories.map((ptc) => ptc.categoryId),
     );
 
-    // 2. Reconstruct Variants
     const loadedVariants = editedProduct.variants.map((v) => {
       const sortedMedia = [...v.media].sort((a, b) => a.position - b.position);
       return {
         id: v.id,
-        price: String(v.price), // Ensure string for input
-        stock: String(v.stock), // Ensure string for input
+        price: String(v.price),
+        stock: String(v.stock),
         options: JSON.stringify(v.options ?? {}),
         images: sortedMedia
           .filter((m) => m.type === "image")
@@ -90,7 +76,7 @@ export default function ProductForm({
     });
     setVariants(loadedVariants);
 
-    // 3. Reconstruct Option Groups
+    // Reconstruct Option Groups
     const groups: Record<string, Set<string>> = {};
     editedProduct.variants.forEach((v) => {
       const opts = (v.options as Record<string, string>) || {};
@@ -113,21 +99,11 @@ export default function ProductForm({
       );
       setOptionGroups(reconstructedGroups);
     } else {
-      // Reset to default if no options exist
       setOptionGroups([{ id: crypto.randomUUID(), name: "", values: [] }]);
     }
   }, [editedProduct]);
 
-  // Drag and Drop state
-  const [draggedItem, setDraggedItem] = useState<{
-    variantIndex: number;
-    mediaType: "image" | "video";
-    mediaIndex: number;
-  } | null>(null);
-
   // --- Mutations ---
-  const utils = api.useUtils();
-
   const addProductMutation = api.admin.addProduct.useMutation({
     onSuccess: (data) => {
       alert(`Product "${name}" added with ID: ${data.id}`);
@@ -145,12 +121,6 @@ export default function ProductForm({
       setError(`Failed to update product: ${err.message}`);
     },
   });
-
-  // const deleteMediaMutation = api.admin.deleteMedia.useMutation({
-  //   onError: (err) => {
-  //     console.error("Failed to delete media from UploadThing:", err);
-  //   },
-  // });
 
   const isPending =
     addProductMutation.isPending || updateProductMutation.isPending;
@@ -235,14 +205,12 @@ export default function ProductForm({
       });
 
       const jsonOptions = JSON.stringify(optionsMap);
-
-      // Check if this variant already exists (to preserve ID, Price, Stock, Media)
       const existingVariant = variants.find((v) => v.options === jsonOptions);
 
       if (existingVariant) return existingVariant;
 
       return {
-        id: undefined, // New variant
+        id: undefined,
         price: "0",
         stock: "0",
         images: [],
@@ -258,139 +226,17 @@ export default function ProductForm({
   const handleVariantChange = (
     index: number,
     field: keyof VariantState,
-    value: string,
+    value: any,
   ) => {
-    const newVariants = [...variants];
-    newVariants[index] = { ...newVariants[index]!, [field]: value };
-    setVariants(newVariants);
+    setVariants((prev) => {
+      const newVariants = [...prev];
+      newVariants[index] = { ...newVariants[index]!, [field]: value };
+      return newVariants;
+    });
   };
 
   const removeVariant = (index: number) => {
     setVariants(variants.filter((_, i) => i !== index));
-  };
-
-  // --- Media Handlers ---
-  const addMediaToVariant = (
-    index: number,
-    newMedia: { key: string; url: string }[],
-    type: "image" | "video",
-  ) => {
-    setVariants((prev) => {
-      const newVariants = [...prev];
-      const variant = newVariants[index]!;
-
-      if (type === "image") {
-        if (variant.images.length + newMedia.length > 8) {
-          alert("Max 8 images allowed per variant.");
-          return prev;
-        }
-        newVariants[index] = {
-          ...variant,
-          images: [...variant.images, ...newMedia],
-        };
-      } else {
-        if (variant.videos.length + newMedia.length > 1) {
-          alert("Max 1 video allowed per variant.");
-          return prev;
-        }
-        newVariants[index] = {
-          ...variant,
-          videos: [...variant.videos, ...newMedia],
-        };
-      }
-      return newVariants;
-    });
-  };
-
-  const removeMedia = (
-    variantIndex: number,
-    mediaIndex: number,
-    type: "image" | "video",
-  ) => {
-    const variant = variants[variantIndex]!;
-    const mediaItem =
-      type === "image"
-        ? variant.images[mediaIndex]
-        : variant.videos[mediaIndex];
-
-    // if (mediaItem?.key) {
-    //   deleteMediaMutation.mutate({ key: mediaItem.key });
-    // }
-
-    setVariants((prev) => {
-      const newVariants = [...prev];
-      const currVariant = newVariants[variantIndex]!;
-
-      if (type === "image") {
-        newVariants[variantIndex] = {
-          ...currVariant,
-          images: currVariant.images.filter((_, i) => i !== mediaIndex),
-        };
-      } else {
-        newVariants[variantIndex] = {
-          ...currVariant,
-          videos: currVariant.videos.filter((_, i) => i !== mediaIndex),
-        };
-      }
-      return newVariants;
-    });
-  };
-
-  // --- Drag and Drop Logic ---
-  const onDragStart = (
-    e: React.DragEvent,
-    variantIndex: number,
-    mediaType: "image" | "video",
-    mediaIndex: number,
-  ) => {
-    setDraggedItem({ variantIndex, mediaType, mediaIndex });
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const onDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const onDrop = (
-    e: React.DragEvent,
-    targetVariantIndex: number,
-    targetMediaType: "image" | "video",
-    targetMediaIndex: number,
-  ) => {
-    e.preventDefault();
-
-    if (!draggedItem) return;
-    const {
-      variantIndex: sourceVariantIndex,
-      mediaType: sourceMediaType,
-      mediaIndex: sourceMediaIndex,
-    } = draggedItem;
-
-    if (sourceVariantIndex !== targetVariantIndex) return;
-    if (sourceMediaType !== targetMediaType) return;
-    if (sourceMediaIndex === targetMediaIndex) return;
-
-    setVariants((prev) => {
-      const newVariants = [...prev];
-      const variant = newVariants[sourceVariantIndex]!;
-      let list =
-        sourceMediaType === "image" ? [...variant.images] : [...variant.videos];
-
-      const [movedItem] = list.splice(sourceMediaIndex, 1);
-      if (movedItem) {
-        list.splice(targetMediaIndex, 0, movedItem);
-      }
-
-      newVariants[sourceVariantIndex] = {
-        ...variant,
-        images: sourceMediaType === "image" ? list : variant.images,
-        videos: sourceMediaType === "video" ? list : variant.videos,
-      };
-
-      return newVariants;
-    });
-
-    setDraggedItem(null);
   };
 
   // --- Submit ---
@@ -417,7 +263,7 @@ export default function ProductForm({
         const options = JSON.parse(v.options);
 
         return {
-          id: v.id, // Include ID for updates
+          id: v.id,
           price,
           stock,
           options,
@@ -431,7 +277,6 @@ export default function ProductForm({
     }
 
     if (productId) {
-      // Update Mode
       updateProductMutation.mutate({
         productId,
         name,
@@ -440,7 +285,6 @@ export default function ProductForm({
         variants: transformedVariants,
       });
     } else {
-      // Create Mode
       addProductMutation.mutate({
         name,
         description,
@@ -489,6 +333,7 @@ export default function ProductForm({
 
       {/* Basic Info Block */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
+        {/* ... (Name, Categories, Description inputs remain the same) ... */}
         <h2 className="border-b border-gray-700 pb-2 text-lg font-bold text-gray-200">
           Basic Info
         </h2>
@@ -540,7 +385,7 @@ export default function ProductForm({
         </div>
       </div>
 
-      {/* Options Configuration Block */}
+      {/* Options Configuration Block - Unchanged except for brevity in this response */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
         <div className="flex items-center justify-between border-b border-gray-700 pb-2">
           <h2 className="text-lg font-bold text-gray-200">Options</h2>
@@ -654,7 +499,7 @@ export default function ProductForm({
               key={index}
               className="flex flex-col gap-4 rounded border border-gray-700 bg-gray-900 p-4 shadow-sm"
             >
-              {/* Variant Header */}
+              {/* Variant Header & Price/Stock fields remain unchanged */}
               <div className="flex items-start justify-between">
                 <div>
                   <span className="font-mono text-xs text-gray-500">
@@ -675,7 +520,6 @@ export default function ProductForm({
                 </button>
               </div>
 
-              {/* Price & Stock */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-400">
@@ -710,121 +554,36 @@ export default function ProductForm({
                 </div>
               </div>
 
-              {/* --- IMAGE SECTION --- */}
-              <div className="flex flex-col gap-2 rounded bg-gray-800/50 p-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-300">
+              {/* --- MEDIA SECTIONS USING MediaGrid --- */}
+              <MediaGrid
+                mediaType="image"
+                maxItems={8}
+                items={variant.images}
+                onChange={(newItems) =>
+                  handleVariantChange(index, "images", newItems)
+                }
+                uploadThingRoute="variantImageUploader"
+                title={
+                  <span className="flex items-center gap-2">
                     <FaImage /> Images (Drag to reorder)
-                  </h3>
-                  <span className="text-[10px] text-gray-500">
-                    {variant.images.length}/8
                   </span>
-                </div>
+                }
+              />
 
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5">
-                  {variant.images.map((item, imgIndex) => (
-                    <div
-                      key={item.key}
-                      draggable
-                      onDragStart={(e) =>
-                        onDragStart(e, index, "image", imgIndex)
-                      }
-                      onDragOver={onDragOver}
-                      onDrop={(e) => onDrop(e, index, "image", imgIndex)}
-                      className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-600 bg-gray-800 active:cursor-grabbing"
-                    >
-                      <img
-                        src={item.url}
-                        alt="Variant"
-                        className="h-full w-full object-cover"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
-                        <FaGripVertical className="text-white drop-shadow-md" />
-                      </div>
-                      <div className="absolute top-1 right-1">
-                        <button
-                          type="button"
-                          onClick={() => removeMedia(index, imgIndex, "image")}
-                          className="rounded-full bg-red-600 p-1 text-white hover:bg-red-500"
-                        >
-                          <FaTrash size={10} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Image Uploader Button */}
-                  {variant.images.length < 8 && (
-                    <div className="col-span-1">
-                      <MultiUploader
-                        label="+"
-                        uploadThingRoute="variantImageUploader"
-                        availability={8 - variant.images.length}
-                        onUploadSuccess={(files) =>
-                          addMediaToVariant(index, files, "image")
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* --- VIDEO SECTION --- */}
-              <div className="flex flex-col gap-2 rounded bg-gray-800/50 p-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-300">
+              <MediaGrid
+                mediaType="video"
+                maxItems={1}
+                items={variant.videos}
+                onChange={(newItems) =>
+                  handleVariantChange(index, "videos", newItems)
+                }
+                uploadThingRoute="variantVideoUploader"
+                title={
+                  <span className="flex items-center gap-2">
                     <FaVideo /> Video
-                  </h3>
-                  <span className="text-[10px] text-gray-500">
-                    {variant.videos.length}/1
                   </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5">
-                  {variant.videos.map((item, vidIndex) => (
-                    <div
-                      key={item.key}
-                      draggable
-                      onDragStart={(e) =>
-                        onDragStart(e, index, "video", vidIndex)
-                      }
-                      onDragOver={onDragOver}
-                      onDrop={(e) => onDrop(e, index, "video", vidIndex)}
-                      className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-600 bg-gray-800 active:cursor-grabbing"
-                    >
-                      <div className="flex h-full w-full items-center justify-center bg-black">
-                        <FaVideo className="text-3xl text-gray-500" />
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
-                        <FaGripVertical className="text-white drop-shadow-md" />
-                      </div>
-                      <div className="absolute top-1 right-1">
-                        <button
-                          type="button"
-                          onClick={() => removeMedia(index, vidIndex, "video")}
-                          className="rounded-full bg-red-600 p-1 text-white hover:bg-red-500"
-                        >
-                          <FaTrash size={10} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Video Uploader Button */}
-                  {variant.videos.length < 1 && (
-                    <div className="col-span-1">
-                      <MultiUploader
-                        label="+"
-                        uploadThingRoute="variantVideoUploader"
-                        availability={1 - variant.videos.length}
-                        onUploadSuccess={(files) =>
-                          addMediaToVariant(index, files, "video")
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+                }
+              />
             </div>
           ))}
         </div>

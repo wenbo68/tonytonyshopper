@@ -33,7 +33,7 @@ export function MediaModal() {
         <MediaCarousel
           mediaList={mediaList}
           initialIndex={initialIndex}
-          className="aspect-video w-full rounded-lg bg-black"
+          className="aspect-video w-full rounded bg-black"
         />
       </div>
     </div>

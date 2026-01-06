@@ -351,24 +351,24 @@ export function ProductVariantModal() {
               {/* Media Carousel */}
               <MediaCarousel
                 mediaList={mediaList}
-                renderItem={(media) =>
-                  media.type === "video" ? (
-                    <video
-                      src={media.url}
-                      controls
-                      className="h-full w-full object-cover"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <ItemImage
-                      src={media.url}
-                      alt={product.name ?? "Product image"}
-                      href={`/product/${product.id}`}
-                      onClick={closeModal}
-                      className="h-full w-full"
-                    />
-                  )
-                }
+                // renderItem={(media) =>
+                //   media.type === "video" ? (
+                //     <video
+                //       src={media.url}
+                //       controls
+                //       className="h-full w-full object-cover"
+                //       onClick={(e) => e.stopPropagation()}
+                //     />
+                //   ) : (
+                //     <ItemImage
+                //       src={media.url}
+                //       alt={product.name ?? "Product image"}
+                //       href={`/product/${product.id}`}
+                //       onClick={closeModal}
+                //       className="h-full w-full"
+                //     />
+                //   )
+                // }
               >
                 {/* Overlays */}
                 {session?.user?.role === "admin" && (

@@ -238,3 +238,9 @@ export type DropdownOption = {
   value: string;
   label: string;
 };
+
+export type UploadThingRoute =
+  | "variantImageUploader"
+  | "variantVideoUploader"
+  | "commentImageUploader"
+  | "commentVideoUploader";
