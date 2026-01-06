@@ -80,6 +80,7 @@ export default function RootLayout({
 // use shipping api (shippo, easypost, etc) to tracking shipping status (also automates creation of tracking number, return label, etc)
 
 // each product (or product variant) should store weight/dimension (for return purposes)
+// each variant should store purchased count (product purchase count can sum the variants' purchased countse)
 
 // to allow for multiple returns per item, each item should have many returns.
 // each return might have a separate shipping label or share one, so there should be a label entity having many returns.
@@ -87,7 +88,6 @@ export default function RootLayout({
 // don't think about label in return; the steps are now simplified. implement requested business logic when there is a real client
 
 // three things to work on:
-// 3. upload image/video in return modal (then show in shipAndReturnInfoModal)
 // 4. finish home page
 // make user reviews show the user's purchased variants
 // more comment filters: by username, by media

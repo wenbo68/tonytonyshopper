@@ -59,7 +59,7 @@ export function CheckoutListener() {
       customToast.success("Payment succeeded!", toastIdRef.current);
       toastIdRef.current = null;
       setSessionId(null); // <--- STOP LISTENING: Clear storage
-      router.replace("/product/all");
+      router.replace("/search");
     } else if (data?.status === "abandoned") {
       const message =
         data.reason === "abandoned_payment_failed"
@@ -72,7 +72,7 @@ export function CheckoutListener() {
       customToast.error(message, toastIdRef.current, 5000);
       toastIdRef.current = null;
       setSessionId(null); // <--- STOP LISTENING: Clear storage
-      router.replace("/product/all");
+      router.replace("/search");
     }
   }, [data, sessionId, router, setSessionId]);
 

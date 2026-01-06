@@ -57,7 +57,7 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
   const handleSearch = (
     overrides?: Partial<ProductFilters & { sort: string }>,
   ) => {
-    baseHandleSearch("/product/all", overrides);
+    baseHandleSearch("/search", overrides);
   };
 
   return (

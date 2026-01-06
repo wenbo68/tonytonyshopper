@@ -26,6 +26,47 @@ import { getProductsInputSchema } from "~/type";
 import { updateProductVariantDenorms } from "~/server/utils/product";
 
 export const productRouter = createTRPCRouter({
+  getHomeProducts: publicProcedure.query(async ({ ctx }) => {
+    // 1. Fetch all categories sorted alphabetically
+    const allCategories = await ctx.db.query.categories.findMany({
+      orderBy: [asc(categories.name)],
+    });
+
+    // 2. Fetch top 5 products for each category
+    const results = await Promise.all(
+      allCategories.map(async (category) => {
+        // FIX: Use db.select() instead of findMany() to avoid alias mismatch with exists() subquery
+        const topProducts = await ctx.db
+          .select()
+          .from(products)
+          .where(
+            exists(
+              ctx.db
+                .select()
+                .from(productsToCategories)
+                .where(
+                  and(
+                    eq(productsToCategories.productId, products.id),
+                    eq(productsToCategories.categoryId, category.id),
+                  ),
+                ),
+            ),
+          )
+          .orderBy(desc(products.averageRating))
+          .limit(5);
+
+        return {
+          name: category.name,
+          id: category.id,
+          products: topProducts,
+        };
+      }),
+    );
+
+    // 3. Return only categories that have products
+    return results.filter((c) => c.products.length > 0);
+  }),
+
   /**
    * Fetches all products with filtering, sorting, and pagination.
    */
@@ -36,7 +77,7 @@ export const productRouter = createTRPCRouter({
         page,
         pageSize,
         name,
-        categories,
+        category,
         priceMin,
         priceMax,
         ratingMin,
@@ -109,7 +150,7 @@ export const productRouter = createTRPCRouter({
       }
 
       // Category Filter (finds products in *any* of the selected categories)
-      if (categories && categories.length > 0) {
+      if (category && category.length > 0) {
         conditions.push(
           exists(
             db
@@ -118,7 +159,7 @@ export const productRouter = createTRPCRouter({
               .where(
                 and(
                   eq(productsToCategories.productId, products.id),
-                  inArray(productsToCategories.categoryId, categories),
+                  inArray(productsToCategories.categoryId, category),
                 ),
               ),
           ),
@@ -167,25 +208,15 @@ export const productRouter = createTRPCRouter({
       const totalPages = Math.ceil(totalProducts / pageSize);
 
       // --- 4. Get Paginated Data ---
-      // might need to eager load category info as well for product card
-      const paginatedProducts = await db.query.products.findMany({
-        where: whereClause,
-        orderBy: [orderByClause],
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
-        // with: {
-        //   variants: {
-        //     with: {
-        //       media: true,
-        //     },
-        //   },
-        //   productsToCategories: {
-        //     with: {
-        //       category: true,
-        //     },
-        //   },
-        // },
-      });
+      // We use db.select() instead of db.query.products.findMany() to prevent aliasing issues
+      // when using the exists() subquery in the where clause.
+      const paginatedProducts = await db
+        .select()
+        .from(products)
+        .where(whereClause)
+        .orderBy(orderByClause)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize);
 
       return {
         products: paginatedProducts,

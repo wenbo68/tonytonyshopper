@@ -172,7 +172,7 @@ export const stripeRouter = createTRPCRouter({
           },
           // success_url: `${baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
           // cancel_url: `${baseUrl}/payment/cancel`,
-          success_url: `${baseUrl}/product/all?session_id={CHECKOUT_SESSION_ID}`,
+          success_url: `${baseUrl}/search?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/cart?canceled=true`,
         });
         return { url: session.url };

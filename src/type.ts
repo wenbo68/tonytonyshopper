@@ -173,7 +173,7 @@ export const getProductsInputSchema = z.object({
   pageSize: z.number().min(1).max(50).optional().default(20),
 
   name: z.string().optional(),
-  categories: z.array(z.string()).optional(),
+  category: z.array(z.string()).optional(),
   priceMin: z.number().optional(),
   priceMax: z.number().optional(),
   ratingMin: z.number().min(1).max(5).optional(),
