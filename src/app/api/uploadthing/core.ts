@@ -87,6 +87,37 @@ export const ourFileRouter = {
     .onUploadComplete(async ({ metadata, file }) => {
       return { key: file.key, url: file.ufsUrl };
     }),
+
+  // --- NEW: Comment Media Uploaders ---
+  returnImageUploader: f({
+    image: {
+      maxFileSize: "4MB",
+      maxFileCount: 4,
+    },
+  })
+    .middleware(async ({ req }) => {
+      const session = await auth();
+      if (!session?.user?.id) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { key: file.key, url: file.ufsUrl };
+    }),
+
+  returnVideoUploader: f({
+    video: {
+      maxFileSize: "64MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async ({ req }) => {
+      const session = await auth();
+      if (!session?.user?.id) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { key: file.key, url: file.ufsUrl };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

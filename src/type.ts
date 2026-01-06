@@ -243,4 +243,6 @@ export type UploadThingRoute =
   | "variantImageUploader"
   | "variantVideoUploader"
   | "commentImageUploader"
-  | "commentVideoUploader";
+  | "commentVideoUploader"
+  | "returnImageUploader"
+  | "returnVideoUploader";

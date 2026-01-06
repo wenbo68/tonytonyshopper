@@ -8,28 +8,22 @@ import type { OrderItem } from "~/type";
 import { customToast } from "../toast";
 import { toastZodError } from "~/server/utils/generic";
 
-// type AdminOrder = RouterOutputs["admin"]["getAllOrders"]["orders"][number];
-
-interface ReturnModalProps {
+interface FinishReturnModalProps {
   orderItem: OrderItem | null;
   isOpen: boolean;
   onClose: () => void;
   // onSuccess: () => Promise<any>;
 }
 
-export function ReturnModal({
+export function FinishReturnModal({
   orderItem,
   isOpen,
   onClose,
   // onSuccess,
-}: ReturnModalProps) {
+}: FinishReturnModalProps) {
   const utils = api.useUtils();
 
   const [quantity, setQuantity] = useState<number | "">("");
-  // const [returnCost, setReturnCost] = useState<number | "">("");
-  // const [returnLabel, setReturnLabel] = useState<string>("");
-  // const [returnCarrier, setReturnCarrier] = useState<string>("");
-  // const [returnTrackingNumber, setReturnTrackingNumber] = useState<string>("");
 
   // prevent scrolling main page when modal is open
   useEffect(() => {
@@ -47,10 +41,6 @@ export function ReturnModal({
   useEffect(() => {
     if (orderItem) {
       setQuantity(orderItem.quantity);
-      // setReturnCost(orderItem.returnCost ? Number(orderItem.returnCost) : "");
-      // setReturnLabel(orderItem.returnLabel ?? "");
-      // setReturnCarrier(orderItem.returnCarrier ?? "");
-      // setReturnTrackingNumber(orderItem.returnTrackingNumber ?? "");
     }
   }, [orderItem]);
 

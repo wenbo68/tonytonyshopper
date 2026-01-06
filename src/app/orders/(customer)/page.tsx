@@ -37,7 +37,7 @@ import ShipAndReturnInfoModal from "~/app/_components/modal/ShipAndReturnInfoMod
 import { FaXmark } from "react-icons/fa6";
 import { RequestReturnModal } from "~/app/_components/modal/RequestReturnModal";
 import { GiOpenBook } from "react-icons/gi";
-import { ReturnModal } from "~/app/_components/modal/ReturnModal";
+import { FinishReturnModal } from "~/app/_components/modal/FinishReturnModal";
 import type { UserRole } from "~/server/db/schema";
 
 // Infer type for better safety
@@ -70,9 +70,8 @@ export default function OrdersPage() {
   } | null>(null);
   const [requestReturnModalProps, setRequestReturnModalProps] =
     useState<OrderItem | null>(null);
-  const [returnModalProps, setReturnModalProps] = useState<OrderItem | null>(
-    null,
-  );
+  const [finishReturnModalProps, setFinishReturnModalProps] =
+    useState<OrderItem | null>(null);
   const [dropdownItemId, setDropdownItemId] = useState<string | null>(null);
 
   // Close menu when clicking outside
@@ -156,15 +155,15 @@ export default function OrdersPage() {
     setDropdownItemId(null); // Close menu
   };
 
-  const handleReturnRequest = (e: React.MouseEvent, orderItem: OrderItem) => {
+  const handleRequestReturn = (e: React.MouseEvent, orderItem: OrderItem) => {
     e.stopPropagation(); // Stop click from opening the modal
     setRequestReturnModalProps(orderItem);
     setDropdownItemId(null); // Close menu
   };
 
-  const handleReturn = (e: React.MouseEvent, orderItem: OrderItem) => {
+  const handleFinishReturn = (e: React.MouseEvent, orderItem: OrderItem) => {
     e.stopPropagation();
-    setReturnModalProps(orderItem);
+    setFinishReturnModalProps(orderItem);
     setDropdownItemId(null);
   };
 
@@ -225,10 +224,10 @@ export default function OrdersPage() {
         onClose={() => setRequestReturnModalProps(null)}
         orderItem={requestReturnModalProps}
       />
-      <ReturnModal
-        isOpen={!!returnModalProps}
-        onClose={() => setReturnModalProps(null)}
-        orderItem={returnModalProps}
+      <FinishReturnModal
+        isOpen={!!finishReturnModalProps}
+        onClose={() => setFinishReturnModalProps(null)}
+        orderItem={finishReturnModalProps}
       />
 
       {/* orders */}
@@ -428,7 +427,7 @@ export default function OrdersPage() {
                                   {item.status === "shipped" && (
                                     <button
                                       onClick={(e) =>
-                                        handleReturnRequest(e, item)
+                                        handleRequestReturn(e, item)
                                       }
                                       className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
                                     >
@@ -463,7 +462,9 @@ export default function OrdersPage() {
                                   {/* Finish Return */}
                                   {item.status === "return_approved" && (
                                     <button
-                                      onClick={(e) => handleReturn(e, item)}
+                                      onClick={(e) =>
+                                        handleFinishReturn(e, item)
+                                      }
                                       className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
                                     >
                                       <div className="item-center flex min-w-4 justify-center">

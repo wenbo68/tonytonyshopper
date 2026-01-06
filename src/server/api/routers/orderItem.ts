@@ -6,6 +6,7 @@ import {
 } from "~/server/api/trpc";
 import { fetchOrderItem, updateOrderItem } from "~/server/utils/order";
 import {
+  mediaTypeConst,
   rejectReturnReasonConst,
   returnReasonConst,
   returnReasonDetailsMap,
@@ -16,6 +17,7 @@ import { TRPCError } from "@trpc/server";
 // import { orderItems } from "~/server/db/schema";
 import Stripe from "stripe";
 import { env } from "~/env";
+import { returnMedia } from "~/server/db/schema";
 
 export const orderItemRouter = createTRPCRouter({
   // paid -> canceled
@@ -96,10 +98,20 @@ export const orderItemRouter = createTRPCRouter({
         orderItemId: z.string(),
         quantity: z.number().min(1, "Invalid quantity."),
         returnReason: z.enum(returnReasonConst),
+        media: z
+          .array(
+            z.object({
+              key: z.string(),
+              url: z.string(),
+              type: z.enum(mediaTypeConst),
+              position: z.number(),
+            }),
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { orderItemId, quantity, returnReason } = input;
+      const { orderItemId, quantity, returnReason, media } = input;
       await ctx.db.transaction(async (tx) => {
         await updateOrderItem(
           tx,
@@ -110,6 +122,18 @@ export const orderItemRouter = createTRPCRouter({
           quantity,
           { returnReason },
         );
+        // 2. Insert Media
+        if (media && media.length > 0) {
+          await tx.insert(returnMedia).values(
+            media.map((m) => ({
+              orderItemId,
+              type: m.type,
+              url: m.url,
+              key: m.key,
+              position: m.position,
+            })),
+          );
+        }
       });
     }),
 

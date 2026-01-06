@@ -549,15 +549,15 @@ export const orderItemsRelations = relations(orderItems, ({ one, many }) => ({
     fields: [orderItems.productVariantId],
     references: [productVariants.id],
   }),
-  media: many(orderItemMedia),
+  media: many(returnMedia),
   // returnLabel: one(returnLabels, {
   //   fields: [orderItems.returnLabelId],
   //   references: [returnLabels.id],
   // }),
 }));
 
-export const orderItemMedia = createTable(
-  "order_item_media",
+export const returnMedia = createTable(
+  "return_media",
   (d) => ({
     id: d
       .varchar({ length: 255 })
@@ -576,12 +576,12 @@ export const orderItemMedia = createTable(
 
     position: d.integer().notNull(),
   }),
-  (t) => [index("order_item_media_order_item_id_idx").on(t.orderItemId)],
+  (t) => [index("return_media_order_item_id_idx").on(t.orderItemId)],
 );
 
-export const orderItemMediaRelations = relations(orderItemMedia, ({ one }) => ({
+export const returnMediaRelations = relations(returnMedia, ({ one }) => ({
   orderItem: one(orderItems, {
-    fields: [orderItemMedia.orderItemId],
+    fields: [returnMedia.orderItemId],
     references: [orderItems.id],
   }),
 }));
