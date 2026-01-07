@@ -11,6 +11,7 @@ import { ProductVariantModal } from "./_components/modal/ProductVariantModal";
 import { CartMergeHandler } from "./_components/CartMergeHandler";
 import { CheckoutListener } from "./_components/CheckoutListener";
 import { MediaModal } from "./_components/modal/MediaModal";
+import BotNav from "./_components/nav/BotNav";
 
 export const metadata: Metadata = {
   title: "TonyTonyShopper",
@@ -42,6 +43,7 @@ export default function RootLayout({
           <Toaster position="bottom-center" />
           {/* <BotNav /> */}
         </ContextProviders>
+        <BotNav />
         {/* </Suspense> */}
       </body>
     </html>
@@ -78,6 +80,13 @@ export default function RootLayout({
 // don't think about label in return; the steps are now simplified. implement requested business logic when there is a real client
 
 // three things to work on:
+// 0. create footer
+// test guest mode
+// 1. adjust colors
+// 2. create products for show
+// 3. allow admin to add products
+// 4. cart sidebar
+
 // make user reviews show the user's purchased variants
 // more comment filters: by username, by media
 // 3. text filter but allows multiple entries (eg for order items)
