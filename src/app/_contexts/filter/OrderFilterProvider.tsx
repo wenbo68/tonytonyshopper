@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, Suspense, useContext, type ReactNode } from "react";
 import { useFilterLogic, type FilterState } from "~/app/_hooks/useFilterLogic";
 import { defaultOrderSort } from "~/const";
 
@@ -61,10 +61,12 @@ export function OrderFilterProvider({ children }: { children: ReactNode }) {
   };
 
   return (
+    // <Suspense fallback={null}>
     <OrderFilterContext.Provider
       value={{ filters, setFilter, sort, setSort, handleSearch }}
     >
       {children}
     </OrderFilterContext.Provider>
+    // </Suspense>
   );
 }

@@ -7,10 +7,11 @@ import {
   orderItems,
   productVariants,
   cartItems,
+  type OrderStatusReason,
 } from "~/server/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { Stripe } from "stripe";
-import type { OrderStatusReason } from "~/type";
+// import type { OrderStatusReason } from "~/type";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 

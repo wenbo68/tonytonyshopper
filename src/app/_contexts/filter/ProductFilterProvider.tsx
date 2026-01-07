@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, Suspense, useContext, type ReactNode } from "react";
 import { defaultProductSort } from "~/const";
 import { useFilterLogic, type FilterState } from "~/app/_hooks/useFilterLogic";
 
@@ -61,10 +61,12 @@ export function ProductFilterProvider({ children }: { children: ReactNode }) {
   };
 
   return (
+    // <Suspense fallback={null}>
     <ProductFilterContext.Provider
       value={{ filters, setFilter, sort, setSort, handleSearch }}
     >
       {children}
     </ProductFilterContext.Provider>
+    // </Suspense>
   );
 }

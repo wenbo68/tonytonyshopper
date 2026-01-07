@@ -34,7 +34,7 @@ export default function CancelModal({
     await utils.order.getUserOrders.invalidate();
   };
 
-  const cancelItemMutation = api.order.cancelOrderItem.useMutation({
+  const cancelItemMutation = api.orderItem.cancelOrderItem.useMutation({
     onMutate: () => {
       const toastId = customToast.loading("Canceling...");
       return { toastId };

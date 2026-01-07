@@ -18,7 +18,7 @@ import {
   FaUndo,
 } from "react-icons/fa";
 // import toast from "react-hot-toast";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import OrderModal from "../../_components/modal/OrderModal";
 import { ItemGrid } from "~/app/_components/item/ItemGrid";
 import {
@@ -197,6 +197,13 @@ export default function OrdersPage() {
   }
 
   return (
+    // <Suspense
+    //   fallback={
+    //     <div className="animate-pulse text-center">
+    //       Loading order history...
+    //     </div>
+    //   }
+    // >
     <div className="flex flex-col gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
       {/* Modals */}
       <OrderModal
@@ -533,5 +540,6 @@ export default function OrdersPage() {
         totalPages={data?.totalPages ?? 1}
       />
     </div>
+    // </Suspense>
   );
 }

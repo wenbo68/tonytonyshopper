@@ -23,6 +23,7 @@ import {
 import { handleOverlayClick } from "~/server/utils/modal";
 import { customToast } from "~/app/_components/toast";
 import { MediaCarousel } from "../MediaCarousel";
+import type { MediaType } from "~/server/db/schema";
 
 export function ProductVariantModal() {
   const { data: session } = useSession();
@@ -182,11 +183,14 @@ export function ProductVariantModal() {
     // 2. If absolutely no media, return fallback
     if (rawMedia.length === 0) {
       return [
-        // {
-        //   type: "image",
-        //   url: "https://placehold.co/600x600/eee/ccc.png?text=No+Image",
-        //   id: "placeholder",
-        // },
+        {
+          type: "image" as MediaType,
+          ket: "",
+          url: "https://placehold.co/600x600/eee/ccc.png?text=No+Image",
+          id: "placeholder",
+          position: 0,
+          variantId: sourceVariant?.id ?? "",
+        },
       ];
     }
 

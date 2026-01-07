@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, Suspense, useContext, type ReactNode } from "react";
 import { useFilterLogic, type FilterState } from "~/app/_hooks/useFilterLogic";
 import { defaultReviewSort } from "~/const";
 
@@ -58,10 +58,12 @@ export function ReviewFilterProvider({ children }: { children: ReactNode }) {
   };
 
   return (
+    // <Suspense fallback={null}>
     <FilterContext.Provider
       value={{ filters, setFilter, sort, setSort, handleSearch }}
     >
       {children}
     </FilterContext.Provider>
+    // </Suspense>
   );
 }

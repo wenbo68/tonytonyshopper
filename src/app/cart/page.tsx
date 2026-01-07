@@ -93,7 +93,7 @@ export default function CartPage() {
   const { items: guestCartItems, removeItem: removeGuestItem } =
     useGuestCartStore();
   const guestVariantIds = guestCartItems.map((item) => item.productVariantId);
-  const { data: guestVariants, isPending: isGuestVariantsPending } =
+  const { data: guestVariants, isLoading: isGuestVariantsLoading } =
     api.product.getVariantsByIds.useQuery(guestVariantIds, {
       enabled:
         sessionStatus === "unauthenticated" && guestVariantIds.length > 0,
@@ -142,7 +142,7 @@ export default function CartPage() {
         quantity: item.quantity,
       })) ?? [];
   } else {
-    showLoading = isGuestVariantsPending;
+    showLoading = isGuestVariantsLoading;
 
     if (guestVariants) {
       const guestVariantMap = new Map(guestVariants.map((v) => [v.id, v]));

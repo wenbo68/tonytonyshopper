@@ -12,6 +12,7 @@ import { CartMergeHandler } from "./_components/CartMergeHandler";
 import { CheckoutListener } from "./_components/CheckoutListener";
 import { MediaModal } from "./_components/modal/MediaModal";
 import BotNav from "./_components/nav/BotNav";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "TonyTonyShopper",
@@ -31,7 +32,10 @@ export default function RootLayout({
       <body className="flex flex-col bg-gray-950 text-gray-400">
         {/* <Suspense fallback={null}> */}
         <ContextProviders>
-          <CheckoutListener />
+          {/* 2. Wrap CheckoutListener in Suspense */}
+          <Suspense fallback={null}>
+            <CheckoutListener />
+          </Suspense>
           <CartMergeHandler />
           {/* we don't use zustand for order modal bc its only used directly in the orders & orders/admin page */}
           <ProductVariantModal />
@@ -80,8 +84,8 @@ export default function RootLayout({
 // don't think about label in return; the steps are now simplified. implement requested business logic when there is a real client
 
 // three things to work on:
-// 0. create footer
 // test guest mode
+// switch query isPending to isLoading (otherwise disabled queries will show true permanently)
 // 1. adjust colors
 // 2. create products for show
 // 3. allow admin to add products
