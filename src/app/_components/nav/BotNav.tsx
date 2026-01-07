@@ -15,7 +15,7 @@ export default function BotNav() {
         </a>
 
         <a
-          href="https://github.com/wenbo68"
+          href="https://github.com/wenbo68/tonytonyshopper"
           target="_blank"
           rel="noopener noreferrer"
           className="block"
