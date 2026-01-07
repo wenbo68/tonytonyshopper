@@ -334,7 +334,7 @@ export function ProductVariantModal() {
       onMouseDown={(e) => handleOverlayClick(e, closeModal)}
     >
       <div
-        className="max-h-[90vh] w-full max-w-[90vw] sm:max-w-sm"
+        className="scrollbar-hide max-h-[90vh] w-full max-w-[90vw] overflow-y-auto sm:max-w-sm"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {isFetchingProduct ? (

@@ -181,11 +181,11 @@ export default function ReviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-sm"
       onMouseDown={(e) => handleOverlayClick(e, onClose)}
     >
       <div
-        className="scrollbar-thin max-h-[90vh] w-full max-w-[90vw] overflow-y-auto rounded-lg bg-gray-900 sm:max-w-lg"
+        className="scrollbar-hide max-h-[90vh] w-full max-w-[90vw] overflow-y-auto rounded bg-gray-900 sm:max-w-lg"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {isFetchingExistingReview ? (
@@ -193,19 +193,16 @@ export default function ReviewModal({
             <p className="animate-pulse">Loading review...</p>
           </div>
         ) : (
-          <div className="flex w-full flex-col gap-2 p-4 sm:p-6">
-            <h2 className="text-lg font-bold text-gray-200">
-              {existingReview ? "Edit Review" : "Write a Review"}
-            </h2>
+          <div className="flex w-full flex-col gap-2 p-4">
             {error && <p className="text-sm text-red-400">{error}</p>}
 
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col gap-4 text-sm text-gray-400"
+              className="flex flex-col gap-3 text-sm text-gray-400"
             >
               <div className="flex flex-col gap-1">
                 <span className="block font-medium text-gray-300">Rating</span>
-                <div className="flex w-fit items-center rounded bg-gray-800 px-3 py-2">
+                <div className="flex w-full items-center rounded bg-gray-800 px-3 py-2">
                   <StarRating rating={rating} setRating={setRating} />
                 </div>
               </div>
@@ -219,11 +216,11 @@ export default function ReviewModal({
                 </label>
                 <textarea
                   id="comment"
-                  rows={4}
+                  rows={3}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Share your experience..."
-                  className="scrollbar-hide w-full rounded bg-gray-800 px-3 py-2 outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="scrollbar-hide w-full rounded bg-gray-800 px-3 py-2 outline-none"
                 ></textarea>
               </div>
 
@@ -248,7 +245,7 @@ export default function ReviewModal({
                 />
               </div>
 
-              <div className="mt-2 flex items-center justify-end gap-3">
+              <div className="flex items-center gap-3">
                 {existingReview && (
                   <button
                     type="button"
@@ -258,7 +255,7 @@ export default function ReviewModal({
                         deleteMutation.mutate({ id: existingReview.id });
                       }
                     }}
-                    className="cursor-pointer text-sm font-semibold text-red-400 hover:text-red-300 disabled:text-gray-600"
+                    className="w-full min-w-[100px] rounded bg-red-600/40 px-4 py-2 font-semibold text-white transition-all hover:cursor-pointer hover:bg-red-600/30 disabled:cursor-default disabled:bg-gray-700"
                   >
                     {isDeleting ? "Deleting..." : "Delete Review"}
                   </button>
@@ -266,7 +263,7 @@ export default function ReviewModal({
                 <button
                   type="submit"
                   disabled={isPending || isDeleting}
-                  className="min-w-[100px] rounded bg-indigo-600 px-4 py-2 font-semibold text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-700"
+                  className="w-full min-w-[100px] rounded bg-indigo-600 px-4 py-2 font-semibold text-white transition-all hover:cursor-pointer hover:bg-indigo-700 disabled:cursor-default disabled:bg-gray-700"
                 >
                   {isPending
                     ? "Saving..."

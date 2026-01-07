@@ -189,7 +189,7 @@ export function RequestReturnModal({
       <form
         onMouseDown={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="flex max-h-[80vh] w-sm max-w-[90vw] flex-col gap-4 rounded bg-gray-900 p-4 text-sm"
+        className="scrollbar-hide flex max-h-[90vh] w-sm max-w-[90vw] flex-col gap-4 overflow-y-auto rounded bg-gray-900 p-4 text-sm"
       >
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
@@ -228,24 +228,26 @@ export function RequestReturnModal({
             />
           </div>
           {/* Media Upload Section */}
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold">Evidence</label>
-            <MediaGrid
-              items={images}
-              onChange={setImages}
-              mediaType="image"
-              maxItems={4}
-              uploadThingRoute="returnImageUploader"
-            />
-            <MediaGrid
-              items={videos}
-              onChange={setVideos}
-              mediaType="video"
-              maxItems={1}
-              uploadThingRoute="returnVideoUploader"
-            />
-          </div>
+          {/* <div className="flex flex-col gap-2">
+            <label className="font-semibold">Evidence</label> */}
+          <MediaGrid
+            items={images}
+            onChange={setImages}
+            mediaType="image"
+            maxItems={4}
+            uploadThingRoute="returnImageUploader"
+            gridClassName="grid grid-cols-2 gap-2"
+          />
+          <MediaGrid
+            items={videos}
+            onChange={setVideos}
+            mediaType="video"
+            maxItems={1}
+            uploadThingRoute="returnVideoUploader"
+            gridClassName="grid grid-cols-2 gap-2"
+          />
         </div>
+        {/* </div> */}
 
         {/* <div className="flex flex-col gap-1"> */}
         <div className="flex flex-col gap-4 sm:flex-row">

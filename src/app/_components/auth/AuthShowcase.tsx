@@ -7,6 +7,11 @@ import Image from "next/image";
 // import { FaHeart } from 'react-icons/fa6';
 import { RiLogoutBoxRLine } from "react-icons/ri";
 import { usePathname, useSearchParams } from "next/navigation";
+import { FaBookmark } from "react-icons/fa6";
+import { FaCoins } from "react-icons/fa";
+import { IoIosAdd } from "react-icons/io";
+import { MdLibraryAddCheck } from "react-icons/md";
+import Link from "next/link";
 // import { MdAddBox } from 'react-icons/md';
 
 export function AuthShowcase() {
@@ -78,13 +83,52 @@ export function AuthShowcase() {
 
       {/* Dropdown Menu */}
       {isDropdownOpen && (
-        <div className="absolute right-0 z-10 mt-3 flex w-36 origin-top-right flex-col rounded bg-gray-800 p-2">
+        <div className="absolute right-0 z-10 mt-3 flex w-36 origin-top-right flex-col rounded bg-gray-800 p-1 sm:mt-2.5">
+          <Link
+            href={"/orders"}
+            onClick={() => {
+              setDropdownOpen(false);
+              // signOut();
+            }}
+            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:bg-gray-900 hover:text-blue-400"
+          >
+            <div className="flex h-4 w-4 items-center justify-center">
+              <FaBookmark size={12} />
+            </div>
+            Order History
+          </Link>
+          <Link
+            href={"/orders/admin"}
+            onClick={() => {
+              setDropdownOpen(false);
+              // signOut();
+            }}
+            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:bg-gray-900 hover:text-blue-400"
+          >
+            <div className="flex h-4 w-4 items-center justify-center">
+              <FaCoins size={13} />
+            </div>
+            Sales History
+          </Link>
+          <Link
+            href={"/product/add"}
+            onClick={() => {
+              setDropdownOpen(false);
+              // signOut();
+            }}
+            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:bg-gray-900 hover:text-blue-400"
+          >
+            <div className="flex h-4 w-4 items-center justify-center">
+              <MdLibraryAddCheck size={15} />
+            </div>
+            Add Product
+          </Link>
           <button
             onClick={() => {
               setDropdownOpen(false);
               signOut();
             }}
-            className="flex w-full items-center gap-2 rounded p-2 text-left text-sm hover:bg-gray-900 hover:text-blue-400"
+            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:bg-gray-900 hover:text-blue-400"
           >
             <div className="flex h-4 w-4 items-center justify-center">
               <RiLogoutBoxRLine size={15} />

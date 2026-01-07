@@ -58,7 +58,7 @@ export default function ShipAndReturnInfoModal({
     >
       {/* Modal Content Box */}
       <div
-        className="scrollbar-hide flex max-h-[80vh] w-lg max-w-[90vw] flex-col gap-3 overflow-y-auto rounded bg-gray-900 p-4"
+        className="scrollbar-hide flex max-h-[90vh] w-lg max-w-[90vw] flex-col gap-3 overflow-y-auto rounded bg-gray-900 p-4"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {isPendingMedia ? (
@@ -88,10 +88,10 @@ export default function ShipAndReturnInfoModal({
                 <hr className="border-gray-800" />
 
                 <div className="flex flex-col gap-0">
+                  <label className="text-sm font-semibold">
+                    Return Requested
+                  </label>
                   <div className="flex flex-col gap-1">
-                    <label className="text-sm font-semibold">
-                      Return Requested
-                    </label>
                     <div className="flex gap-2 text-sm">
                       <label className="font-base min-w-16 text-gray-500">
                         Reason:

@@ -53,7 +53,7 @@ export const productRouter = createTRPCRouter({
             ),
           )
           .orderBy(desc(products.averageRating))
-          .limit(5);
+          .limit(6);
 
         return {
           name: category.name,

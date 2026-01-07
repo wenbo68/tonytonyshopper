@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { AuthShowcaseFallback } from "../auth/AuthShowcaseFallback";
 import { AuthShowcase } from "../auth/AuthShowcase";
+import { FaBookmark, FaShop } from "react-icons/fa6";
+import { IoSearch } from "react-icons/io5";
+import { FaCartPlus } from "react-icons/fa";
 
 export function TopNav() {
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -51,28 +54,38 @@ export function TopNav() {
       className="sticky top-0 z-50 flex h-12 w-full justify-center bg-gray-900 transition-transform duration-0"
       style={{ transform: `translateY(${navPosition}px)` }}
     >
-      <div className="flex w-full max-w-7xl items-center justify-end gap-4 px-3 sm:gap-5 sm:px-3 md:gap-6 md:px-4 lg:gap-7 lg:px-5 xl:gap-8 xl:px-6">
-        <div className="flex h-full items-center gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8">
+      <div className="flex w-full max-w-[1400px] items-center justify-between px-2">
+        <Link
+          href="/search"
+          className="flex items-center text-center text-sm font-semibold"
+        >
+          <div className="flex h-8 w-8 items-center justify-center">
+            <FaShop size={32} />
+          </div>
+        </Link>
+        <div className="flex h-full items-center gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
+          <Link
+            href="/search"
+            className="flex items-center text-center text-sm font-semibold hover:text-blue-400"
+          >
+            {/* <div className="flex h-5 w-5 items-center justify-center">
+              <IoSearch size={20} />
+            </div> */}
+            Search
+          </Link>
           <Link
             href="/cart"
-            onClick={() => sessionStorage.setItem("previousPageUrl", "/cart")}
             className="flex items-center text-center text-sm font-semibold hover:text-blue-400"
           >
+            {/* <div className="flex h-5 w-5 items-center justify-center">
+              <FaCartPlus size={20} />
+            </div> */}
             Cart
           </Link>
-          {/* <Link
-            href="/services"
-            onClick={() =>
-              sessionStorage.setItem('previousPageUrl', '/services')
-            }
-            className="flex items-center text-center text-sm font-semibold hover:text-blue-400"
-          >
-            Services
-          </Link> */}
+          <Suspense fallback={<AuthShowcaseFallback />}>
+            <AuthShowcase />
+          </Suspense>
         </div>
-        <Suspense fallback={<AuthShowcaseFallback />}>
-          <AuthShowcase />
-        </Suspense>
       </div>
     </nav>
   );

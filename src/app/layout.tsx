@@ -36,20 +36,10 @@ export default function RootLayout({
           <ProductVariantModal />
           <MediaModal />
           <TopNav />
-          <main className="mx-auto w-full max-w-7xl grow px-2 pt-4 pb-10 sm:pt-5 sm:pb-11 md:pt-6 md:pb-12 lg:pt-7 lg:pb-13 xl:pt-8 xl:pb-14">
+          <main className="mx-auto w-full max-w-[1400px] grow px-2 pt-4 pb-10 sm:pt-5 sm:pb-11 md:pt-6 md:pb-12 lg:pt-7 lg:pb-13 xl:pt-8 xl:pb-14">
             {children}
           </main>
-          <Toaster
-            position="bottom-center"
-            // toastOptions={{
-            //   style: {
-            //     // background: "#111827", // gray-900
-            //     background: "#1e2939", // gray-800
-            //     // color: "#f9fafb", // gray-50
-            //     color: "#99a1af", // gray-400
-            //   },
-            // }}
-          />
+          <Toaster position="bottom-center" />
           {/* <BotNav /> */}
         </ContextProviders>
         {/* </Suspense> */}
@@ -91,6 +81,4 @@ export default function RootLayout({
 // make user reviews show the user's purchased variants
 // more comment filters: by username, by media
 // 3. text filter but allows multiple entries (eg for order items)
-// 5. better ui for add/edit product (enforce 1/+ images for each variant)
 // 1. optimistic update for return modals
-// allow 6 items per row
