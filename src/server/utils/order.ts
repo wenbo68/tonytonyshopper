@@ -26,9 +26,9 @@ export const getOrderItemStatusPriority = (status: OrderItemStatus | null) => {
 export const fetchOrderItem = async (
   tx: PgTransaction<
     PostgresJsQueryResultHKT,
-    typeof import("/home/wenboliu68/projects/tonytonyshopper/src/server/db/schema"),
+    typeof import("~/server/db/schema"), // <--- FIX: Use alias or relative path
     ExtractTablesWithRelations<
-      typeof import("/home/wenboliu68/projects/tonytonyshopper/src/server/db/schema")
+      typeof import("~/server/db/schema") // <--- FIX: Use alias or relative path
     >
   >,
   currentUserId: string | undefined,
@@ -77,9 +77,9 @@ export const fetchOrderItem = async (
 export const updateOrderItem = async (
   tx: PgTransaction<
     PostgresJsQueryResultHKT,
-    typeof import("/home/wenboliu68/projects/tonytonyshopper/src/server/db/schema"),
+    typeof import("~/server/db/schema"), // <--- FIX: Use alias or relative path
     ExtractTablesWithRelations<
-      typeof import("/home/wenboliu68/projects/tonytonyshopper/src/server/db/schema")
+      typeof import("~/server/db/schema") // <--- FIX: Use alias or relative path
     >
   >,
   currentUserId: string | undefined,
