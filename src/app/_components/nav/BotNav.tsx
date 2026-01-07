@@ -23,7 +23,7 @@ export default function BotNav() {
           <FaGithub size={24} className="min-w-fit" />
         </a>
 
-        <a
+        {/* <a
           href="https://www.linkedin.com/in/wenboliu68/"
           target="_blank"
           rel="noopener noreferrer"
@@ -39,7 +39,7 @@ export default function BotNav() {
           className="block"
         >
           <FaInstagram size={24} className="min-w-fit" />
-        </a>
+        </a> */}
       </div>
     </nav>
   );
