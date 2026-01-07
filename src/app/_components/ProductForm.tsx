@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
 import type { Category } from "~/type";
-import { FaImage, FaVideo } from "react-icons/fa";
+import { FaImage, FaTrash, FaVideo } from "react-icons/fa";
 import { MediaGrid, type MediaItem } from "./MediaGrid";
+import { Dropdown } from "./Dropdown";
+import { ClickablePill, PillContainer, UnclickablePill } from "./Pill";
+import { FaCheck, FaListUl } from "react-icons/fa6";
+import type { colorClassMap } from "~/const";
 
 type VariantState = {
   id?: string;
@@ -42,12 +46,11 @@ export default function ProductForm({
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [variants, setVariants] = useState<VariantState[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([
-    { id: crypto.randomUUID(), name: "", values: [] },
-  ]);
-  const [pendingValues, setPendingValues] = useState<Record<string, string>>(
-    {},
-  );
+
+  // Option State
+  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
+  const [inputOptionName, setInputOptionName] = useState("");
+  const [inputOptionValue, setInputOptionValue] = useState("");
 
   // Sync state when editedProduct data arrives
   useEffect(() => {
@@ -99,7 +102,7 @@ export default function ProductForm({
       );
       setOptionGroups(reconstructedGroups);
     } else {
-      setOptionGroups([{ id: crypto.randomUUID(), name: "", values: [] }]);
+      setOptionGroups([]);
     }
   }, [editedProduct]);
 
@@ -125,54 +128,59 @@ export default function ProductForm({
   const isPending =
     addProductMutation.isPending || updateProductMutation.isPending;
 
-  // --- Option Group Handlers ---
-  const addOptionGroup = () => {
-    setOptionGroups([
-      ...optionGroups,
-      { id: crypto.randomUUID(), name: "", values: [] },
-    ]);
+  // --- Option Handlers ---
+
+  const handleAddOption = () => {
+    const optName = inputOptionName.trim();
+    const optValue = inputOptionValue.trim();
+
+    if (!optName || !optValue) return;
+
+    setOptionGroups((prev) => {
+      const existingGroupIndex = prev.findIndex((g) => g.name === optName);
+
+      if (existingGroupIndex !== -1) {
+        // Group exists, append value if not present
+        const group = prev[existingGroupIndex]!;
+        if (group.values.some((v) => v.name === optValue)) return prev;
+
+        const updatedGroup = {
+          ...group,
+          values: [
+            ...group.values,
+            { id: crypto.randomUUID(), name: optValue },
+          ],
+        };
+        const newGroups = [...prev];
+        newGroups[existingGroupIndex] = updatedGroup;
+        return newGroups;
+      } else {
+        // Create new group
+        return [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            name: optName,
+            values: [{ id: crypto.randomUUID(), name: optValue }],
+          },
+        ];
+      }
+    });
+
+    // Clear value input so user can quickly add another value for the same key
+    setInputOptionValue("");
   };
 
-  const removeOptionGroup = (id: string) => {
-    setOptionGroups(optionGroups.filter((g) => g.id !== id));
-    const newPending = { ...pendingValues };
-    delete newPending[id];
-    setPendingValues(newPending);
-  };
-
-  const updateOptionGroupName = (id: string, newName: string) => {
-    setOptionGroups(
-      optionGroups.map((g) => (g.id === id ? { ...g, name: newName } : g)),
-    );
-  };
-
-  const addOptionValue = (groupId: string) => {
-    const valName = pendingValues[groupId]?.trim();
-    if (!valName) return;
-
-    setOptionGroups(
-      optionGroups.map((g) => {
-        if (g.id === groupId) {
-          if (g.values.some((v) => v.name === valName)) return g;
-          return {
-            ...g,
-            values: [...g.values, { id: crypto.randomUUID(), name: valName }],
-          };
-        }
-        return g;
-      }),
-    );
-    setPendingValues({ ...pendingValues, [groupId]: "" });
-  };
-
-  const removeOptionValue = (groupId: string, valueId: string) => {
-    setOptionGroups(
-      optionGroups.map((g) => {
-        if (g.id === groupId) {
-          return { ...g, values: g.values.filter((v) => v.id !== valueId) };
-        }
-        return g;
-      }),
+  const handleRemoveOptionValue = (groupId: string, valueId: string) => {
+    setOptionGroups((prev) =>
+      prev
+        .map((g) => {
+          if (g.id === groupId) {
+            return { ...g, values: g.values.filter((v) => v.id !== valueId) };
+          }
+          return g;
+        })
+        .filter((g) => g.values.length > 0),
     );
   };
 
@@ -239,6 +247,15 @@ export default function ProductForm({
     setVariants(variants.filter((_, i) => i !== index));
   };
 
+  // --- Category Handlers ---
+  const handleClickCategory = (catId: string) => {
+    if (!categoryIds.includes(catId)) {
+      setCategoryIds([...categoryIds, catId]);
+    } else {
+      setCategoryIds(categoryIds.filter((id) => id !== catId));
+    }
+  };
+
   // --- Submit ---
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,14 +311,6 @@ export default function ProductForm({
     }
   };
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedOptions = Array.from(
-      e.target.selectedOptions,
-      (option) => option.value,
-    );
-    setCategoryIds(selectedOptions);
-  };
-
   if (status === "loading" || isFetchingProduct)
     return (
       <div className="container mx-auto animate-pulse py-8 text-center">
@@ -320,286 +329,239 @@ export default function ProductForm({
       onSubmit={handleSubmit}
       className="mx-auto flex max-w-4xl flex-col gap-8 pb-20 text-sm"
     >
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">
-          {productId ? "Edit Product" : "Add Product"}
-        </h1>
-        {productId && (
-          <span className="font-mono text-xs text-gray-500">
-            ID: {productId}
-          </span>
-        )}
-      </div>
-
-      {/* Basic Info Block */}
-      <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-        {/* ... (Name, Categories, Description inputs remain the same) ... */}
-        <h2 className="border-b border-gray-700 pb-2 text-lg font-bold text-gray-200">
-          Basic Info
-        </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="name" className="font-semibold text-gray-300">
-              Product Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="rounded border border-gray-700 bg-gray-900 p-2 outline-none focus:border-blue-500"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="categories" className="font-semibold text-gray-300">
-              Categories
-            </label>
-            <select
-              id="categories"
-              multiple
+      <div className="flex flex-col gap-3">
+        {/* Product Info */}
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold">Product Category</span>
+          <div className="flex flex-col gap-3">
+            <Dropdown
+              options={categories.map((c) => ({ value: c.id, label: c.name }))}
               value={categoryIds}
-              onChange={handleCategoryChange}
-              required
-              className="scrollbar-thin h-[42px] rounded border border-gray-700 bg-gray-900 p-2 outline-none focus:border-blue-500"
-            >
-              {categories?.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+              onChange={handleClickCategory}
+            />
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="description" className="font-semibold text-gray-300">
-            Description
+          <label htmlFor="name" className="font-semibold">
+            Product Name
+          </label>
+          <input
+            id="name"
+            type="text"
+            // placeholder="Enter name..."
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="rounded bg-gray-900 px-3 py-2 outline-none"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="description" className="font-semibold">
+            Product Description
           </label>
           <textarea
             id="description"
+            // placeholder="Enter description..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="rounded border border-gray-700 bg-gray-900 p-2 outline-none focus:border-blue-500"
+            rows={1}
+            className="scrollbar-hide rounded bg-gray-900 px-3 py-2 outline-none"
           />
         </div>
-      </div>
 
-      {/* Options Configuration Block - Unchanged except for brevity in this response */}
-      <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-        <div className="flex items-center justify-between border-b border-gray-700 pb-2">
-          <h2 className="text-lg font-bold text-gray-200">Options</h2>
-          <button
-            type="button"
-            onClick={addOptionGroup}
-            className="text-xs font-semibold text-blue-400 uppercase hover:text-blue-300"
-          >
-            + Add Option Key
-          </button>
-        </div>
-        <div className="flex flex-col gap-4">
-          {optionGroups.map((group) => (
-            <div
-              key={group.id}
-              className="flex flex-col gap-2 rounded border border-gray-700 bg-gray-900/50 p-3"
+        {/* <hr className="border-gray-800" /> */}
+
+        {/* Options */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
+          <div className="flex w-full items-end gap-2">
+            <div className="flex w-full flex-col gap-1">
+              <label className="font-semibold">Option Name</label>
+              <input
+                type="text"
+                value={inputOptionName}
+                onChange={(e) => setInputOptionName(e.target.value)}
+                // placeholder="e.g. Color"
+                className="rounded bg-gray-900 px-3 py-2 outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleAddOption}
+              className="flex aspect-square min-w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600 sm:hidden"
             >
-              <div className="flex flex-col items-end gap-3 md:flex-row md:items-center">
-                <div className="flex w-full flex-col gap-1 md:w-1/3">
-                  <label className="font-mono text-xs text-gray-400">
-                    Option Name
-                  </label>
-                  <input
-                    type="text"
-                    value={group.name}
-                    onChange={(e) =>
-                      updateOptionGroupName(group.id, e.target.value)
-                    }
-                    placeholder="Color"
-                    className="w-full rounded border border-gray-600 bg-gray-800 p-2 text-white outline-none"
-                  />
-                </div>
-                <div className="flex w-full flex-col gap-1 md:w-1/3">
-                  <label className="font-mono text-xs text-gray-400">
-                    Add Value
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={pendingValues[group.id] || ""}
-                      onChange={(e) =>
-                        setPendingValues({
-                          ...pendingValues,
-                          [group.id]: e.target.value,
-                        })
-                      }
-                      onKeyDown={(e) =>
-                        e.key === "Enter" &&
-                        (e.preventDefault(), addOptionValue(group.id))
-                      }
-                      placeholder="Red"
-                      className="flex-1 rounded border border-gray-600 bg-gray-800 p-2 text-white outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => addOptionValue(group.id)}
-                      className="rounded bg-gray-700 px-3 text-white hover:bg-gray-600"
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
-                <div className="ml-auto">
-                  <button
-                    type="button"
-                    onClick={() => removeOptionGroup(group.id)}
-                    className="text-xs text-red-500 underline hover:text-red-400"
-                  >
-                    Remove Option
-                  </button>
-                </div>
-              </div>
-              <div className="mt-1 flex flex-wrap gap-2">
+              <FaCheck />
+            </button>
+          </div>
+          <div className="flex w-full items-end gap-2">
+            <div className="flex w-full flex-col gap-1">
+              <label className="font-semibold">Option Value</label>
+              <input
+                type="text"
+                value={inputOptionValue}
+                onChange={(e) => setInputOptionValue(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), handleAddOption())
+                }
+                // placeholder="e.g. Red"
+                className="rounded bg-gray-900 px-3 py-2 outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={generateVariants}
+              className="flex aspect-square min-w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600 sm:hidden"
+            >
+              <FaListUl />
+            </button>
+          </div>
+          <div className="hidden gap-2 sm:flex">
+            <button
+              type="button"
+              onClick={handleAddOption}
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
+            >
+              <FaCheck />
+            </button>
+            <button
+              type="button"
+              onClick={generateVariants}
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
+            >
+              <FaListUl />
+            </button>
+          </div>
+        </div>
+        {optionGroups.length === 0 ? null : (
+          <div className="flex flex-col gap-2">
+            {optionGroups.map((group, index) => (
+              <PillContainer key={group.id}>
                 {group.values.map((val) => (
-                  <span
+                  <ClickablePill
                     key={val.id}
-                    className="inline-flex items-center gap-1 rounded border border-blue-800 bg-blue-900/30 px-2 py-1 text-sm text-blue-200"
-                  >
-                    {val.name}
-                    <button
-                      type="button"
-                      onClick={() => removeOptionValue(group.id, val.id)}
-                      className="ml-1 text-blue-400 hover:text-white"
-                    >
-                      ×
-                    </button>
-                  </span>
+                    label={`${group.name}: ${val.name}`}
+                    color={
+                      (index < 8
+                        ? index + 1
+                        : "gray") as keyof typeof colorClassMap
+                    }
+                    onRemove={() => handleRemoveOptionValue(group.id, val.id)}
+                  />
                 ))}
+              </PillContainer>
+            ))}
+          </div>
+        )}
+
+        {/* <hr className="border-gray-800" /> */}
+
+        {/* Variants */}
+        {variants.map((variant, index) => (
+          <div key={index} className="flex flex-col gap-3">
+            <hr className="mt-2 border-gray-800" />
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold">Variant {index + 1}:</span>
+                <PillContainer>
+                  {Object.entries(
+                    JSON.parse(variant.options) as Record<string, string>,
+                  ).map(([optName, optValue]) => {
+                    const groupIndex = optionGroups.findIndex(
+                      (g) => g.name === optName,
+                    );
+                    const color =
+                      groupIndex !== -1 && groupIndex < 8
+                        ? groupIndex + 1
+                        : "gray";
+
+                    return (
+                      <UnclickablePill
+                        key={optName}
+                        label={`${optName}: ${optValue}`}
+                        color={color as keyof typeof colorClassMap}
+                      />
+                    );
+                  })}
+                </PillContainer>
               </div>
+              {/* <button
+                type="button"
+                onClick={() => removeVariant(index)}
+                className="flex cursor-pointer items-center justify-center rounded-full bg-red-600/50 p-1.5 text-gray-300 hover:bg-red-600/80"
+              >
+                <FaTrash size={10} />
+              </button> */}
             </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={generateVariants}
-          className="mt-2 w-full rounded border border-dashed border-gray-600 p-3 text-gray-400 transition-colors hover:border-gray-400 hover:bg-gray-800 hover:text-white"
-        >
-          Generate/Update Variants from Options
-        </button>
-      </div>
 
-      {/* Variants List */}
-      <div className="flex flex-col gap-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-        <h2 className="border-b border-gray-700 pb-2 text-lg font-bold text-gray-200">
-          Variants ({variants.length})
-        </h2>
-
-        <div className="flex flex-col gap-6">
-          {variants.map((variant, index) => (
-            <div
-              key={index}
-              className="flex flex-col gap-4 rounded border border-gray-700 bg-gray-900 p-4 shadow-sm"
-            >
-              {/* Variant Header & Price/Stock fields remain unchanged */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="font-mono text-xs text-gray-500">
-                    {variant.options}
-                  </span>
-                  {variant.id && (
-                    <span className="ml-2 rounded bg-gray-800 px-1 text-[10px] text-gray-500">
-                      Existing ID: {variant.id}
-                    </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeVariant(index)}
-                  className="text-sm text-red-500 hover:text-red-400"
+            <div className="flex gap-2">
+              <div className="flex w-full flex-col gap-1">
+                <label
+                  htmlFor={`variant-${index}-price`}
+                  className="font-semibold"
                 >
-                  Remove Variant
-                </button>
+                  Variant Price
+                </label>
+                <input
+                  id={`variant-${index}-price`}
+                  type="number"
+                  value={variant.price}
+                  onChange={(e) =>
+                    handleVariantChange(index, "price", e.target.value)
+                  }
+                  className="w-full rounded bg-gray-900 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  min={0.01}
+                />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-gray-400">
-                    Price
-                  </label>
-                  <input
-                    type="number"
-                    value={variant.price}
-                    onChange={(e) =>
-                      handleVariantChange(index, "price", e.target.value)
-                    }
-                    className="rounded border border-gray-600 bg-gray-800 p-2 text-white outline-none"
-                    placeholder="0.00"
-                    step="0.01"
-                    min={0.01}
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-gray-400">
-                    Stock
-                  </label>
-                  <input
-                    type="number"
-                    value={variant.stock}
-                    onChange={(e) =>
-                      handleVariantChange(index, "stock", e.target.value)
-                    }
-                    className="rounded border border-gray-600 bg-gray-800 p-2 text-white outline-none"
-                    placeholder="0"
-                    min={0}
-                  />
-                </div>
+              <div className="flex w-full flex-col gap-1">
+                <label
+                  htmlFor={`variant-${index}-stock`}
+                  className="font-semibold"
+                >
+                  Variant Stock
+                </label>
+                <input
+                  id={`variant-${index}-stock`}
+                  type="number"
+                  value={variant.stock}
+                  onChange={(e) =>
+                    handleVariantChange(index, "stock", e.target.value)
+                  }
+                  className="w-full rounded bg-gray-900 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  min={0}
+                />
               </div>
-
-              {/* --- MEDIA SECTIONS USING MediaGrid --- */}
-              <MediaGrid
-                mediaType="image"
-                maxItems={8}
-                items={variant.images}
-                onChange={(newItems) =>
-                  handleVariantChange(index, "images", newItems)
-                }
-                uploadThingRoute="variantImageUploader"
-                title={
-                  <span className="flex items-center gap-2">
-                    <FaImage /> Images (Drag to reorder)
-                  </span>
-                }
-              />
-
-              <MediaGrid
-                mediaType="video"
-                maxItems={1}
-                items={variant.videos}
-                onChange={(newItems) =>
-                  handleVariantChange(index, "videos", newItems)
-                }
-                uploadThingRoute="variantVideoUploader"
-                title={
-                  <span className="flex items-center gap-2">
-                    <FaVideo /> Video
-                  </span>
-                }
-              />
             </div>
-          ))}
-        </div>
-      </div>
 
-      {error && (
-        <div className="rounded border border-red-800 bg-red-900/50 p-3 text-red-200">
-          {error}
-        </div>
-      )}
+            {/* --- MEDIA SECTIONS USING MediaGrid --- */}
+            <MediaGrid
+              mediaType="image"
+              maxItems={8}
+              items={variant.images}
+              onChange={(newItems) =>
+                handleVariantChange(index, "images", newItems)
+              }
+              uploadThingRoute="variantImageUploader"
+            />
 
-      <div className="sticky bottom-4 z-10">
+            <MediaGrid
+              mediaType="video"
+              maxItems={1}
+              items={variant.videos}
+              onChange={(newItems) =>
+                handleVariantChange(index, "videos", newItems)
+              }
+              uploadThingRoute="variantVideoUploader"
+            />
+          </div>
+        ))}
+
+        {/* Submit button */}
+        <hr className="my-2 border-gray-800" />
+        {error && <span className="text-red-600/50">{error}</span>}
         <button
           type="submit"
           disabled={isPending}
-          className="w-full rounded-md bg-green-600 px-6 py-4 font-bold text-white shadow-lg transition-transform hover:bg-green-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-gray-600"
+          className="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 transition-colors hover:bg-indigo-700 disabled:cursor-default disabled:bg-gray-600"
         >
           {isPending
             ? "Saving..."

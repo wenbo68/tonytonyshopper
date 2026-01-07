@@ -223,7 +223,7 @@ export default function ReviewModal({
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Share your experience..."
-                  className="scrollbar-hide w-full rounded bg-gray-800 px-3 py-2 text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="scrollbar-hide w-full rounded bg-gray-800 px-3 py-2 outline-none focus:ring-1 focus:ring-indigo-500"
                 ></textarea>
               </div>
 

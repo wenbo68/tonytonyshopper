@@ -88,9 +88,9 @@ export default function RootLayout({
 // don't think about label in return; the steps are now simplified. implement requested business logic when there is a real client
 
 // three things to work on:
-// 4. finish home page
 // make user reviews show the user's purchased variants
 // more comment filters: by username, by media
 // 3. text filter but allows multiple entries (eg for order items)
 // 5. better ui for add/edit product (enforce 1/+ images for each variant)
 // 1. optimistic update for return modals
+// allow 6 items per row

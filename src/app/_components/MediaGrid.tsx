@@ -35,7 +35,7 @@ export function MediaGrid({
   maxItems,
   uploadThingRoute,
   title,
-  gridClassName = "grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-5",
+  gridClassName = "grid grid-cols-2 gap-2 sm:grid-cols-4",
 }: MediaGridProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -81,20 +81,13 @@ export function MediaGrid({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded bg-gray-800/50 p-3">
+    <div className="flex flex-col gap-1">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-300">
-          {title ? (
-            title
-          ) : (
-            <>
-              {mediaType === "image" ? <FaImage /> : <FaVideo />}
-              {mediaType === "image" ? " Images" : " Videos"}
-            </>
-          )}
+      <div className="flex items-center gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-semibold">
+          {title ? title : mediaType === "image" ? "Images:" : "Videos:"}
         </h3>
-        <span className="text-[10px] text-gray-500">
+        <span className="">
           {items.length}/{maxItems}
         </span>
       </div>
@@ -108,7 +101,7 @@ export function MediaGrid({
             onDragStart={(e) => onDragStart(e, index)}
             onDragOver={onDragOver}
             onDrop={(e) => onDrop(e, index)}
-            className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-700 bg-black active:cursor-grabbing"
+            className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-800 bg-black active:cursor-grabbing"
           >
             {mediaType === "video" ? (
               <>
@@ -117,7 +110,7 @@ export function MediaGrid({
                   className="h-full w-full object-contain"
                   // No controls here
                 />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                   <FaPlay className="text-gray-300" />
                 </div>
               </>
@@ -131,16 +124,16 @@ export function MediaGrid({
             )}
 
             {/* Hover Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
-              <FaGripVertical className="text-white drop-shadow-md" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100">
+              <FaGripVertical className="text-gray-300" />
             </div>
 
             {/* Delete Button */}
-            <div className="absolute top-1 right-1">
+            <div className="absolute top-1.5 right-1.5">
               <button
                 type="button"
                 onClick={() => handleRemove(index)}
-                className="rounded-full bg-red-600 p-1 text-white hover:bg-red-500"
+                className="flex cursor-pointer items-center justify-center rounded-full bg-red-600/50 p-1.5 text-gray-300 hover:bg-red-600/80"
               >
                 <FaTrash size={10} />
               </button>
@@ -150,15 +143,14 @@ export function MediaGrid({
 
         {/* Uploader */}
         {items.length < maxItems && (
-          <div className="col-span-1 h-full">
-            <MultiUploader
-              label="+"
-              uploadThingRoute={uploadThingRoute}
-              availability={maxItems - items.length}
-              onUploadSuccess={handleUploadSuccess}
-              className="h-full min-h-20" // Ensure it has height
-            />
-          </div>
+          // <div className="">
+          <MultiUploader
+            label="+"
+            uploadThingRoute={uploadThingRoute}
+            availability={maxItems - items.length}
+            onUploadSuccess={handleUploadSuccess}
+          />
+          // </div>
         )}
       </div>
     </div>

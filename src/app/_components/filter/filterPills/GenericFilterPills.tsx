@@ -2,7 +2,11 @@
 
 import { useMemo } from "react";
 import type { PillConfig } from "~/type";
-import { ClickablePill, PillContainer, UnclickablePill } from "../FilterPill";
+import {
+  ClickablePill,
+  PillContainer,
+  UnclickablePill,
+} from "~/app/_components/Pill";
 
 // Define how each filter field should be displayed
 export type BasePillConfig<T> = {

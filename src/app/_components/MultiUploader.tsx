@@ -56,35 +56,28 @@ export function MultiUploader({
     <div className={`flex flex-col gap-2 ${className}`}>
       <div
         {...getRootProps()}
-        className="flex cursor-pointer flex-col items-center justify-center rounded border border-dashed border-gray-600 bg-gray-800/50 p-4 text-center transition-colors hover:bg-gray-800"
+        className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded border border-gray-800 bg-gray-900 p-4 text-center transition-colors hover:bg-gray-900/50"
       >
         <input {...getInputProps()} />
-        <p className="text-xs text-gray-400">
-          {label || "Drop file here or click"}
-        </p>
+        <p className="">{label || "+"}</p>
       </div>
 
       {files.length > 0 && (
-        <div className="flex items-center justify-between gap-2 rounded bg-gray-800 p-2">
-          <span className="truncate text-xs text-gray-300">
-            {files.length} file(s) selected
-          </span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              if (files.length > availability) {
-                alert(`Too many files. You can only add ${availability} more.`);
-                return;
-              }
-              startUpload(files);
-            }}
-            disabled={isUploading}
-            className="rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-500 disabled:bg-gray-600"
-          >
-            {isUploading ? "Uploading..." : "Upload"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            if (files.length > availability) {
+              alert(`Too many files. You can only add ${availability} more.`);
+              return;
+            }
+            startUpload(files);
+          }}
+          disabled={isUploading}
+          className="cursor-pointer rounded bg-indigo-600 px-3 py-2 text-xs font-semibold text-gray-300 hover:bg-indigo-700 disabled:cursor-default disabled:bg-gray-600"
+        >
+          {isUploading ? "Uploading" : `Upload ${files.length}`}
+        </button>
       )}
     </div>
   );
