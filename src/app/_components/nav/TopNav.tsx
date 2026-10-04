@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { AuthShowcaseFallback } from "../auth/AuthShowcaseFallback";
 import { AuthShowcase } from "../auth/AuthShowcase";
-import { FaBookmark, FaShop } from "react-icons/fa6";
+import { FaBookmark } from "react-icons/fa6";
+import { Logo } from "../Logo";
 import { IoSearch } from "react-icons/io5";
 import { FaCartPlus } from "react-icons/fa";
 
@@ -57,11 +58,11 @@ export function TopNav() {
       <div className="flex w-full max-w-7xl items-center justify-between px-2">
         <Link
           href="/"
-          className="flex items-center text-center text-sm font-semibold"
+          className="flex items-center gap-2 text-sm font-semibold text-gray-300 hover:text-blue-400"
+          aria-label="tonytonyshopper home"
         >
-          <div className="flex h-8 w-8 items-center justify-center">
-            <FaShop size={32} />
-          </div>
+          <Logo className="h-8 w-8" />
+          <span className="hidden sm:inline">tonytonyshopper</span>
         </Link>
         <div className="flex h-full items-center gap-6 sm:gap-7 md:gap-8 lg:gap-9 xl:gap-10">
           <Link
