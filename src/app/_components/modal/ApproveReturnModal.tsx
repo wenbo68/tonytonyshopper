@@ -168,7 +168,7 @@ export function ApproveReturnModal({
       <form
         onMouseDown={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="flex max-h-[80vh] w-sm max-w-[90vw] flex-col gap-4 rounded bg-gray-900 p-4 text-sm"
+        className="flex max-h-[80vh] w-sm max-w-[90vw] flex-col gap-4 rounded bg-gray-800 p-4 text-sm"
       >
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
@@ -189,7 +189,7 @@ export function ApproveReturnModal({
                   setQuantity(Math.max(0, Number(val)));
                 }
               }}
-              className="w-full rounded bg-gray-800 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-full rounded bg-gray-700 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               required
             />
           </div>
@@ -211,7 +211,7 @@ export function ApproveReturnModal({
                   setReturnCost(Math.max(0, Number(val)));
                 }
               }}
-              className="w-full rounded bg-gray-800 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-full rounded bg-gray-700 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               required
             />
           </div>
@@ -222,7 +222,7 @@ export function ApproveReturnModal({
               placeholder="Please include http:// or https://"
               value={returnLabel}
               onChange={(e) => setReturnLabel(e.target.value)}
-              className="rounded bg-gray-800 p-2 outline-none"
+              className="rounded bg-gray-700 p-2 outline-none"
               required
             />
           </div>
@@ -233,7 +233,7 @@ export function ApproveReturnModal({
               // placeholder="e.g., UPS, FedEx"
               value={returnCarrier}
               onChange={(e) => setReturnCarrier(e.target.value)}
-              className="rounded bg-gray-800 p-2 outline-none"
+              className="rounded bg-gray-700 p-2 outline-none"
               required
             />
           </div>
@@ -244,7 +244,7 @@ export function ApproveReturnModal({
               // placeholder="e.g., UPS, FedEx"
               value={returnTrackingNumber}
               onChange={(e) => setReturnTrackingNumber(e.target.value)}
-              className="rounded bg-gray-800 p-2 outline-none"
+              className="rounded bg-gray-700 p-2 outline-none"
               required
             />
           </div>
@@ -265,7 +265,7 @@ export function ApproveReturnModal({
           <button
             type="submit"
             disabled={isPending}
-            className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
+            className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-500 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
           >
             {rejectReturnMutationIsPending ? "Approving..." : "Approve"}
           </button>

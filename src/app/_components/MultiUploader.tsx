@@ -56,7 +56,7 @@ export function MultiUploader({
     <div className={`flex flex-col gap-2 ${className}`}>
       <div
         {...getRootProps()}
-        className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded border border-gray-800 bg-gray-900 p-4 text-center transition-colors hover:bg-gray-900/50"
+        className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded border border-gray-700 bg-gray-800 p-4 text-center transition-colors hover:bg-gray-800/50"
       >
         <input {...getInputProps()} />
         <p className="">{label || "+"}</p>
@@ -74,7 +74,7 @@ export function MultiUploader({
             startUpload(files);
           }}
           disabled={isUploading}
-          className="cursor-pointer rounded bg-indigo-600 px-3 py-2 text-xs font-semibold text-gray-300 hover:bg-indigo-700 disabled:cursor-default disabled:bg-gray-600"
+          className="cursor-pointer rounded bg-indigo-600 px-3 py-2 text-xs font-semibold text-gray-300 hover:bg-indigo-500 disabled:cursor-default disabled:bg-gray-500"
         >
           {isUploading ? "Uploading" : `Upload ${files.length}`}
         </button>

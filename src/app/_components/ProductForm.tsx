@@ -352,7 +352,7 @@ export default function ProductForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="rounded bg-gray-900 px-3 py-2 outline-none"
+            className="rounded bg-gray-800 px-3 py-2 outline-none"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -365,11 +365,11 @@ export default function ProductForm({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={1}
-            className="scrollbar-hide rounded bg-gray-900 px-3 py-2 outline-none"
+            className="scrollbar-hide rounded bg-gray-800 px-3 py-2 outline-none"
           />
         </div>
 
-        {/* <hr className="border-gray-800" /> */}
+        {/* <hr className="border-gray-700" /> */}
 
         {/* Options */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
@@ -381,13 +381,13 @@ export default function ProductForm({
                 value={inputOptionName}
                 onChange={(e) => setInputOptionName(e.target.value)}
                 // placeholder="e.g. Color"
-                className="rounded bg-gray-900 px-3 py-2 outline-none"
+                className="rounded bg-gray-800 px-3 py-2 outline-none"
               />
             </div>
             <button
               type="button"
               onClick={handleAddOption}
-              className="flex aspect-square min-w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600 sm:hidden"
+              className="flex aspect-square min-w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-500 disabled:hover:cursor-default disabled:hover:bg-indigo-600 sm:hidden"
             >
               <FaCheck />
             </button>
@@ -403,13 +403,13 @@ export default function ProductForm({
                   e.key === "Enter" && (e.preventDefault(), handleAddOption())
                 }
                 // placeholder="e.g. Red"
-                className="rounded bg-gray-900 px-3 py-2 outline-none"
+                className="rounded bg-gray-800 px-3 py-2 outline-none"
               />
             </div>
             <button
               type="button"
               onClick={generateVariants}
-              className="flex aspect-square min-w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600 sm:hidden"
+              className="flex aspect-square min-w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-500 disabled:hover:cursor-default disabled:hover:bg-indigo-600 sm:hidden"
             >
               <FaListUl />
             </button>
@@ -418,14 +418,14 @@ export default function ProductForm({
             <button
               type="button"
               onClick={handleAddOption}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-500 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
             >
               <FaCheck />
             </button>
             <button
               type="button"
               onClick={generateVariants}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded bg-indigo-600 font-semibold text-gray-300 hover:bg-indigo-500 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
             >
               <FaListUl />
             </button>
@@ -452,12 +452,12 @@ export default function ProductForm({
           </div>
         )}
 
-        {/* <hr className="border-gray-800" /> */}
+        {/* <hr className="border-gray-700" /> */}
 
         {/* Variants */}
         {variants.map((variant, index) => (
           <div key={index} className="flex flex-col gap-3">
-            <hr className="mt-2 border-gray-800" />
+            <hr className="mt-2 border-gray-700" />
 
             <div className="flex items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -508,7 +508,7 @@ export default function ProductForm({
                   onChange={(e) =>
                     handleVariantChange(index, "price", e.target.value)
                   }
-                  className="w-full rounded bg-gray-900 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full rounded bg-gray-800 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   min={0.01}
                 />
               </div>
@@ -526,7 +526,7 @@ export default function ProductForm({
                   onChange={(e) =>
                     handleVariantChange(index, "stock", e.target.value)
                   }
-                  className="w-full rounded bg-gray-900 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full rounded bg-gray-800 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   min={0}
                 />
               </div>
@@ -556,12 +556,12 @@ export default function ProductForm({
         ))}
 
         {/* Submit button */}
-        <hr className="my-2 border-gray-800" />
+        <hr className="my-2 border-gray-700" />
         {error && <span className="text-red-600/50">{error}</span>}
         <button
           type="submit"
           disabled={isPending}
-          className="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 transition-colors hover:bg-indigo-700 disabled:cursor-default disabled:bg-gray-600"
+          className="w-full rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 transition-colors hover:bg-indigo-500 disabled:cursor-default disabled:bg-gray-500"
         >
           {isPending
             ? "Saving..."

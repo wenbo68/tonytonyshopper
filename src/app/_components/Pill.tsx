@@ -13,7 +13,7 @@ export function PillContainer({ children }: { children: React.ReactNode }) {
 
 // 2. The Skeleton Pill for the Fallback
 export function PillSkeleton({ width }: { width: string }) {
-  return <div className={`h-6 ${width} animate-pulse rounded bg-gray-700`} />;
+  return <div className={`h-6 ${width} animate-pulse rounded bg-gray-600`} />;
 }
 
 // 3. The Base Props

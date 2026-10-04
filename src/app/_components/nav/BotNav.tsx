@@ -3,7 +3,7 @@ import { BiLogoGmail } from "react-icons/bi";
 
 export default function BotNav() {
   return (
-    <nav className="mx-auto h-14 w-full max-w-[1400px] border-t border-gray-700 px-3">
+    <nav className="mx-auto h-14 w-full max-w-7xl border-t border-gray-700 px-3">
       <div className="flex h-full w-full items-center justify-end gap-3 md:gap-3">
         <a
           href="mailto:laboratorymember008@gmail.com"

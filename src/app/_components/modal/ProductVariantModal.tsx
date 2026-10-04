@@ -342,7 +342,7 @@ export function ProductVariantModal() {
         onMouseDown={(e) => e.stopPropagation()}
       >
         {isFetchingProduct ? (
-          <div className="rounded bg-gray-900 p-6 text-center text-gray-500">
+          <div className="rounded bg-gray-900 p-6 text-center text-gray-400">
             <p className="animate-pulse">Loading product...</p>
           </div>
         ) : !product ? (
@@ -404,10 +404,10 @@ export function ProductVariantModal() {
                   href={`/product/${product.id}#review-filters`}
                   className="flex cursor-pointer items-center gap-1"
                 >
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-400">
                     {numericRating.toFixed(1)}
                   </span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-400">
                     ({formatNumber(product.reviewCount)})
                   </span>
                   <StarRating rating={numericRating} interactive={false} />
@@ -430,8 +430,8 @@ export function ProductVariantModal() {
                         handleOptionChange(name, newValue)
                       }
                       triggerColor="bg-gray-800"
-                      menuColor="bg-gray-700"
-                      menuHighlightColor="hover:bg-gray-800"
+                      menuColor="bg-gray-800"
+                      menuHighlightColor="hover:bg-gray-700"
                     />
                   </div>
                 ))}

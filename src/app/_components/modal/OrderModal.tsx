@@ -129,100 +129,100 @@ export default function OrderModal({
     >
       {/* Modal Content Box */}
       <div
-        className="scrollbar-hide flex max-h-[80vh] w-lg max-w-[90vw] flex-col gap-3 overflow-y-auto rounded bg-gray-900 p-4"
+        className="scrollbar-hide flex max-h-[80vh] w-lg max-w-[90vw] flex-col gap-3 overflow-y-auto rounded bg-gray-800 p-4"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Order</label>
           <div className="flex gap-2 text-sm">
-            <label className="min-w-16 text-gray-500">ID:</label>
+            <label className="min-w-16 text-gray-400">ID:</label>
             <span className="">{order.id}</span>
           </div>
         </div>
 
-        <hr className="border-gray-800" />
+        <hr className="border-gray-700" />
 
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Customer</label>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Name:</label>
+            <label className="font-base min-w-16 text-gray-400">Name:</label>
             <span className="">{order.user?.name ?? "N/A"}</span>
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Email:</label>
+            <label className="font-base min-w-16 text-gray-400">Email:</label>
             <span className="">
               {order.user?.email ?? order.guestEmail ?? "N/A"}
             </span>
           </div>
         </div>
 
-        <hr className="border-gray-800" />
+        <hr className="border-gray-700" />
 
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Total</label>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">
+            <label className="font-base min-w-16 text-gray-400">
               Subtotal:
             </label>
             <span className="">{formatCurrency(order.subtotal)}</span>
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">
+            <label className="font-base min-w-16 text-gray-400">
               Shipping:
             </label>
             <span className="">{formatCurrency(order.shippingFee)}</span>
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Tax:</label>
+            <label className="font-base min-w-16 text-gray-400">Tax:</label>
             <span className="">{formatCurrency(order.tax)}</span>
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Grand:</label>
+            <label className="font-base min-w-16 text-gray-400">Grand:</label>
             <span className="">{formatCurrency(order.totalAmount)}</span>
           </div>
         </div>
 
-        {/* <hr className="border-gray-800" />
+        {/* <hr className="border-gray-700" />
 
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Card</label>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Brand:</label>
+            <label className="font-base min-w-16 text-gray-400">Brand:</label>
             <span className="capitalize">{order.cardBrand ?? "N/A"}</span>
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Last4:</label>
+            <label className="font-base min-w-16 text-gray-400">Last4:</label>
             <span className="">{order.cardLast4 ?? "N/A"}</span>
           </div>
         </div> */}
 
-        <hr className="border-gray-800" />
+        <hr className="border-gray-700" />
 
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Shipping</label>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Method:</label>
+            <label className="font-base min-w-16 text-gray-400">Method:</label>
             {renderShippingMethod(
               order.shippingMethod ?? "",
               order.shippingTime,
             )}
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Name:</label>
+            <label className="font-base min-w-16 text-gray-400">Name:</label>
             <span className="">{order.shippingName ?? "N/A"}</span>
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Addr:</label>
+            <label className="font-base min-w-16 text-gray-400">Addr:</label>
             {renderAddress(order.shippingAddress)}
           </div>
         </div>
 
-        <hr className="border-gray-800" />
+        <hr className="border-gray-700" />
 
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Billing</label>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Card:</label>
+            <label className="font-base min-w-16 text-gray-400">Card:</label>
             <span className="capitalize">
               {!order.cardBrand || !order.cardLast4
                 ? "N/A"
@@ -230,21 +230,21 @@ export default function OrderModal({
             </span>
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Name:</label>
+            <label className="font-base min-w-16 text-gray-400">Name:</label>
             <span className="">{order.billingName ?? "N/A"}</span>
           </div>
           <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">Addr:</label>
+            <label className="font-base min-w-16 text-gray-400">Addr:</label>
             {renderAddress(order.billingAddress)}
           </div>
         </div>
 
-        <hr className="border-gray-800" />
+        <hr className="border-gray-700" />
 
         <div className="flex flex-col gap-0">
           <label className="text-sm font-semibold">Delivery</label>
           <div className="flex gap-2 text-sm">
-            <label className="font-base text-gray-500">
+            <label className="font-base text-gray-400">
               Click the Shipped tag to see an item's delivery info
             </label>
             {/* <span className="">
@@ -252,7 +252,7 @@ export default function OrderModal({
             </span> */}
           </div>
           {/* <div className="flex gap-2 text-sm">
-            <label className="font-base min-w-16 text-gray-500">
+            <label className="font-base min-w-16 text-gray-400">
               Tracking:
             </label>
             <span className="">

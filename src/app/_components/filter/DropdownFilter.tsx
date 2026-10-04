@@ -99,7 +99,7 @@ export default function DropdownFilter(props: DropdownFilterProps) {
         <label className="font-semibold">{label}</label>
       </div>
       <div ref={containerRef}>
-        <div className="flex w-full items-center rounded bg-gray-900">
+        <div className="flex w-full items-center rounded bg-gray-800">
           <input
             type="text"
             value={writtenText}
@@ -128,14 +128,14 @@ export default function DropdownFilter(props: DropdownFilterProps) {
             {isGroupOptions
               ? (filteredOptions as FilterGroupOption[]).map((group) => (
                   <div key={group.groupLabel}>
-                    <div className="p-1 text-xs text-gray-500 uppercase">
+                    <div className="p-1 text-xs text-gray-400 uppercase">
                       {group.groupLabel}
                     </div>
                     {group.options.map((option) => (
                       <button
                         key={option.urlInput}
                         onClick={() => handleSelectOption(option)}
-                        className={`w-full cursor-pointer rounded p-2 pl-5 text-left hover:bg-gray-900 hover:text-blue-400 ${
+                        className={`w-full cursor-pointer rounded p-2 pl-5 text-left hover:bg-gray-700 hover:text-blue-400 ${
                           String(value) === String(option.urlInput)
                             ? "text-blue-400"
                             : ""
@@ -150,7 +150,7 @@ export default function DropdownFilter(props: DropdownFilterProps) {
                   <button
                     key={option.urlInput}
                     onClick={() => handleSelectOption(option)}
-                    className={`w-full cursor-pointer rounded px-2 ${filteredOptions.length === 1 ? "py-1.5" : "py-2"} text-left hover:bg-gray-900 hover:text-blue-400 ${
+                    className={`w-full cursor-pointer rounded px-2 ${filteredOptions.length === 1 ? "py-1.5" : "py-2"} text-left hover:bg-gray-700 hover:text-blue-400 ${
                       mode === "multi" &&
                       value.some(
                         (item) => String(item) === String(option.urlInput),

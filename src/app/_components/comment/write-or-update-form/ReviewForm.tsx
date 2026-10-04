@@ -46,7 +46,7 @@ export default function ReviewForm({
       {/* Rating */}
       <div className="flex flex-col gap-1">
         <span className="block font-medium text-gray-200">Rating</span>
-        <div className="flex items-center rounded bg-gray-800 px-3 py-2.5">
+        <div className="flex items-center rounded bg-gray-700 px-3 py-2.5">
           <StarRating rating={rating} setRating={setRating} />
         </div>
       </div>
@@ -59,7 +59,7 @@ export default function ReviewForm({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Share your experience..."
-          className="w-full rounded bg-gray-800 px-3 py-2 text-gray-300 outline-none"
+          className="w-full rounded bg-gray-700 px-3 py-2 text-gray-300 outline-none"
         />
       </div>
 
@@ -70,7 +70,7 @@ export default function ReviewForm({
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="text-gray-500 hover:text-gray-400"
+            className="text-gray-400 hover:text-gray-300"
           >
             Cancel
           </button>
@@ -78,7 +78,7 @@ export default function ReviewForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-200 hover:bg-indigo-500 disabled:opacity-50"
+          className="rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-500 disabled:opacity-50"
         >
           {isSubmitting ? "Processing..." : submitLabel}
         </button>

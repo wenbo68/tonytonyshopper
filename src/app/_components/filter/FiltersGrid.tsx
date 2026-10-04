@@ -28,7 +28,7 @@ export function FiltersGrid({
 
   // Common Grid Classes
   const defaultGridClassName =
-    "grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-2 md:grid-cols-4 md:gap-2 lg:grid-cols-5 lg:gap-2 xl:grid-cols-6 xl:gap-2";
+    "grid w-full grid-cols-2 gap-2 text-sm sm:grid-cols-3 sm:gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 lg:gap-5 xl:grid-cols-6 xl:gap-6";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +39,7 @@ export function FiltersGrid({
     <button
       type="button"
       onClick={() => setIsOpen(!isOpen)}
-      className="cursor-pointer rounded bg-gray-900 p-2 sm:hidden"
+      className="cursor-pointer rounded bg-gray-800 p-2 sm:hidden"
       aria-label="Toggle filters"
     >
       <IoIosArrowDown

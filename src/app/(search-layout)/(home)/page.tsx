@@ -55,7 +55,7 @@ export default function ProductsPage() {
               </span>
               <Link
                 href={`/search?category=${category.id}&sort=rating-desc`}
-                className="text-xs font-semibold text-gray-500 transition hover:text-blue-500"
+                className="text-xs font-semibold text-gray-400 transition hover:text-blue-500"
               >
                 View All
               </Link>

@@ -66,7 +66,7 @@ export function MediaCarousel({
   return (
     <div
       className={clsx(
-        "group relative aspect-square w-full overflow-hidden rounded bg-black",
+        "group relative aspect-square w-full overflow-hidden rounded",
         className,
       )}
     >

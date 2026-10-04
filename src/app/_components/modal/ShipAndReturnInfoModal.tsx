@@ -58,11 +58,11 @@ export default function ShipAndReturnInfoModal({
     >
       {/* Modal Content Box */}
       <div
-        className="scrollbar-hide flex max-h-[90vh] w-lg max-w-[90vw] flex-col gap-3 overflow-y-auto rounded bg-gray-900 p-4"
+        className="scrollbar-hide flex max-h-[90vh] w-lg max-w-[90vw] flex-col gap-3 overflow-y-auto rounded bg-gray-800 p-4"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {isPendingMedia ? (
-          <div className="rounded bg-gray-900 p-6 text-center text-gray-500">
+          <div className="rounded bg-gray-800 p-6 text-center text-gray-400">
             <p className="animate-pulse">Loading product...</p>
           </div>
         ) : (
@@ -70,13 +70,13 @@ export default function ShipAndReturnInfoModal({
             <div className="flex flex-col gap-0">
               <label className="text-sm font-semibold">Shipped</label>
               <div className="flex gap-2 text-sm">
-                <label className="font-base min-w-16 text-gray-500">
+                <label className="font-base min-w-16 text-gray-400">
                   Carrier:
                 </label>
                 <span className="">{orderItem.carrier}</span>
               </div>
               <div className="flex gap-2 text-sm">
-                <label className="font-base min-w-16 text-gray-500">
+                <label className="font-base min-w-16 text-gray-400">
                   Tracking:
                 </label>
                 <span className="">{orderItem.trackingNumber}</span>
@@ -85,7 +85,7 @@ export default function ShipAndReturnInfoModal({
 
             {orderItem.returnReason && (
               <>
-                <hr className="border-gray-800" />
+                <hr className="border-gray-700" />
 
                 <div className="flex flex-col gap-0">
                   <label className="text-sm font-semibold">
@@ -93,7 +93,7 @@ export default function ShipAndReturnInfoModal({
                   </label>
                   <div className="flex flex-col gap-1">
                     <div className="flex gap-2 text-sm">
-                      <label className="font-base min-w-16 text-gray-500">
+                      <label className="font-base min-w-16 text-gray-400">
                         Reason:
                       </label>
                       <div className="flex gap-2">
@@ -146,14 +146,14 @@ export default function ShipAndReturnInfoModal({
 
             {orderItem.rejectReturnReason && (
               <>
-                <hr className="border-gray-800" />
+                <hr className="border-gray-700" />
 
                 <div className="flex flex-col gap-0">
                   <label className="text-sm font-semibold">
                     Return Rejected
                   </label>
                   <div className="flex gap-2 text-sm">
-                    <label className="font-base min-w-16 text-gray-500">
+                    <label className="font-base min-w-16 text-gray-400">
                       Reason:
                     </label>
                     <span className="">{orderItem.rejectReturnReason}</span>
@@ -167,14 +167,14 @@ export default function ShipAndReturnInfoModal({
               orderItem.returnCarrier &&
               orderItem.returnTrackingNumber && (
                 <>
-                  <hr className="border-gray-800" />
+                  <hr className="border-gray-700" />
 
                   <div className="flex flex-col gap-0">
                     <label className="text-sm font-semibold">
                       Return Approved
                     </label>
                     <div className="flex gap-2 text-sm">
-                      <label className="font-base min-w-16 text-gray-500">
+                      <label className="font-base min-w-16 text-gray-400">
                         Cost:
                       </label>
                       <span className="">
@@ -182,19 +182,19 @@ export default function ShipAndReturnInfoModal({
                       </span>
                     </div>
                     <div className="flex gap-2 text-sm">
-                      <label className="font-base min-w-16 text-gray-500">
+                      <label className="font-base min-w-16 text-gray-400">
                         Label:
                       </label>
                       <span className="">{orderItem.returnLabel}</span>
                     </div>
                     <div className="flex gap-2 text-sm">
-                      <label className="font-base min-w-16 text-gray-500">
+                      <label className="font-base min-w-16 text-gray-400">
                         Carrier:
                       </label>
                       <span className="">{orderItem.returnCarrier}</span>
                     </div>
                     <div className="flex gap-2 text-sm">
-                      <label className="font-base min-w-16 text-gray-500">
+                      <label className="font-base min-w-16 text-gray-400">
                         Tracking:
                       </label>
                       <span className="">{orderItem.returnTrackingNumber}</span>
@@ -205,12 +205,12 @@ export default function ShipAndReturnInfoModal({
 
             {orderItem.refundedAmount && (
               <>
-                <hr className="border-gray-800" />
+                <hr className="border-gray-700" />
 
                 <div className="flex flex-col gap-0">
                   <label className="text-sm font-semibold">Refunded</label>
                   <div className="flex gap-2 text-sm">
-                    <label className="font-base min-w-16 text-gray-500">
+                    <label className="font-base min-w-16 text-gray-400">
                       Amount:
                     </label>
                     <span className="">

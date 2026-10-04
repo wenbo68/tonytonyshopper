@@ -189,7 +189,7 @@ export function RequestReturnModal({
       <form
         onMouseDown={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
-        className="scrollbar-hide flex max-h-[90vh] w-sm max-w-[90vw] flex-col gap-4 overflow-y-auto rounded bg-gray-900 p-4 text-sm"
+        className="scrollbar-hide flex max-h-[90vh] w-sm max-w-[90vw] flex-col gap-4 overflow-y-auto rounded bg-gray-800 p-4 text-sm"
       >
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
@@ -210,7 +210,7 @@ export function RequestReturnModal({
                   setQuantity(Math.max(0, Number(val)));
                 }
               }}
-              className="w-full rounded bg-gray-800 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-full rounded bg-gray-700 px-3 py-2 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               autoFocus
               required
             />
@@ -221,10 +221,10 @@ export function RequestReturnModal({
               options={returnReasonOptions}
               value={returnReason}
               onChange={(newValue) => setReturnReason(newValue)}
-              triggerColor="bg-gray-800"
+              triggerColor="bg-gray-700"
               menuColor="bg-gray-700"
-              // menuRingColor="bg-gray-600"
-              menuHighlightColor="hover:bg-gray-800"
+              // menuRingColor="bg-gray-500"
+              menuHighlightColor="hover:bg-gray-600"
             />
           </div>
           {/* Media Upload Section */}
@@ -264,7 +264,7 @@ export function RequestReturnModal({
           <button
             type="submit"
             disabled={isPending}
-            className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-700 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
+            className="w-full cursor-pointer rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 hover:bg-indigo-500 disabled:hover:cursor-default disabled:hover:bg-indigo-600"
           >
             {updateReturnMutationIsPending ? "Requesting..." : "Request"}
           </button>

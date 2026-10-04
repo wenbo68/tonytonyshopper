@@ -58,7 +58,7 @@ export const Dropdown = ({
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className={`flex w-full cursor-pointer items-center justify-between rounded ${triggerColor ?? "bg-gray-900"} px-3 py-2 text-xs font-semibold`}
+          className={`flex w-full cursor-pointer items-center justify-between rounded ${triggerColor ?? "bg-gray-800"} px-3 py-2 text-xs font-semibold`}
         >
           {/* Display the selected option's label, or "Select..." for multi-select/empty */}
           <span>{selectedOption ? selectedOption.label : ""}</span>
@@ -87,7 +87,7 @@ export const Dropdown = ({
                     // Only close dropdown on selection if it is NOT multi-select
                     if (!isMultiSelect) setIsOpen(false);
                   }}
-                  className={`w-full rounded px-2 ${options.length === 1 ? "py-1.5" : "py-2"} text-left text-xs font-semibold ${menuHighlightColor ?? "hover:bg-gray-900"} hover:text-blue-400 ${
+                  className={`w-full rounded px-2 ${options.length === 1 ? "py-1.5" : "py-2"} text-left text-xs font-semibold ${menuHighlightColor ?? "hover:bg-gray-700"} hover:text-blue-400 ${
                     isSelected ? "text-blue-400" : ""
                   }`}
                 >

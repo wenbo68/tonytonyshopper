@@ -25,14 +25,14 @@ export default function StarRating({
           icon = (
             <div className={`relative ${starSize}`}>
               {/* Bottom Layer: Full Gray Star */}
-              <FaStar className="absolute top-0 left-0 h-full w-full text-gray-600" />
+              <FaStar className="absolute top-0 left-0 h-full w-full text-gray-500" />
               {/* Top Layer: Half Yellow Star */}
               <FaStarHalf className="absolute top-0 left-0 h-full w-full text-yellow-500/80" />
             </div>
           );
         } else {
           // Empty Star
-          icon = <FaStar className={`text-gray-600 ${starSize}`} />;
+          icon = <FaStar className={`text-gray-500 ${starSize}`} />;
         }
 
         return (

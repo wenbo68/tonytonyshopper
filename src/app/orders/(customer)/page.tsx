@@ -262,7 +262,7 @@ export default function OrdersPage() {
                     </span>
                   </div>
                   <button
-                    className="hover: cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-400"
+                    className="hover: cursor-pointer text-xs font-semibold text-gray-400 hover:text-gray-300"
                     onClick={() => setOrderModalProps(order)}
                   >
                     More Info
@@ -375,7 +375,7 @@ export default function OrdersPage() {
 
                               {/* Dropdown Menu */}
                               {isMenuOpen && (
-                                <div className="absolute top-8 right-0 z-50 flex min-w-36 flex-col rounded bg-gray-800 p-1 text-left text-xs font-semibold text-gray-400 transition-all">
+                                <div className="absolute top-8 right-0 z-50 flex min-w-36 flex-col rounded bg-gray-700 p-1 text-left text-xs font-semibold text-gray-400 transition-all">
                                   {/* Buy Again */}
                                   <button
                                     onClick={(e) =>
@@ -386,7 +386,7 @@ export default function OrdersPage() {
                                         item.quantity,
                                       )
                                     }
-                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
                                   >
                                     <div className="item-center flex min-w-4 justify-center">
                                       <FaCartPlus className="text-gray-400" />
@@ -400,7 +400,7 @@ export default function OrdersPage() {
                                       onClick={(e) =>
                                         handleCancel(e, item.id, item.quantity)
                                       }
-                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
                                     >
                                       <div className="item-center flex min-w-4 justify-center">
                                         <FaXmark className="text-gray-400" />
@@ -424,7 +424,7 @@ export default function OrdersPage() {
                                           item.productVariantId,
                                         )
                                       }
-                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
                                     >
                                       <div className="item-center flex min-w-4 justify-center">
                                         <GiOpenBook
@@ -442,7 +442,7 @@ export default function OrdersPage() {
                                       onClick={(e) =>
                                         handleRequestReturn(e, item)
                                       }
-                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
                                     >
                                       <div className="item-center flex min-w-4 justify-center">
                                         <FaUndo
@@ -460,7 +460,7 @@ export default function OrdersPage() {
                                     onClick={(e) =>
                                       handleReturnRequest(e, item)
                                     }
-                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
                                   >
                                     <div className="item-center flex min-w-4 justify-center">
                                       <FaPen
@@ -478,7 +478,7 @@ export default function OrdersPage() {
                                       onClick={(e) =>
                                         handleFinishReturn(e, item)
                                       }
-                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                      className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
                                     >
                                       <div className="item-center flex min-w-4 justify-center">
                                         <FaCheck
@@ -494,7 +494,7 @@ export default function OrdersPage() {
                                   {/* {item.status === "returned" && (
                                   <button
                                     onClick={(e) => handleReturn(e)}
-                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+                                    className="flex w-full items-center gap-2 rounded p-2 hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
                                   >
                                     <div className="item-center flex min-w-4 justify-center">
                                       <FaPen
@@ -518,7 +518,7 @@ export default function OrdersPage() {
                         >
                           {product.name}
                         </Link>
-                        <p className="line-clamp-1 text-xs leading-normal text-gray-500 capitalize">
+                        <p className="line-clamp-1 text-xs leading-normal text-gray-400 capitalize">
                           {formatProductOptionsCaption(variant.options)}
                         </p>
                       </ItemCard>
@@ -528,7 +528,7 @@ export default function OrdersPage() {
               </ItemGrid>
             </div>
             {order !== orders[orders.length - 1] && (
-              <hr className="border-gray-800" />
+              <hr className="border-gray-700" />
             )}
           </div>
         );

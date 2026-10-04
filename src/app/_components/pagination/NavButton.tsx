@@ -51,9 +51,9 @@ export function NavButton({
       className={clsx(
         baseStyle,
         {
-          'bg-gray-800 text-blue-400 is-active': isActive,
-          'hover:bg-gray-800': !isActive && !isDisabled,
-          'text-gray-600 cursor-not-allowed pointer-events-none': isDisabled,
+          'bg-gray-700 text-blue-400 is-active': isActive,
+          'hover:bg-gray-700': !isActive && !isDisabled,
+          'text-gray-500 cursor-not-allowed pointer-events-none': isDisabled,
         },
         className // Allows for additional custom classes
       )}

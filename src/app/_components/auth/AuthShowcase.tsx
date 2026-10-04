@@ -84,14 +84,14 @@ export function AuthShowcase() {
 
       {/* Dropdown Menu */}
       {isDropdownOpen && (
-        <div className="absolute right-0 z-10 mt-3 flex w-36 origin-top-right flex-col rounded bg-gray-800 p-1 sm:mt-2.5">
+        <div className="absolute right-0 z-10 mt-3 flex w-36 origin-top-right flex-col rounded bg-gray-700 p-1 sm:mt-2.5">
           <Link
             href={"/orders"}
             onClick={() => {
               setDropdownOpen(false);
               // signOut();
             }}
-            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
           >
             <div className="flex h-4 w-4 items-center justify-center">
               <FaBookmark size={12} />
@@ -104,7 +104,7 @@ export function AuthShowcase() {
               setDropdownOpen(false);
               // signOut();
             }}
-            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
           >
             <div className="flex h-4 w-4 items-center justify-center">
               <FaCoins size={13} />
@@ -117,7 +117,7 @@ export function AuthShowcase() {
               setDropdownOpen(false);
               // signOut();
             }}
-            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
           >
             <div className="flex h-4 w-4 items-center justify-center">
               <MdLibraryAddCheck size={15} />
@@ -129,7 +129,7 @@ export function AuthShowcase() {
               setDropdownOpen(false);
               signOut();
             }}
-            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:cursor-pointer hover:bg-gray-900 hover:text-blue-400"
+            className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs font-semibold hover:cursor-pointer hover:bg-gray-800 hover:text-blue-400"
           >
             <div className="flex h-4 w-4 items-center justify-center">
               <RiLogoutBoxRLine size={15} />

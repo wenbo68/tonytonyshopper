@@ -185,11 +185,11 @@ export default function ReviewModal({
       onMouseDown={(e) => handleOverlayClick(e, onClose)}
     >
       <div
-        className="scrollbar-hide max-h-[90vh] w-full max-w-[90vw] overflow-y-auto rounded bg-gray-900 sm:max-w-lg"
+        className="scrollbar-hide max-h-[90vh] w-full max-w-[90vw] overflow-y-auto rounded bg-gray-800 sm:max-w-lg"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {isFetchingExistingReview ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-gray-400">
             <p className="animate-pulse">Loading review...</p>
           </div>
         ) : (
@@ -202,7 +202,7 @@ export default function ReviewModal({
             >
               <div className="flex flex-col gap-1">
                 <span className="block font-medium text-gray-300">Rating</span>
-                <div className="flex w-full items-center rounded bg-gray-800 px-3 py-2">
+                <div className="flex w-full items-center rounded bg-gray-700 px-3 py-2">
                   <StarRating rating={rating} setRating={setRating} />
                 </div>
               </div>
@@ -220,7 +220,7 @@ export default function ReviewModal({
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Share your experience..."
-                  className="scrollbar-hide w-full rounded bg-gray-800 px-3 py-2 outline-none"
+                  className="scrollbar-hide w-full rounded bg-gray-700 px-3 py-2 outline-none"
                 ></textarea>
               </div>
 
@@ -255,7 +255,7 @@ export default function ReviewModal({
                         deleteMutation.mutate({ id: existingReview.id });
                       }
                     }}
-                    className="w-full min-w-[100px] rounded bg-red-600/40 px-4 py-2 font-semibold text-white transition-all hover:cursor-pointer hover:bg-red-600/30 disabled:cursor-default disabled:bg-gray-700"
+                    className="w-full min-w-[100px] rounded bg-red-600/40 px-4 py-2 font-semibold text-white transition-all hover:cursor-pointer hover:bg-red-600/30 disabled:cursor-default disabled:bg-gray-600"
                   >
                     {isDeleting ? "Deleting..." : "Delete Review"}
                   </button>
@@ -263,7 +263,7 @@ export default function ReviewModal({
                 <button
                   type="submit"
                   disabled={isPending || isDeleting}
-                  className="w-full min-w-[100px] rounded bg-indigo-600 px-4 py-2 font-semibold text-white transition-all hover:cursor-pointer hover:bg-indigo-700 disabled:cursor-default disabled:bg-gray-700"
+                  className="w-full min-w-[100px] rounded bg-indigo-600 px-4 py-2 font-semibold text-gray-300 transition-all hover:cursor-pointer hover:bg-indigo-500 disabled:cursor-default disabled:bg-gray-600"
                 >
                   {isPending
                     ? "Saving..."

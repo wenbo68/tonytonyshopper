@@ -108,9 +108,9 @@ export default function WriteOrUpdateReply({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`flex flex-col gap-2 bg-gray-900 ${
+      className={`flex flex-col gap-2 bg-gray-800 ${
         updateInput ? "" : "pt-5 pl-10"
-      } rounded text-sm text-gray-500`}
+      } rounded text-sm text-gray-400`}
     >
       {error && <p className="text-sm text-red-400">{error}</p>}
       <div className="flex flex-col gap-2">
@@ -118,7 +118,7 @@ export default function WriteOrUpdateReply({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Write a reply..."
-          className="scrollbar-hide w-full rounded bg-gray-800 p-2 text-gray-400 outline-none"
+          className="scrollbar-hide w-full rounded bg-gray-700 p-2 text-gray-400 outline-none"
           rows={2}
           autoFocus
         ></textarea>
@@ -128,7 +128,7 @@ export default function WriteOrUpdateReply({
             type="button"
             onClick={handleCancel}
             disabled={updateInput?.isUpdatePending || addMutation.isPending}
-            className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
+            className="cursor-pointer hover:text-gray-300 disabled:cursor-default disabled:hover:text-gray-400"
           >
             Cancel
           </button>
@@ -136,7 +136,7 @@ export default function WriteOrUpdateReply({
             <button
               type="submit"
               disabled={updateInput?.isUpdatePending}
-              className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
+              className="cursor-pointer hover:text-gray-300 disabled:cursor-default disabled:hover:text-gray-400"
             >
               {updateInput.isUpdatePending ? "Saving" : "Save"}
             </button>
@@ -144,7 +144,7 @@ export default function WriteOrUpdateReply({
             <button
               type="submit"
               disabled={addMutation.isPending}
-              className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
+              className="cursor-pointer hover:text-gray-300 disabled:cursor-default disabled:hover:text-gray-400"
             >
               {addMutation.isPending ? "Submitting" : "Submit"}
             </button>

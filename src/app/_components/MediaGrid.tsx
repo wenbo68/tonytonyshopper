@@ -101,7 +101,7 @@ export function MediaGrid({
             onDragStart={(e) => onDragStart(e, index)}
             onDragOver={onDragOver}
             onDrop={(e) => onDrop(e, index)}
-            className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-800 bg-black active:cursor-grabbing"
+            className="relative flex aspect-square cursor-grab flex-col items-center justify-center overflow-hidden rounded border border-gray-700 bg-black active:cursor-grabbing"
           >
             {mediaType === "video" ? (
               <>

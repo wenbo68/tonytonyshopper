@@ -2,14 +2,14 @@ function ItemCardSkeleton({ classNames }: { classNames: string[] }) {
   return (
     <div className="flex flex-col gap-2">
       {/* Image Skeleton */}
-      <div className="aspect-square w-full animate-pulse rounded bg-gray-800" />
+      <div className="aspect-square w-full animate-pulse rounded bg-gray-700" />
 
       {/* Caption Skeleton(s) */}
       <div className="flex flex-col gap-1">
         {classNames.map((s, i) => (
           <div
             key={i}
-            className={`animate-pulse rounded bg-gray-800 leading-normal ${s ?? ""}`}
+            className={`animate-pulse rounded bg-gray-700 leading-normal ${s ?? ""}`}
           />
         ))}
       </div>

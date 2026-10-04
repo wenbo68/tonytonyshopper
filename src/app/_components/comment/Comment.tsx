@@ -193,7 +193,7 @@ export default function Comment({
   ];
 
   return (
-    <div className={`rounded bg-gray-900 ${className ?? ""}`}>
+    <div className={`rounded bg-gray-800 ${className ?? ""}`}>
       {isEditing ? (
         comment.parentId ? (
           // rely edit mode: need an error here (bc handleUpdate is defined here)
@@ -277,7 +277,7 @@ export default function Comment({
                                   key={option.label}
                                   type="button"
                                   onClick={option.onClick}
-                                  className={`w-full cursor-pointer rounded p-2 text-left text-xs font-semibold transition-colors hover:bg-gray-900 hover:text-blue-400 disabled:cursor-default disabled:hover:bg-gray-800 disabled:hover:text-gray-400`}
+                                  className={`w-full cursor-pointer rounded p-2 text-left text-xs font-semibold transition-colors hover:bg-gray-700 hover:text-blue-400 disabled:cursor-default disabled:hover:bg-gray-700 disabled:hover:text-gray-300`}
                                 >
                                   {option.label}
                                 </button>
@@ -299,7 +299,7 @@ export default function Comment({
                 </div>
 
                 {comment.createdAt && (
-                  <div className="flex gap-3 text-xs text-gray-500">
+                  <div className="flex gap-3 text-xs text-gray-400">
                     {/* time */}
                     <span className="">
                       {new Date(comment.createdAt).toLocaleDateString("ja-JP")}
@@ -360,7 +360,7 @@ export default function Comment({
 
       {/* all replies */}
       {comment.replies && comment.replies.length > 0 && (
-        <div className="border-l-2 border-gray-800">
+        <div className="border-l-2 border-gray-700">
           {comment.replies.map((reply) => (
             <Comment key={reply.id} comment={reply} className="mt-5 pl-10" />
           ))}

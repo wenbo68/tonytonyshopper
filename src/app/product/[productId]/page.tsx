@@ -216,7 +216,7 @@ export default function ProductDetailPage() {
       <div className="flex flex-col gap-4">
         <div className="flex w-full flex-col gap-3 sm:flex-row">
           {/* Main Media View */}
-          <div className="relative aspect-square w-full grow overflow-hidden rounded bg-gray-900">
+          <div className="relative aspect-square w-full grow overflow-hidden rounded">
             {currentMedia?.type === "video" ? (
               <video
                 src={currentMedia.url}
@@ -258,8 +258,8 @@ export default function ProductDetailPage() {
                 className={clsx(
                   "relative aspect-square w-20 shrink-0 overflow-hidden rounded border-2 transition-all sm:w-full",
                   activeMedia?.id === media.id
-                    ? "border-blue-500 opacity-100"
-                    : "border-transparent bg-gray-800 opacity-60 hover:opacity-100",
+                    ? "border-indigo-500 opacity-100"
+                    : "border-transparent opacity-60 hover:opacity-100",
                 )}
               >
                 {media.type === "video" ? (
@@ -317,10 +317,10 @@ export default function ProductDetailPage() {
                   options={values.map((v) => ({ label: v, value: v }))}
                   value={selectedOptions[name] ?? ""}
                   onChange={(newValue) => handleOptionChange(name, newValue)}
-                  triggerColor="bg-gray-900"
+                  triggerColor="bg-gray-800"
                   menuColor="bg-gray-800"
-                  // menuRingColor="bg-gray-700"
-                  menuHighlightColor="hover:bg-gray-900"
+                  // menuRingColor="bg-gray-600"
+                  menuHighlightColor="hover:bg-gray-700"
                 />
               </div>
             ))}
@@ -341,7 +341,7 @@ export default function ProductDetailPage() {
                 onChange={(e) =>
                   setQuantity(Math.max(0, Number(e.target.value)))
                 }
-                className="w-full rounded bg-gray-900 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                className="w-full rounded bg-gray-800 px-3 py-2 text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
             </div>
           </div>

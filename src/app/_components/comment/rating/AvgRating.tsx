@@ -52,7 +52,7 @@ export default function AvgRating({
             rating={Number(averageRating.toFixed(1))}
             interactive={false}
           />
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-400">
             {ratingCount} {ratingCount === 1 ? "review" : "reviews"}
           </span>
         </div>
@@ -71,13 +71,13 @@ export default function AvgRating({
                 {star}
               </span>
               {/* Star Icon (Optional, or just keep the number) */}
-              {/* <span className="text-gray-500">★</span> */}
+              {/* <span className="text-gray-400">★</span> */}
 
               {/* Bar Background */}
-              <div className="h-2.5 flex-1 overflow-hidden rounded bg-gray-800">
+              <div className="h-2.5 flex-1 overflow-hidden rounded bg-gray-700">
                 {/* Filled Bar */}
                 <div
-                  className="h-full bg-indigo-500 transition-all duration-500 ease-out"
+                  className="h-full bg-blue-500 transition-all duration-500 ease-out"
                   style={{ width: `${percent}%` }}
                 />
               </div>

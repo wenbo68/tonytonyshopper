@@ -150,7 +150,7 @@ export default function WriteOrUpdateReview({ updateInput }: WriteReviewProps) {
   if (!session)
     return (
       <p
-        className={`bg-gray-900 ${updateInput ? `` : `p-5`} flex flex-col gap-4 rounded text-sm text-gray-400`}
+        className={`bg-gray-800 ${updateInput ? `` : `p-5`} flex flex-col gap-4 rounded text-sm text-gray-400`}
       >
         Please login first to submit a review.
       </p>
@@ -158,11 +158,11 @@ export default function WriteOrUpdateReview({ updateInput }: WriteReviewProps) {
 
   if (!updateInput) {
     if (isCheckingEligibility) {
-      return <div className="h-32 animate-pulse rounded bg-gray-900 p-5"></div>;
+      return <div className="h-32 animate-pulse rounded bg-gray-800 p-5"></div>;
     }
     if (!canReview) {
       return (
-        <div className="rounded bg-gray-900 p-5 text-sm text-gray-400">
+        <div className="rounded bg-gray-800 p-5 text-sm text-gray-400">
           You can only review products you have purchased and received (Order
           Status: Shipped).
         </div>
@@ -176,14 +176,14 @@ export default function WriteOrUpdateReview({ updateInput }: WriteReviewProps) {
 
       <form
         onSubmit={handleSubmit}
-        className={`bg-gray-900 ${
+        className={`bg-gray-800 ${
           updateInput ? `` : `p-5`
         } flex flex-col gap-4 rounded text-sm text-gray-400`}
       >
         <div className="flex flex-col gap-4 sm:flex-row">
           <div className="flex w-full flex-col gap-1">
             <span className="block font-medium">Rating</span>
-            <div className="flex items-center rounded bg-gray-800 px-3 py-2.5">
+            <div className="flex items-center rounded bg-gray-700 px-3 py-2.5">
               <StarRating rating={rating} setRating={setRating} />
             </div>
           </div>
@@ -199,7 +199,7 @@ export default function WriteOrUpdateReview({ updateInput }: WriteReviewProps) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Share your experience..."
-            className="scrollbar-hide w-full rounded bg-gray-800 px-3 py-2 outline-none"
+            className="scrollbar-hide w-full rounded bg-gray-700 px-3 py-2 outline-none"
           ></textarea>
         </div>
 
@@ -225,19 +225,19 @@ export default function WriteOrUpdateReview({ updateInput }: WriteReviewProps) {
         </div>
 
         {updateInput ? (
-          <div className="flex justify-end gap-4 text-gray-500">
+          <div className="flex justify-end gap-4 text-gray-400">
             <button
               type="button"
               onClick={handleCancel}
               disabled={updateInput.isUpdatePending}
-              className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
+              className="cursor-pointer hover:text-gray-300 disabled:cursor-default disabled:hover:text-gray-400"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={updateInput.isUpdatePending}
-              className="cursor-pointer hover:text-gray-400 disabled:cursor-default disabled:hover:text-gray-500"
+              className="cursor-pointer hover:text-gray-300 disabled:cursor-default disabled:hover:text-gray-400"
             >
               {updateInput.isUpdatePending ? "Saving" : "Save"}
             </button>

@@ -29,7 +29,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`}>
-      <body className="flex flex-col bg-gray-950 text-gray-400">
+      <body className="flex flex-col bg-gray-900 text-gray-400">
         {/* <Suspense fallback={null}> */}
         <ContextProviders>
           {/* 2. Wrap CheckoutListener in Suspense */}
@@ -41,7 +41,7 @@ export default function RootLayout({
           <ProductVariantModal />
           <MediaModal />
           <TopNav />
-          <main className="mx-auto w-full max-w-[1400px] grow px-2 pt-4 pb-10 sm:pt-5 sm:pb-11 md:pt-6 md:pb-12 lg:pt-7 lg:pb-13 xl:pt-8 xl:pb-14">
+          <main className="mx-auto w-full max-w-7xl grow px-2 pt-4 pb-10 sm:pt-5 sm:pb-11 md:pt-6 md:pb-12 lg:pt-7 lg:pb-13 xl:pt-8 xl:pb-14">
             {children}
           </main>
           <Toaster position="bottom-center" />

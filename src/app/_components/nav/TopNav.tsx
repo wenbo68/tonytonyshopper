@@ -51,12 +51,12 @@ export function TopNav() {
 
   return (
     <nav
-      className="sticky top-0 z-50 flex h-12 w-full justify-center bg-gray-900 transition-transform duration-0"
+      className="sticky top-0 z-50 flex h-12 w-full justify-center bg-gray-800 transition-transform duration-0"
       style={{ transform: `translateY(${navPosition}px)` }}
     >
-      <div className="flex w-full max-w-[1400px] items-center justify-between px-2">
+      <div className="flex w-full max-w-7xl items-center justify-between px-2">
         <Link
-          href="/search"
+          href="/"
           className="flex items-center text-center text-sm font-semibold"
         >
           <div className="flex h-8 w-8 items-center justify-center">

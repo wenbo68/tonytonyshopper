@@ -33,7 +33,7 @@ export default function TextFilter({ label, inputs, action }: TextFilterProps) {
             placeholder={input.placeholder}
             min={input.min}
             max={input.max}
-            className="w-full rounded bg-gray-900 px-3 py-2 outline-none placeholder:text-gray-600 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="w-full rounded bg-gray-800 px-3 py-2 outline-none placeholder:text-gray-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
         ))}
         {action && <>{action}</>}
