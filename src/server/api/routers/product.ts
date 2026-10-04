@@ -19,11 +19,8 @@ import {
   productVariants,
   categories,
   productsToCategories,
-  orders,
 } from "~/server/db/schema";
-import { TRPCError } from "@trpc/server";
 import { getProductsInputSchema } from "~/type";
-import { updateProductVariantDenorms } from "~/server/utils/product";
 
 export const productRouter = createTRPCRouter({
   getHomeProducts: publicProcedure.query(async ({ ctx }) => {
@@ -295,117 +292,5 @@ export const productRouter = createTRPCRouter({
     return ctx.db.query.categories.findMany({
       orderBy: [asc(categories.name)],
     });
-  }),
-
-  /**
-   * A temporary mutation to seed the database.
-   */
-  seedDatabase: publicProcedure.mutation(async ({ ctx }) => {
-    try {
-      console.log("Clearing old data...");
-
-      // 1. Delete orders first (this cascades to orderItems)
-      await ctx.db.delete(orders);
-
-      // 2. Now we can safely delete products (cascades to variants, cartItems, etc.)
-      await ctx.db.delete(products);
-      await ctx.db.delete(categories);
-
-      console.log("Inserting new categories...");
-      const [apparelCategory] = await ctx.db
-        .insert(categories)
-        .values([{ name: "Apparel" }])
-        .returning();
-
-      console.log("Inserting new products and variants...");
-
-      // --- Use a Transaction for consistency ---
-      await ctx.db.transaction(async (tx) => {
-        // 1. Classic Tee
-        const [tee] = await tx
-          .insert(products)
-          .values([
-            {
-              name: "Classic Cotton Tee",
-              description: "A super soft, 100% cotton tee.",
-              isFeatured: true,
-            },
-          ])
-          .returning();
-
-        if (apparelCategory && tee) {
-          await tx.insert(productVariants).values([
-            {
-              productId: tee.id,
-              // name: "Red",
-              price: "24.99",
-              stock: 100,
-              // images: ["https://placehold.co/600x600/f00/fff.png?text=Tee+Red"],
-              options: { color: "Red" },
-            },
-            {
-              productId: tee.id,
-              // name: "Blue",
-              price: "24.99",
-              stock: 50,
-              // images: [
-              //   "https://placehold.co/600x600/00f/fff.png?text=Tee+Blue",
-              // ],
-              options: { color: "Blue" },
-            },
-          ]);
-
-          await tx.insert(productsToCategories).values({
-            productId: tee.id,
-            categoryId: apparelCategory.id,
-          });
-
-          // Calculate stats
-          await updateProductVariantDenorms(tx, tee.id);
-        }
-
-        // 2. Jeans
-        const [jeans] = await tx
-          .insert(products)
-          .values([
-            {
-              name: "Modern Denim Jeans",
-              description: "Stylish, comfortable slim-fit jeans.",
-            },
-          ])
-          .returning();
-
-        if (apparelCategory && jeans) {
-          await tx.insert(productVariants).values([
-            {
-              productId: jeans.id,
-              // name: "Medium Wash / 32x30",
-              price: "59.99",
-              stock: 30,
-              // images: [
-              //   "https://placehold.co/600x600/e0e0e0/333.png?text=Jeans",
-              // ],
-              options: { wash: "Medium", size: "32x30" },
-            },
-          ]);
-
-          await tx.insert(productsToCategories).values({
-            productId: jeans.id,
-            categoryId: apparelCategory.id,
-          });
-
-          // Calculate stats
-          await updateProductVariantDenorms(tx, jeans.id);
-        }
-      });
-
-      return { success: true, message: "Database seeded successfully!" };
-    } catch (error) {
-      console.error("Failed to seed database:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to seed database.",
-      });
-    }
   }),
 });
