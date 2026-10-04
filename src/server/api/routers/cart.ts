@@ -1,8 +1,8 @@
 // Path: ~/server/api/routers/cart.ts
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { cartItems } from "~/server/db/schema"; //
-import { eq, and, desc } from "drizzle-orm";
+import { cartItems, productVariants } from "~/server/db/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 
 export const cartRouter = createTRPCRouter({
   /**
@@ -93,38 +93,54 @@ export const cartRouter = createTRPCRouter({
       ),
     )
     .mutation(async ({ ctx, input }) => {
-      for (const item of input) {
-        const existingItem = await ctx.db.query.cartItems.findFirst({
-          where: and(
-            eq(cartItems.userId, ctx.session.user.id),
-            eq(cartItems.productVariantId, item.productVariantId),
-          ),
-        });
+      const userId = ctx.session.user.id;
+      const requestedIds = [...new Set(input.map((i) => i.productVariantId))];
+      if (requestedIds.length === 0) return { merged: 0, skipped: [] };
 
-        if (existingItem) {
-          // If it exists, we usually just update quantity and keep the original DB timestamp
-          // (or you could update it to 'now' if you wanted it to jump to the top)
-          await ctx.db
-            .update(cartItems)
-            .set({ quantity: existingItem.quantity + item.quantity })
-            .where(
-              and(
-                eq(cartItems.userId, ctx.session.user.id),
-                eq(cartItems.productVariantId, item.productVariantId),
-              ),
-            );
-        } else {
-          // If inserting a new item, use the Guest Cart's timestamp
-          await ctx.db.insert(cartItems).values({
-            userId: ctx.session.user.id,
-            productVariantId: item.productVariantId,
-            quantity: item.quantity,
-            // 2. Use the passed timestamp, or fallback to Date.now()
-            createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+      // A guest cart lives in the browser, so it can point at variants that
+      // were deleted since. Skip those instead of failing the whole merge.
+      const existing = await ctx.db
+        .select({ id: productVariants.id })
+        .from(productVariants)
+        .where(inArray(productVariants.id, requestedIds));
+      const existingIds = new Set(existing.map((v) => v.id));
+      const validItems = input.filter((i) =>
+        existingIds.has(i.productVariantId),
+      );
+      const skipped = requestedIds.filter((id) => !existingIds.has(id));
+
+      await ctx.db.transaction(async (tx) => {
+        for (const item of validItems) {
+          const existingItem = await tx.query.cartItems.findFirst({
+            where: and(
+              eq(cartItems.userId, userId),
+              eq(cartItems.productVariantId, item.productVariantId),
+            ),
           });
+
+          if (existingItem) {
+            // Keep the original DB timestamp; just add the quantities together.
+            await tx
+              .update(cartItems)
+              .set({ quantity: existingItem.quantity + item.quantity })
+              .where(
+                and(
+                  eq(cartItems.userId, userId),
+                  eq(cartItems.productVariantId, item.productVariantId),
+                ),
+              );
+          } else {
+            await tx.insert(cartItems).values({
+              userId,
+              productVariantId: item.productVariantId,
+              quantity: item.quantity,
+              createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+            });
+          }
         }
-      }
-      return { success: true };
+      });
+
+      return { merged: validItems.length, skipped };
     }),
 
   /**

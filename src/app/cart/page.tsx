@@ -103,6 +103,17 @@ export default function CartPage() {
 
   // is merging guest/user cart?
   const isMerging = useCartMergeStore((state) => state.isMerging);
+  const mergeFailed = useCartMergeStore((state) => state.mergeFailed);
+
+  // Guest carts live in the browser, so they can point at variants that no
+  // longer exist. Drop those so the badge and cart stay accurate.
+  useEffect(() => {
+    if (sessionStatus !== "unauthenticated" || !guestVariants) return;
+    const foundIds = new Set(guestVariants.map((v) => v.id));
+    guestCartItems
+      .filter((item) => !foundIds.has(item.productVariantId))
+      .forEach((item) => removeGuestItem(item.productVariantId));
+  }, [sessionStatus, guestVariants, guestCartItems, removeGuestItem]);
 
   // ==== OPTIMIZATION: Prefetch Product Details ====
   // This loads the product data (including all variants) into the cache in the background.
@@ -133,7 +144,8 @@ export default function CartPage() {
   let showLoading = false;
 
   if (session?.user) {
-    const isPendingMerge = guestCartItems.length > 0;
+    // Guest items are waiting to be merged unless the merge already failed.
+    const isPendingMerge = guestCartItems.length > 0 && !mergeFailed;
     showLoading = isUserCartPending || isMerging || isPendingMerge;
 
     cartItems =
@@ -264,7 +276,7 @@ export default function CartPage() {
               >
                 {variant.product.name}
               </Link>
-              <p className="line-clamp-1 text-xs leading-normal text-gray-500 capitalize">
+              <p className="line-clamp-1 text-xs leading-normal text-gray-400 capitalize">
                 {formatProductOptionsCaption(variant.options)}
               </p>
             </ItemCard>
@@ -273,19 +285,19 @@ export default function CartPage() {
       </ItemGrid>
 
       {/* Checkout Section */}
-      <div className="sticky bottom-0 z-20 mt-auto border-t border-gray-800 bg-gray-950/90 py-4 backdrop-blur-md sm:relative">
+      <div className="sticky bottom-0 z-20 mt-auto border-t border-gray-700 bg-gray-900/90 py-4 backdrop-blur-md sm:relative">
         <div className="mx-auto flex max-w-lg flex-col gap-3 rounded p-1">
           <div className="flex justify-between text-lg font-bold text-gray-300">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal.toString())}</span>
           </div>
-          <p className="text-center text-xs text-gray-500">
+          <p className="text-center text-xs text-gray-400">
             Shipping and taxes calculated at checkout.
           </p>
           <button
             onClick={handleCheckout}
             disabled={createCheckoutMutation.isPending}
-            className="w-full cursor-pointer rounded bg-indigo-600 py-3 font-semibold text-gray-300 transition-colors hover:bg-indigo-700 disabled:cursor-default disabled:bg-indigo-700"
+            className="w-full cursor-pointer rounded bg-indigo-600 py-3 font-semibold text-gray-300 transition-colors hover:bg-indigo-500 disabled:cursor-default disabled:bg-indigo-700"
           >
             {createCheckoutMutation.isPending
               ? "Processing..."
